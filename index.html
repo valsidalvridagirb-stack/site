@@ -318,7 +318,13 @@ async function loadProducts(){
 
   grid.innerHTML = '';
   data.forEach(p => {
-    const photo = p.photos ? p.photos.split(';')[0].trim() : null;
+    let rawPhoto = p.photos ? p.photos.split(';')[0].trim() : null;
+    let photo = null;
+    if (rawPhoto) {
+      if (rawPhoto.startsWith('http://')) rawPhoto = rawPhoto.replace('http://', 'https://');
+      else if (rawPhoto.startsWith('//')) rawPhoto = 'https:' + rawPhoto;
+      photo = `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}`;
+    }
     const sizes = Array.isArray(p.sizes) ? p.sizes : [];
     const isWished = wishlist.has(p.id);
 
