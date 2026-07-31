@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Товар — NEXXTLEVEL STORE</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --ink:#111111;
+  --paper:#ffffff;
+  --smoke:#f4f4f2;
+  --line:#e6e5e2;
+  --mute:#767470;
+  --accent:#c8362c;
+  --radius:2px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  color:var(--ink);background:var(--paper);
+}
+a{color:inherit;text-decoration:none;}
+
+header.site{
+  position:sticky;top:0;z-index:50;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.header-inner{
+  max-width:1200px;margin:0 auto;padding:16px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.brand{font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;}
+.brand span{display:block;font-size:10px;color:var(--mute);letter-spacing:3px;}
+nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;}
+
+.product-page{max-width:1200px;margin:40px auto;padding:0 24px;}
+.product-layout{display:grid;grid-template-columns:1fr 1fr;gap:48px;}
+
+/* Gallery */
+.gallery-container{display:flex;gap:16px;}
+.thumbs-list{display:flex;flex-direction:column;gap:12px;width:80px;}
+.thumb-img{
+  aspect-ratio:1;object-fit:cover;border:1px solid var(--line);
+  cursor:pointer;border-radius:var(--radius);
+}
+.thumb-img.active{border-color:var(--ink);}
+.main-image-wrap{flex:1;aspect-ratio:1;background:var(--smoke);border-radius:var(--radius);overflow:hidden;}
+.main-image-wrap img{width:100%;height:100%;object-fit:cover;}
+
+/* Details */
+.product-details{display:flex;flex-direction:column;gap:24px;}
+.p-title{font-size:32px;font-weight:900;text-transform:uppercase;line-height:1.1;}
+.p-price{font-size:24px;font-weight:800;color:var(--ink);}
+.size-section{margin-top:16px;}
+.size-title{font-size:14px;font-weight:700;margin-bottom:12px;text-transform:uppercase;}
+.size-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.size-btn{
+  padding:12px 20px;border:1px solid var(--line);background:none;
+  font-weight:700;cursor:pointer;border-radius:var(--radius);transition:all .2s;
+}
+.size-btn:hover{border-color:var(--ink);}
+.size-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+
+.add-btn{
+  width:100%;padding:18px;background:var(--ink);color:var(--paper);
+  font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:1px;
+  border:none;cursor:pointer;margin-top:16px;
+}
+.add-btn:hover{opacity:0.9;}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="header-inner">
+    <a href="index.html" class="brand">NEXXTLEVEL<span>STORE</span></a>
+    <nav class="menu">
+      <a href="catalog.html?cat=Чоловічі%20кросівки">Чоловічі кросівки</a>
+      <a href="catalog.html?cat=Жіночі%20кросівки">Жіночі кросівки</a>
+    </nav>
+  </div>
+</header>
+
+<main class="product-page" id="productContainer">
+  <div style="text-align:center;padding:48px;">Завантаження товару...</div>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let selectedSize = null;
+let currentPrice = null;
+
+async function fetchProduct() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const productName = urlParams.get('name');
+  const productId = urlParams.get('id');
+
+  let query = supabase.from('products').select('*');
+  if (productName) {
+    query = query.eq('name', productName);
+  } else if (productId) {
+    query = query.eq('id', productId);
+  } else {
+    return;
+  }
+
+  const { data: variants, error } = await query;
+  if (error || !variants || variants.length === 0) {
+    document.getElementById('productContainer').innerHTML = '<h2>Товар не знайдено</h2>';
+    return;
+  }
+
+  const baseProduct = variants[0];
+  const sizeMap = {};
+
+  variants.forEach(variant => {
+    let rawSizes = [];
+    if (Array.isArray(variant.sizes)) rawSizes = variant.sizes;
+    else if (typeof variant.sizes === 'string') rawSizes = variant.sizes.split(',').map(s => s.trim());
+
+    rawSizes.forEach(sz => {
+      if (sz && !sizeMap[sz]) {
+        sizeMap[sz] = Number(variant.price);
+      }
+    });
+  });
+
+  renderProduct(baseProduct, sizeMap);
+}
+
+function renderProduct(product, sizeMap) {
+  let rawPhotos = product.photos ? product.photos.split(';') : (product.image_url ? [product.image_url] : []);
+  const photos = rawPhotos.map(p => {
+    let clean = p.trim();
+    return clean.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(clean)}` : clean;
+  }).filter(Boolean);
+
+  const initialPrice = Object.values(sizeMap)[0] || Number(product.price);
+
+  const container = document.getElementById('productContainer');
+  container.innerHTML = `
+    <div class="product-layout">
+      <div class="gallery-container">
+        ${photos.length > 1 ? `
+          <div class="thumbs-list">
+            ${photos.map((ph, idx) => `
+              <img src="${ph}" class="thumb-img ${idx === 0 ? 'active' : ''}" onclick="changePhoto('${ph}', this)">
+            `).join('')}
+          </div>
+        ` : ''}
+        <div class="main-image-wrap">
+          <img id="mainPhoto" src="${photos[0] || ''}" alt="${product.name}">
+        </div>
+      </div>
+
+      <div class="product-details">
+        <h1 class="p-title">${product.name || product.title}</h1>
+        <div class="p-price" id="productPrice">${initialPrice.toLocaleString('uk-UA')} грн</div>
+
+        <div class="size-section">
+          <div class="size-title">Оберіть розмір (US)</div>
+          <div class="size-grid">
+            ${Object.keys(sizeMap).map(size => `
+              <button class="size-btn" onclick="selectSize('${size}', ${sizeMap[size]}, this)">
+                ${size}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <button class="add-btn" onclick="addToCart()">Додати в кошик</button>
+        
+        ${product.description ? `
+          <div style="margin-top:24px;line-height:1.6;color:var(--mute);">
+            <strong style="color:var(--ink);">ОПИС</strong><br>${product.description}
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function changePhoto(src, btn) {
+  document.getElementById('mainPhoto').src = src;
+  document.querySelectorAll('.thumb-img').forEach(img => img.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function selectSize(size, price, btn) {
+  selectedSize = size;
+  currentPrice = price;
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('productPrice').textContent = `${price.toLocaleString('uk-UA')} грн`;
+}
+
+function addToCart() {
+  if (!selectedSize) {
+    alert('Будь ласка, оберіть розмір перед додаванням у кошик!');
+    return;
+  }
+  alert(`Товар додано в кошик! Розмір: ${selectedSize}, Ціна: ${currentPrice} грн`);
+}
+
+fetchProduct();
+</script>
+</body>
+</html>
