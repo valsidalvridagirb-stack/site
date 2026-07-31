@@ -94,7 +94,7 @@ nav.menu a:hover{color:var(--accent);}
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
 
-var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function loadCatalog() {
   const grid = document.getElementById('productGrid');
@@ -102,7 +102,7 @@ async function loadCatalog() {
   const urlParams = new URLSearchParams(window.location.search);
   const cat = urlParams.get('cat');
 
-  let query = supabase.from('products').select('id, name, price, photos, category_3');
+  let query = supabaseClient.from('products').select('id, name, price, photos, category_3');
 
   if (cat) {
     document.getElementById('pageTitle').textContent = cat;
