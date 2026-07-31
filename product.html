@@ -98,43 +98,59 @@ let currentPrice = null;
 
 async function fetchProduct() {
   const urlParams = new URLSearchParams(window.location.search);
+  const productArticul = urlParams.get('articul');
   const productName = urlParams.get('name');
   const productId = urlParams.get('id');
 
-  let nameToLoad = productName;
+  let variants = null;
 
-  // Якщо прийшли з id (одного конкретного розміру) - спочатку дізнаємось name товару,
-  // а потім підтягнемо ВСІ розміри цього товару (кожен розмір - окремий рядок у таблиці).
-  if (!nameToLoad && productId) {
-    const { data: idRow, error: idError } = await supabaseClient
+  if (productArticul) {
+    // Найнадійніший спосіб: тягнемо ВСІ рядки з цим артикулом,
+    // незалежно від того, під яким саме варіантом назви вони збережені.
+    const { data, error } = await supabaseClient
       .from('products')
-      .select('name')
-      .eq('id', productId)
-      .single();
+      .select('*')
+      .eq('articul', productArticul);
+    if (!error) variants = data;
+  } else {
+    let nameToLoad = productName;
 
-    if (idError || !idRow) {
-      document.getElementById('productContainer').innerHTML = '<h2>Товар не знайдено</h2>';
-      return;
+    // Старі посилання з ?id= - спочатку дізнаємось articul цього рядка,
+    // а далі підтягнемо всі розміри по артикулу (так само, як вище).
+    if (!nameToLoad && productId) {
+      const { data: idRow, error: idError } = await supabaseClient
+        .from('products')
+        .select('articul, name')
+        .eq('id', productId)
+        .single();
+
+      if (!idError && idRow) {
+        const { data: byArticul } = await supabaseClient
+          .from('products')
+          .select('*')
+          .eq('articul', idRow.articul);
+        variants = byArticul;
+      }
     }
-    nameToLoad = idRow.name;
+
+    if (!variants && nameToLoad) {
+      const { data } = await supabaseClient
+        .from('products')
+        .select('*')
+        .eq('name', nameToLoad);
+      variants = data;
+    }
   }
 
-  if (!nameToLoad) {
+  if (!variants || variants.length === 0) {
     document.getElementById('productContainer').innerHTML = '<h2>Товар не знайдено</h2>';
     return;
   }
 
-  const { data: variants, error } = await supabaseClient
-    .from('products')
-    .select('*')
-    .eq('name', nameToLoad);
+  // серед варіантів назви обираємо найдовшу (зазвичай найбільш описову)
+  const baseProduct = variants.reduce((best, v) =>
+    (v.name || '').length > (best.name || '').length ? v : best, variants[0]);
 
-  if (error || !variants || variants.length === 0) {
-    document.getElementById('productContainer').innerHTML = '<h2>Товар не знайдено</h2>';
-    return;
-  }
-
-  const baseProduct = variants[0];
   const sizeMap = {};
 
   // кожен варіант - це один розмір (поле size, в однині) з власною кількістю в наявності
