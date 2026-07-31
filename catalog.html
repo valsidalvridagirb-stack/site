@@ -86,6 +86,9 @@ nav.menu a:hover{color:var(--accent);}
     <div class="catalog-count" id="resultsCount">Завантаження товарів...</div>
   </div>
   <div class="product-grid" id="productGrid"></div>
+  <div style="text-align:center;margin-top:32px;">
+    <button id="loadMoreBtn" style="display:none;padding:14px 32px;border:1px solid var(--line);background:none;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;border-radius:var(--radius);">Показати ще</button>
+  </div>
 </main>
 
 <script>
@@ -94,96 +97,104 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function loadCatalog() {
-  const grid = document.getElementById('productGrid');
-  const countEl = document.getElementById('resultsCount');
-  const urlParams = new URLSearchParams(window.location.search);
-  const cat = urlParams.get('cat');
+const PAGE_SIZE = 40;
+let currentOffset = 0;
+let currentCat = null;
+let totalLoaded = 0;
 
-  let query = supabaseClient.from('product_summary').select('id, articul, name, price, photos');
+const fallbackPhoto = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='100%25' height='100%25' fill='%2523f4f4f2'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%2523767470'%3ENo Photo%3C/text%3E%3C/svg%3E";
 
-  if (cat) {
-    document.getElementById('pageTitle').textContent = cat;
-    query = query.contains('site_categories', [cat]);
+function cardHTML(p) {
+  let rawPhoto = p.photos ? p.photos.split(';')[0].trim() : null;
+  let photo = fallbackPhoto;
+
+  if (rawPhoto) {
+    if (rawPhoto.startsWith('http://')) rawPhoto = rawPhoto.replace('http://', 'https://');
+    else if (rawPhoto.startsWith('//')) rawPhoto = 'https:' + rawPhoto;
+    photo = `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}`;
   }
 
-  const { data, error } = await query;
+  const title = p.name || 'Без назви';
+
+  return `
+    <div class="product-card">
+      <a href="product.html?articul=${encodeURIComponent(p.articul || '')}" class="product-link">
+        <div class="product-media">
+          <img src="${photo}" alt="${title}" loading="lazy" onerror="this.onerror=null;this.src='${fallbackPhoto}';">
+        </div>
+        <div class="product-info">
+          <h3 class="product-name">${title}</h3>
+          <div class="product-price">${Number(p.price || 0)} грн</div>
+        </div>
+      </a>
+    </div>
+  `;
+}
+
+async function loadPage() {
+  const grid = document.getElementById('productGrid');
+  const countEl = document.getElementById('resultsCount');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+
+  loadMoreBtn.disabled = true;
+  loadMoreBtn.textContent = 'Завантаження...';
+
+  let query = supabaseClient
+    .from('product_summary')
+    .select('id, articul, name, price, photos', { count: 'exact' })
+    .order('id', { ascending: false })
+    .range(currentOffset, currentOffset + PAGE_SIZE - 1);
+
+  if (currentCat) {
+    query = query.contains('site_categories', [currentCat]);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) {
     console.error('Помилка Supabase:', error);
     grid.innerHTML = `<p class="empty-state">Помилка завантаження: ${error.message}</p>`;
     countEl.textContent = 'Помилка';
+    loadMoreBtn.style.display = 'none';
     return;
   }
 
-  if (!data || data.length === 0) {
+  if (currentOffset === 0 && (!data || data.length === 0)) {
     grid.innerHTML = '<p class="empty-state">Товарів у цій категорії не знайдено.</p>';
     countEl.textContent = 'Знайдено: 0 товарів';
+    loadMoreBtn.style.display = 'none';
     return;
   }
 
-  const groupedProducts = {};
-  data.forEach(item => {
-    const key = item.articul || (item.name || `item-${item.id}`).trim().toLowerCase();
-    if (!groupedProducts[key]) {
-      groupedProducts[key] = {
-        ...item,
-        prices: [Number(item.price || 0)]
-      };
-    } else {
-      groupedProducts[key].prices.push(Number(item.price || 0));
-      if (!groupedProducts[key].photos && item.photos) {
-        groupedProducts[key].photos = item.photos;
-      }
-    }
-  });
+  const html = data.map(cardHTML).join('');
+  grid.insertAdjacentHTML('beforeend', html);
 
-  const uniqueProducts = Object.values(groupedProducts);
-  countEl.textContent = `Знайдено: ${uniqueProducts.length} товарів`;
-  grid.innerHTML = '';
+  totalLoaded += data.length;
+  currentOffset += PAGE_SIZE;
+  countEl.textContent = `Знайдено: ${count ?? totalLoaded} товарів (показано ${totalLoaded})`;
 
-  const fallbackPhoto = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='100%25' height='100%25' fill='%2523f4f4f2'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%2523767470'%3ENo Photo%3C/text%3E%3C/svg%3E";
-
-  uniqueProducts.forEach(p => {
-    let rawPhoto = p.photos ? p.photos.split(';')[0].trim() : null;
-    let photo = fallbackPhoto;
-
-    if (rawPhoto) {
-      if (rawPhoto.startsWith('http://')) {
-        rawPhoto = rawPhoto.replace('http://', 'https://');
-      } else if (rawPhoto.startsWith('//')) {
-        rawPhoto = 'https:' + rawPhoto;
-      }
-
-      // Проксируем ЛЮБОЙ внешний URL через weserv.nl (как и в product.html).
-      // Это заодно решает проблему серверов с некорректным/несовпадающим SSL-сертификатом,
-      // из-за которых браузер выдавал net::ERR_CERT_COMMON_NAME_INVALID.
-      photo = `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}`;
-    }
-
-    const minPrice = Math.min(...p.prices);
-    const maxPrice = Math.max(...p.prices);
-    const priceDisplay = minPrice === maxPrice 
-      ? `${minPrice} грн` 
-      : `від ${minPrice} грн`;
-
-    const title = p.name || 'Без назви';
-
-    grid.innerHTML += `
-      <div class="product-card">
-        <a href="product.html?articul=${encodeURIComponent(p.articul || '')}" class="product-link">
-          <div class="product-media">
-            <img src="${photo}" alt="${title}" loading="lazy" onerror="this.onerror=null;this.src='${fallbackPhoto}';">
-          </div>
-          <div class="product-info">
-            <h3 class="product-name">${title}</h3>
-            <div class="product-price">${priceDisplay}</div>
-          </div>
-        </a>
-      </div>
-    `;
-  });
+  loadMoreBtn.disabled = false;
+  loadMoreBtn.textContent = 'Показати ще';
+  loadMoreBtn.style.display = (count && totalLoaded < count) ? 'inline-block' : 'none';
 }
+
+function loadCatalog() {
+  const urlParams = new URLSearchParams(window.location.search);
+  currentCat = urlParams.get('cat');
+  currentOffset = 0;
+  totalLoaded = 0;
+
+  if (currentCat) {
+    document.getElementById('pageTitle').textContent = currentCat;
+  }
+
+  document.getElementById('productGrid').innerHTML = '';
+  document.getElementById('resultsCount').textContent = 'Завантаження товарів...';
+
+  loadPage();
+}
+
+document.getElementById('loadMoreBtn').addEventListener('click', loadPage);
 
 loadCatalog();
 </script>
