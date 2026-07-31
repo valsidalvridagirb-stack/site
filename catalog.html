@@ -73,10 +73,8 @@ nav.menu a:hover{color:var(--accent);}
   <div class="header-inner">
     <a href="index.html" class="brand">NEXXTLEVEL<span>STORE</span></a>
     <nav class="menu">
-      <a href="catalog.html?cat=Чоловіче%20взуття">Чоловіче взуття</a>
-      <a href="catalog.html?cat=Жіноче%20взуття">Жіноче взуття</a>
-      <a href="catalog.html?cat=Чоловічий%20одяг">Чоловічий одяг</a>
-      <a href="catalog.html?cat=Жіночий%20одяг">Жіночий одяг</a>
+      <a href="catalog.html?cat=Чоловічі кросівки">Чоловічі кросівки</a>
+      <a href="catalog.html?cat=Жіночі кросівки">Жіночі кросівки</a>
       <a href="catalog.html">Усі товари</a>
     </nav>
   </div>
@@ -102,21 +100,11 @@ async function loadCatalog() {
   const urlParams = new URLSearchParams(window.location.search);
   const cat = urlParams.get('cat');
 
-  let query = supabaseClient.from('products').select('id, name, price, photos, category_3');
+  let query = supabaseClient.from('product_summary').select('id, name, price, photos');
 
   if (cat) {
     document.getElementById('pageTitle').textContent = cat;
-
-    const shoeKeywords = ['крос', 'кед', 'взут', 'шльоп', 'сланц', 'крокс', 'тапоч', 'бутс', 'сандал', 'папуч'];
-
-    if (cat.includes('взуття') || cat.includes('кросівки')) {
-      const footwearOr = shoeKeywords.map(k => `name.ilike.%${k}%,category_3.ilike.%${k}%`).join(',');
-      query = query.or(footwearOr);
-    } else if (cat.includes('одяг')) {
-      shoeKeywords.forEach(k => {
-        query = query.not('name', 'ilike', `%${k}%`).not('category_3', 'ilike', `%${k}%`);
-      });
-    }
+    query = query.contains('site_categories', [cat]);
   }
 
   const { data, error } = await query;

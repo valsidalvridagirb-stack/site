@@ -101,16 +101,34 @@ async function fetchProduct() {
   const productName = urlParams.get('name');
   const productId = urlParams.get('id');
 
-  let query = supabaseClient.from('products').select('*');
-  if (productName) {
-    query = query.eq('name', productName);
-  } else if (productId) {
-    query = query.eq('id', productId);
-  } else {
+  let nameToLoad = productName;
+
+  // Якщо прийшли з id (одного конкретного розміру) - спочатку дізнаємось name товару,
+  // а потім підтягнемо ВСІ розміри цього товару (кожен розмір - окремий рядок у таблиці).
+  if (!nameToLoad && productId) {
+    const { data: idRow, error: idError } = await supabaseClient
+      .from('products')
+      .select('name')
+      .eq('id', productId)
+      .single();
+
+    if (idError || !idRow) {
+      document.getElementById('productContainer').innerHTML = '<h2>Товар не знайдено</h2>';
+      return;
+    }
+    nameToLoad = idRow.name;
+  }
+
+  if (!nameToLoad) {
+    document.getElementById('productContainer').innerHTML = '<h2>Товар не знайдено</h2>';
     return;
   }
 
-  const { data: variants, error } = await query;
+  const { data: variants, error } = await supabaseClient
+    .from('products')
+    .select('*')
+    .eq('name', nameToLoad);
+
   if (error || !variants || variants.length === 0) {
     document.getElementById('productContainer').innerHTML = '<h2>Товар не знайдено</h2>';
     return;
@@ -119,16 +137,12 @@ async function fetchProduct() {
   const baseProduct = variants[0];
   const sizeMap = {};
 
+  // кожен варіант - це один розмір (поле size, в однині) з власною кількістю в наявності
   variants.forEach(variant => {
-    let rawSizes = [];
-    if (Array.isArray(variant.sizes)) rawSizes = variant.sizes;
-    else if (typeof variant.sizes === 'string') rawSizes = variant.sizes.split(',').map(s => s.trim());
-
-    rawSizes.forEach(sz => {
-      if (sz && !sizeMap[sz]) {
-        sizeMap[sz] = Number(variant.price);
-      }
-    });
+    const sz = variant.size;
+    if (sz && Number(variant.quantity) > 0 && !(sz in sizeMap)) {
+      sizeMap[sz] = Number(variant.price);
+    }
   });
 
   renderProduct(baseProduct, sizeMap);
@@ -166,7 +180,7 @@ function renderProduct(product, sizeMap) {
         <div class="size-section">
           <div class="size-title">Оберіть розмір (US)</div>
           <div class="size-grid">
-            ${Object.keys(sizeMap).map(size => `
+            ${Object.keys(sizeMap).sort((a, b) => parseFloat(a) - parseFloat(b)).map(size => `
               <button class="size-btn" onclick="selectSize('${size}', ${sizeMap[size]}, this)">
                 ${size}
               </button>
