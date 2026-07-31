@@ -91,7 +91,7 @@ nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;}
 <script>
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let selectedSize = null;
 let currentPrice = null;
@@ -101,7 +101,7 @@ async function fetchProduct() {
   const productName = urlParams.get('name');
   const productId = urlParams.get('id');
 
-  let query = supabase.from('products').select('*');
+  let query = supabaseClient.from('products').select('*');
   if (productName) {
     query = query.eq('name', productName);
   } else if (productId) {
