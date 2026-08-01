@@ -412,9 +412,64 @@
   footer {
     background: var(--ink);
     color: #fff;
-    padding: 40px 0 28px;
+    padding: 56px 0 28px;
     margin-top: 40px;
   }
+
+  .foot-main {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 32px 40px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 32px;
+    border-bottom: 1px solid #2a2a2a;
+    margin-bottom: 28px;
+  }
+
+  .foot-brand .logo b { color: #fff; font-size: 20px; }
+  .foot-brand .logo span { color: #84837f; }
+  .foot-brand p {
+    color: #b4b3af;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-top: 14px;
+    max-width: 280px;
+  }
+
+  .foot-col h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: #84837f;
+    margin-bottom: 16px;
+    font-weight: 700;
+  }
+  .foot-col a, .foot-col span {
+    display: block;
+    color: #d8d7d3;
+    font-size: 14px;
+    text-decoration: none;
+    margin-bottom: 12px;
+    transition: color .15s;
+  }
+  .foot-col a:hover { color: #fff; }
+
+  .foot-social {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .foot-social a {
+    width: 38px; height: 38px;
+    border: 1px solid #333;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 0;
+    transition: border-color .15s, background .15s;
+  }
+  .foot-social a:hover { border-color: #fff; background: rgba(255,255,255,.06); }
+  .foot-social svg { width: 17px; height: 17px; stroke: #fff; fill: none; }
 
   .foot-bottom {
     max-width: 1240px;
@@ -433,6 +488,7 @@
     .hero-brand-logo span { font-size: 10px; letter-spacing: 8px; }
     .cats { grid-template-columns: 1fr; }
     .product-grid { grid-template-columns: repeat(2, 1fr); }
+    .foot-main { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 560px) {
@@ -539,6 +595,35 @@
 </section>
 
 <footer>
+  <div class="foot-main">
+    <div class="foot-brand">
+      <a href="index.html" class="logo">
+        <b>NEXXTLEVEL</b>
+        <span>S T O R E</span>
+      </a>
+      <p>Оригінальні кросівки з США та Європи. Перевірена автентичність на кожен товар.</p>
+      <div class="foot-social">
+        <a href="https://www.instagram.com/nexxtlevelstore/" target="_blank" rel="noopener" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+        </a>
+        <a href="https://t.me/nexxtlevelstore" target="_blank" rel="noopener" aria-label="Telegram">
+          <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="foot-col">
+      <h4>Каталог</h4>
+      <a href="catalog.html?cat=Чоловічі кросівки">Чоловічі кросівки</a>
+      <a href="catalog.html?cat=Жіночі кросівки">Жіночі кросівки</a>
+      <a href="catalog.html">Усі товари</a>
+    </div>
+    <div class="foot-col">
+      <h4>Контакти</h4>
+      <a href="tel:+380934382093">+38 093 438 20 93</a>
+      <a href="https://www.instagram.com/nexxtlevelstore/" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://t.me/nexxtlevelstore" target="_blank" rel="noopener">Telegram</a>
+    </div>
+  </div>
   <div class="foot-bottom">
     <span>© 2026 NexxtLevelStore. Всі права захищені.</span>
   </div>
