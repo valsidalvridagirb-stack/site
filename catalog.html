@@ -322,14 +322,13 @@ async function loadProducts(page = 1){
     .from('product_summary')
     .select('*', { count: 'exact' });
 
-  // Фільтрація за категорією або пошуком
+ // Гнучка фільтрація за категорією або пошуком
   if (categoryParam) {
-    query = query.ilike('category', `%${categoryParam}%`);
-  }
-  if (searchParam) {
+    const genderKey = categoryParam.split(' ')[0]; 
+    query = query.or(`category.ilike.%${genderKey}%,name.ilike.%${genderKey}%`);
+  } else if (searchParam) {
     query = query.or(`name.ilike.%${searchParam}%,articul.ilike.%${searchParam}%`);
   }
-
   const { data, count, error } = await query
     .order('id', { ascending: false })
     .range(from, to);
@@ -342,7 +341,7 @@ async function loadProducts(page = 1){
 
   grid.innerHTML = '';
   data.forEach(p => {
-    let rawPhoto = p.photos ? p.photos.split(',')[0].trim() : null;
+let rawPhoto = p.photos ? p.photos.split(',')[0].trim() : null;
     if (!rawPhoto && p.photos) rawPhoto = p.photos.split(';')[0].trim();
     
     let photo = null;
