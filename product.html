@@ -86,7 +86,7 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .product-layout > *{min-width:0;}
 
 /* Gallery */
-.gallery-container{display:flex;gap:16px;align-items:flex-start;}
+.gallery-container{display:flex;gap:16px;align-items:flex-start;user-select:none;}
 .thumbs-list{
   display:flex;flex-direction:column;gap:12px;width:80px;
   max-height:520px;overflow-y:auto;
@@ -104,7 +104,10 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
   flex:1;aspect-ratio:4/5;background:var(--smoke);border-radius:var(--radius);
   overflow:hidden;position:relative;cursor:zoom-in;min-width:0;
 }
-.main-image-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+.main-image-wrap img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  user-select:none;-webkit-user-select:none;-webkit-user-drag:none;
+}
 .main-nav-arrows{
   position:absolute;bottom:16px;right:16px;
   display:flex;gap:8px;z-index:4;
@@ -542,12 +545,12 @@ function renderProduct(product, sizeMap) {
         ${photos.length > 1 ? `
           <div class="thumbs-list">
             ${photos.map((ph, idx) => `
-              <img src="${ph}" class="thumb-img ${idx === 0 ? 'active' : ''}" onclick="changePhoto('${ph}', this, ${idx})">
+              <img src="${ph}" class="thumb-img ${idx === 0 ? 'active' : ''}" draggable="false" onclick="changePhoto('${ph}', this, ${idx})">
             `).join('')}
           </div>
         ` : ''}
         <div class="main-image-wrap" id="mainImageWrap" onclick="openLightbox(currentPhotoIndex)">
-          <img id="mainPhoto" src="${photos[0] || ''}" alt="${product.name}">
+          <img id="mainPhoto" src="${photos[0] || ''}" alt="${product.name}" draggable="false">
           ${photos.length > 1 ? `
             <div class="main-nav-arrows">
               <div class="nav-arrow-btn" onclick="event.stopPropagation();mainPhotoStep(-1)">
