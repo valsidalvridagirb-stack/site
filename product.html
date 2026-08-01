@@ -529,7 +529,25 @@ function addToCart() {
     alert('Будь ласка, оберіть розмір перед додаванням у кошик!');
     return;
   }
-  alert(`Товар додано в кошик! Розмір: ${selectedSize}, Ціна: ${currentPrice} грн`);
+
+  // Считываем текущий cart из localStorage
+  let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+  // Добавляем новый товар
+  cart.push({
+    name: document.querySelector('.p-title').textContent,
+    articul: document.querySelector('.p-articul') ? document.querySelector('.p-articul').textContent.replace('Артикул: ', '') : '',
+    size: selectedSize,
+    price: currentPrice,
+    quantity: 1
+  });
+
+  // Сохраняем обратно
+  localStorage.setItem('cart', JSON.stringify(cart));
+
+  if (confirm('Товар додано в кошик! Перейти до оформления замовлення?')) {
+    window.location.href = 'checkout.html';
+  }
 }
 
 let lightboxPhotos = [];
