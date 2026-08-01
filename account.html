@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Особистий кабінет — NEXXTLEVEL STORE</title>
+<link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root { --ink:#111111; --paper:#ffffff; --smoke:#f8f8f6; --line:#e6e5e2; --mute:#767470; --radius:4px; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Inter', system-ui, sans-serif; color:var(--ink); background:var(--paper); display:flex; flex-direction:column; min-height:100vh; }
+  a { text-decoration:none; color:inherit; }
+  
+  header.site { position:sticky; top:0; z-index:50; background:rgba(255,255,255,.95); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .header-row { display:flex; align-items:center; justify-space-between; padding:20px 32px; max-width:1240px; margin:0 auto; }
+  .logo b { font-size:21px; font-weight:800; }
+  .logo span { font-size:9px; letter-spacing:.32em; color:var(--mute); font-weight:600; display:block; }
+  nav.main-nav { display:flex; gap:24px; font-size:14px; font-weight:600; }
+
+  .account-container { max-width:1000px; margin:40px auto; padding:0 24px; flex:1; width:100%; }
+  .auth-box { max-width:400px; margin:40px auto; padding:32px; border:1px solid var(--line); border-radius:var(--radius); background:var(--smoke); }
+  .auth-box h2 { font-size:20px; font-weight:800; margin-bottom:20px; text-transform:uppercase; text-align:center; }
+  
+  .form-group { margin-bottom:16px; }
+  .form-group label { display:block; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:6px; color:var(--mute); }
+  .form-group input { width:100%; padding:12px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; outline:none; }
+  
+  .btn { width:100%; padding:14px; background:var(--ink); color:#fff; font-weight:800; font-size:14px; border:none; border-radius:var(--radius); cursor:pointer; text-transform:uppercase; letter-spacing:1px; margin-top:8px; }
+  .btn:hover { opacity:0.9; }
+  .btn-secondary { background:none; color:var(--ink); border:1px solid var(--ink); margin-top:10px; }
+  
+  .account-grid { display:grid; grid-template-columns:1fr 2fr; gap:40px; }
+  .profile-card, .orders-card { border:1px solid var(--line); padding:24px; border-radius:var(--radius); }
+  .profile-card h3, .orders-card h3 { font-size:16px; font-weight:800; text-transform:uppercase; margin-bottom:20px; border-bottom:1px solid var(--line); padding-bottom:10px; }
+  
+  .order-item { border:1px solid var(--line); padding:16px; border-radius:var(--radius); margin-bottom:12px; }
+  .order-header { display:flex; justify-content:space-between; font-weight:700; font-size:14px; margin-bottom:8px; }
+  .order-status { background:#e2f0d9; color:#385723; padding:2px 8px; border-radius:10px; font-size:12px; }
+  
+  footer { background:var(--ink); color:#fff; padding:30px; text-align:center; font-size:12px; margin-top:auto; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="header-row">
+    <a href="index.html" class="logo"><b>NEXXTLEVEL</b><span>S T O R E</span></a>
+    <nav class="main-nav">
+      <a href="catalog.html">Каталог</a>
+      <a href="checkout.html">Кошик / Оформлення</a>
+    </nav>
+  </div>
+</header>
+
+<main class="account-container">
+  <!-- Блок авторизации (если не вошел) -->
+  <div id="authSection" class="auth-box">
+    <h2 id="authTitle">Вхід до кабінету</h2>
+    <form id="authForm">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="authEmail" required>
+      </div>
+      <div class="form-group">
+        <label>Пароль</label>
+        <input type="password" id="authPassword" required>
+      </div>
+      <button type="submit" class="btn" id="authSubmitBtn">Увійти</button>
+    </form>
+    <button class="btn btn-secondary" id="toggleAuthMode">Немає акаунту? Зареєструватися</button>
+  </div>
+
+  <!-- Блок Личного Кабинета (если вошел) -->
+  <div id="profileSection" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <h2>Особистий кабінет</h2>
+      <button class="btn btn-secondary" style="width:auto; padding:8px 16px;" id="logoutBtn">Вийти</button>
+    </div>
+    
+    <div class="account-grid">
+      <div class="profile-card">
+        <h3>Мої дані</h3>
+        <form id="profileForm">
+          <div class="form-group">
+            <label>ПІБ</label>
+            <input type="text" id="profName" placeholder="Іванов Іван">
+          </div>
+          <div class="form-group">
+            <label>Телефон</label>
+            <input type="tel" id="profPhone" placeholder="+380930000000">
+          </div>
+          <div class="form-group">
+            <label>Місто</label>
+            <input type="text" id="profCity" placeholder="Київ">
+          </div>
+          <div class="form-group">
+            <label>Ніч Нової Пошти</label>
+            <input type="text" id="profNP" placeholder="Відділення №1">
+          </div>
+          <button type="submit" class="btn">Зберегти</button>
+        </form>
+      </div>
+
+      <div class="orders-card">
+        <h3>Історія замовлень</h3>
+        <div id="ordersList">Завантаження замовлень...</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>© 2026 NexxtLevelStore. Всі права захищені.</footer>
+
+<script>
+const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let isSignUp = false;
+let currentUser = null;
+
+const authSection = document.getElementById('authSection');
+const profileSection = document.getElementById('profileSection');
+const authForm = document.getElementById('authForm');
+const toggleBtn = document.getElementById('toggleAuthMode');
+
+toggleBtn.addEventListener('click', () => {
+  isSignUp = !isSignUp;
+  document.getElementById('authTitle').textContent = isSignUp ? 'Реєстрація' : 'Вхід до кабінету';
+  document.getElementById('authSubmitBtn').textContent = isSignUp ? 'Зареєструватися' : 'Увійти';
+  toggleBtn.textContent = isSignUp ? 'Вже є акаунт? Увійти' : 'Немає акаунту? Зареєструватися';
+});
+
+authForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('authEmail').value;
+  const password = document.getElementById('authPassword').value;
+
+  if (isSignUp) {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) alert('Помилка реєстрації: ' + error.message);
+    else { alert('Реєстрація успішна!'); initAccount(); }
+  } else {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) alert('Помилка входу: ' + error.message);
+    else initAccount();
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await supabase.auth.signOut();
+  location.reload();
+});
+
+async function initAccount() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    authSection.style.display = 'block';
+    profileSection.style.display = 'none';
+    return;
+  }
+  
+  currentUser = user;
+  authSection.style.display = 'none';
+  profileSection.style.display = 'block';
+
+  // Загружаем профиль
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+  if (profile) {
+    document.getElementById('profName').value = profile.full_name || '';
+    document.getElementById('profPhone').value = profile.phone || '';
+    document.getElementById('profCity').value = profile.city || '';
+    document.getElementById('profNP').value = profile.nova_poshta_dept || '';
+  }
+
+  loadOrders(user.id);
+}
+
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const updates = {
+    id: currentUser.id,
+    full_name: document.getElementById('profName').value,
+    phone: document.getElementById('profPhone').value,
+    city: document.getElementById('profCity').value,
+    nova_poshta_dept: document.getElementById('profNP').value
+  };
+
+  const { error } = await supabase.from('profiles').upsert(updates);
+  if (error) alert('Помилка збереження');
+  else alert('Дані оновлено!');
+});
+
+async function loadOrders(userId) {
+  const container = document.getElementById('ordersList');
+  const { data: orders, error } = await supabase.from('orders').select('*, order_items(*)').eq('user_id', userId).order('created_at', {ascending: false});
+  
+  if (!orders || orders.length === 0) {
+    container.innerHTML = '<p style="color:var(--mute);">У вас поки немає замовлень.</p>';
+    return;
+  }
+
+  container.innerHTML = orders.map(o => `
+    <div class="order-item">
+      <div class="order-header">
+        <span>Замовлення #${o.id}</span>
+        <span class="order-status">${o.status}</span>
+      </div>
+      <div style="font-size:13px; color:var(--mute); margin-bottom:8px;">
+        Дата: ${new Date(o.created_at).toLocaleDateString()}
+      </div>
+      <div style="font-size:14px; font-weight:600;">
+        ${o.order_items.map(i => `${i.product_name} (${i.size}) x${i.quantity}`).join('<br>')}
+      </div>
+      <div style="margin-top:8px; font-weight:700; text-align:right;">
+        Сума: ${Number(o.total_price).toLocaleString()} грн
+      </div>
+    </div>
+  `).join('');
+}
+
+initAccount();
+</script>
+</body>
+</html>
