@@ -7,6 +7,29 @@
   <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+  /* Стили для иконок в шапке */
+.header-icons {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+}
+.icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  transition: opacity 0.2s;
+}
+.icon-btn:hover {
+  opacity: 0.6;
+}
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--ink);
+}
 :root{
   --ink:#111111;
   --paper:#ffffff;
@@ -255,16 +278,38 @@ footer.site-footer {
 <body>
 
 <header class="site">
-  <div class="header-inner">
-    <a href="index.html" class="brand">NEXXTLEVEL<span>STORE</span></a>
-    <nav class="menu">
-      <a href="catalog.html?cat=Чоловічі%20кросівки">Чоловічі кросівки</a>
-      <a href="catalog.html?cat=Жіночі%20кросівки">Жіночі кросівки</a>
+  <div class="header-row">
+    <a href="index.html" class="logo">
+      <b>NEXXTLEVEL</b>
+      <span>S T O R E</span>
+    </a>
+    
+    <nav class="main-nav">
+      <a href="catalog.html?cat=Чоловічі кросівки">Чоловіче</a>
+      <a href="catalog.html?cat=Жіночі кросівки">Жіноче</a>
+      <a href="catalog.html">Всі товари</a>
     </nav>
+
     <form class="site-search" id="siteSearchForm">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input type="text" id="siteSearchInput" placeholder="Пошук за назвою або артикулом">
     </form>
+
+    <div class="header-icons">
+      <!-- Иконка Личного Кабинета -->
+      <a href="account.html" class="icon-btn" title="Особистий кабінет" aria-label="Особистий кабінет">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </a>
+
+      <!-- Иконка Избранного (Wishlist) -->
+      <button class="icon-btn" id="wishlistBtn" title="Обране" aria-label="Обране">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7.5-4.9-10-9.3C0.3 8.1 2 4.5 5.7 4c2-.3 3.7.7 6.3 3 2.6-2.3 4.3-3.3 6.3-3 3.7.5 5.4 4.1 3.7 7.7C19.5 16.1 12 21 12 21z"/></svg>
+        <span class="badge-count" id="wishCount">0</span>
+      </button>
+    </div>
   </div>
 </header>
 
