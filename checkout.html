@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Оформлення замовлення — NEXXTLEVEL STORE</title>
+<link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root { --ink:#111111; --paper:#ffffff; --smoke:#f8f8f6; --line:#e6e5e2; --mute:#767470; --radius:4px; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Inter', system-ui, sans-serif; color:var(--ink); background:var(--paper); min-height:100vh; display:flex; flex-direction:column; }
+  
+  header.site { position:sticky; top:0; z-index:50; background:rgba(255,255,255,.95); border-bottom:1px solid var(--line); }
+  .header-row { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; max-width:1240px; margin:0 auto; }
+  .logo b { font-size:21px; font-weight:800; }
+  .logo span { font-size:9px; letter-spacing:.32em; color:var(--mute); font-weight:600; display:block; }
+  
+  .checkout-container { max-width:1100px; margin:40px auto; padding:0 24px; flex:1; width:100%; }
+  .checkout-grid { display:grid; grid-template-columns:1.5fr 1fr; gap:40px; }
+  
+  .form-section, .summary-section { border:1px solid var(--line); padding:24px; border-radius:var(--radius); }
+  h2 { font-size:18px; font-weight:800; text-transform:uppercase; margin-bottom:20px; }
+  
+  .form-group { margin-bottom:14px; }
+  .form-group label { display:block; font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:4px; color:var(--mute); }
+  .form-group input { width:100%; padding:10px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; outline:none; }
+  
+  .cart-item { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding:10px 0; }
+  .cart-item:last-child { border-bottom:none; }
+  
+  .btn-submit { width:100%; padding:16px; background:var(--ink); color:#fff; font-weight:800; border:none; border-radius:var(--radius); cursor:pointer; text-transform:uppercase; font-size:14px; margin-top:20px; }
+  .btn-submit:hover { opacity:0.9; }
+
+  footer { background:var(--ink); color:#fff; padding:30px; text-align:center; font-size:12px; margin-top:auto; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="header-row">
+    <a href="index.html" class="logo"><b>NEXXTLEVEL</b><span>S T O R E</span></a>
+    <a href="catalog.html" style="font-size:14px; font-weight:600;">← До каталогу</a>
+  </div>
+</header>
+
+<main class="checkout-container">
+  <div class="checkout-grid">
+    
+    <!-- Данные получателя -->
+    <div class="form-section">
+      <h2>Данні для доставки</h2>
+      <form id="checkoutForm">
+        <div class="form-group">
+          <label>ПІБ Отримувача</label>
+          <input type="text" id="custName" required placeholder="Шевченко Тарас">
+        </div>
+        <div class="form-group">
+          <label>Телефон</label>
+          <input type="tel" id="custPhone" required placeholder="+380931234567">
+        </div>
+        <div class="form-group">
+          <label>Місто</label>
+          <input type="text" id="custCity" required placeholder="Київ">
+        </div>
+        <div class="form-group">
+          <label>Відділення Нової Пошти</label>
+          <input type="text" id="custNP" required placeholder="Відділення №1 (вул. Хрещатик, 1)">
+        </div>
+        <button type="submit" class="btn-submit">Підтвердити замовлення</button>
+      </form>
+    </div>
+
+    <!-- Состав заказа -->
+    <div class="summary-section">
+      <h2>Ваше замовлення</h2>
+      <div id="cartList"></div>
+      <div style="border-top:2px solid var(--ink); margin-top:16px; padding-top:16px; display:flex; justify-content:space-between; font-weight:800; font-size:18px;">
+        <span>Разом:</span>
+        <span id="totalPrice">0 грн</span>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>© 2026 NexxtLevelStore. Всі права захищені.</footer>
+
+<script>
+const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+let currentUser = null;
+
+async function initCheckout() {
+  // Заполняем корзину
+  renderCart();
+
+  // Автоподстановка данных, если юзер залогинен
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    currentUser = user;
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    if (profile) {
+      if (profile.full_name) document.getElementById('custName').value = profile.full_name;
+      if (profile.phone) document.getElementById('custPhone').value = profile.phone;
+      if (profile.city) document.getElementById('custCity').value = profile.city;
+      if (profile.nova_poshta_dept) document.getElementById('custNP').value = profile.nova_poshta_dept;
+    }
+  }
+}
+
+function renderCart() {
+  const container = document.getElementById('cartList');
+  if (cart.length === 0) {
+    container.innerHTML = '<p style="color:var(--mute);">Кошик порожній</p>';
+    document.getElementById('totalPrice').textContent = '0 грн';
+    return;
+  }
+
+  let total = 0;
+  container.innerHTML = cart.map((item, index) => {
+    total += Number(item.price) * (item.quantity || 1);
+    return `
+      <div class="cart-item">
+        <div>
+          <div style="font-weight:700; font-size:14px;">${item.name}</div>
+          <div style="font-size:12px; color:var(--mute);">Розмір: ${item.size}</div>
+        </div>
+        <div style="font-weight:700;">${Number(item.price).toLocaleString()} грн</div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('totalPrice').textContent = `${total.toLocaleString()} грн`;
+}
+
+document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (cart.length === 0) {
+    alert('Ваш кошик порожній!');
+    return;
+  }
+
+  const totalPrice = cart.reduce((sum, item) => sum + Number(item.price) * (item.quantity || 1), 0);
+
+  // 1. Создаем заказ в `orders`
+  const { data: order, error: orderErr } = await supabase
+    .from('orders')
+    .insert([{
+      user_id: currentUser ? currentUser.id : null,
+      customer_name: document.getElementById('custName').value,
+      customer_phone: document.getElementById('custPhone').value,
+      city: document.getElementById('custCity').value,
+      nova_poshta_dept: document.getElementById('custNP').value,
+      total_price: totalPrice
+    }])
+    .select()
+    .single();
+
+  if (orderErr) {
+    alert('Помилка при створенні замовлення: ' + orderErr.message);
+    return;
+  }
+
+  // 2. Добавляем позиции заказа в `order_items`
+  const orderItems = cart.map(item => ({
+    order_id: order.id,
+    product_name: item.name,
+    articul: item.articul || '',
+    size: item.size,
+    price: item.price,
+    quantity: item.quantity || 1
+  }));
+
+  const { error: itemsErr } = await supabase.from('order_items').insert(orderItems);
+
+  if (itemsErr) {
+    alert('Помилка при збереженні товарів замовлення.');
+  } else {
+    alert(`Дякуємо! Замовлення №${order.id} успішно оформлено.`);
+    localStorage.removeItem('cart');
+    window.location.href = currentUser ? 'account.html' : 'index.html';
+  }
+});
+
+initCheckout();
+</script>
+</body>
+</html>
