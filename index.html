@@ -9,11 +9,11 @@
   :root{
     --ink:#111111;
     --paper:#ffffff;
-    --smoke:#f4f4f2;
+    --smoke:#f8f8f6;
     --line:#e6e5e2;
     --mute:#767470;
     --accent:#c8362c;
-    --radius:2px;
+    --radius:4px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
@@ -32,8 +32,8 @@
   /* ===== Header ===== */
   header.site{
     position:sticky;top:0;z-index:50;
-    background:rgba(255,255,255,.92);
-    backdrop-filter:blur(8px);
+    background:rgba(255,255,255,.95);
+    backdrop-filter:blur(10px);
     border-bottom:1px solid var(--line);
   }
   .header-row{
@@ -62,15 +62,14 @@
   /* ===== Hero Banner у Чорно-Білому Стилі ===== */
   .hero-banner {
     position: relative;
-    min-height: 540px;
+    min-height: 500px;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Чорно-біле якісне фото з затемненням для контрасту */
-    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=1600&auto=format&fit=crop');
+    background-image: linear-gradient(rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.72)), url('https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=1600&auto=format&fit=crop');
     background-size: cover;
     background-position: center;
-    filter: grayscale(100%); /* Повний чорно-білий ефект */
+    filter: grayscale(100%);
     color: #ffffff;
     padding: 60px 20px;
     text-align: center;
@@ -85,16 +84,14 @@
     gap: 22px;
   }
 
-  /* Логотип бренду на баннері */
   .hero-brand-logo {
     display: flex;
     flex-direction: column;
     align-items: center;
     border: 3px solid #ffffff;
     padding: 18px 36px;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(4px);
-    margin-bottom: 10px;
   }
 
   .hero-brand-logo b {
@@ -123,7 +120,6 @@
     font-weight: 300;
   }
 
-  /* Форма пошуку */
   .hero-search-form {
     display: flex;
     width: 100%;
@@ -132,7 +128,7 @@
     border-radius: 2px;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    margin-top: 10px;
+    margin-top: 8px;
   }
 
   .hero-search-input {
@@ -163,66 +159,272 @@
     color: #000000;
   }
 
-  /* ===== Category strip ===== */
-  .cats{max-width:1240px;margin:40px auto 0;padding:0 32px 64px;display:grid;grid-template-columns:repeat(2,1fr);gap:24px;}
-  .cat-card{background:var(--smoke);padding:28px 26px;display:flex;flex-direction:column;min-height:160px;justify-content:center;}
-  .cat-card .cat-head h3{font-size:18px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;margin-bottom:8px;}
-  .cat-card .cat-head a{font-size:13px;color:var(--mute);display:inline-flex;align-items:center;gap:6px;font-weight:600;}
-  .cat-card .cat-head a svg{width:12px;height:12px;transition:transform .2s;}
-  .cat-card:hover .cat-head a svg{transform:translateX(3px);}
+  /* ===== Оновлені Картки Категорій (Чоловіче / Жіноче) ===== */
+  .cats {
+    max-width: 1240px;
+    margin: 50px auto 0;
+    padding: 0 32px 50px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+  }
 
-  /* ===== New arrivals ===== */
-  .arrivals{max-width:1240px;margin:0 auto;padding:32px 32px 72px;}
-  .arrivals-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:32px;}
-  .arrivals-head h2{font-size:16px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;}
-  .arrivals-head a{font-size:13px;color:var(--mute);font-weight:600;display:flex;align-items:center;gap:6px;}
-  .product-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:22px;}
-  .product-card{display:flex;flex-direction:column;color:inherit;text-decoration:none;}
-  .product-media{
-    position:relative;background:var(--smoke);aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;
-    margin-bottom:14px;overflow:hidden;
+  .cat-card {
+    position: relative;
+    background: linear-gradient(135deg, #fbfbfb 0%, #f0f0ed 100%);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 40px 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 180px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
   }
-  .product-media img,.product-media svg{width:100%;height:100%;object-fit:cover;transition:transform .35s;}
-  .product-card:hover .product-media img{transform:scale(1.04);}
-  .wish-btn{
-    position:absolute;top:12px;right:12px;width:30px;height:30px;background:#fff;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.08);
-    z-index:3;
+
+  .cat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--ink);
+    opacity: 0;
+    transition: opacity 0.3s ease;
   }
-  .wish-btn svg{width:15px;height:15px;stroke:var(--ink);fill:none;transition:.15s;}
-  .wish-btn.active svg{fill:var(--accent);stroke:var(--accent);}
-  .product-name{font-size:13.5px;font-weight:600;margin-bottom:4px;}
-  .product-price{font-size:13.5px;font-weight:700;margin-bottom:12px;}
-  .size-row{display:flex;gap:6px;flex-wrap:wrap;}
-  .size-row span{
-    font-size:11px;color:var(--mute);border:1px solid var(--line);padding:4px 7px;
-    display:flex;align-items:center;justify-content:center;font-weight:600;
+
+  .cat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 28px rgba(0,0,0,0.06);
+    border-color: #d0cfca;
+  }
+
+  .cat-card:hover::before {
+    opacity: 1;
+  }
+
+  .cat-card h3 {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .cat-card p {
+    font-size: 13px;
+    color: var(--mute);
+    margin-bottom: 20px;
+  }
+
+  .cat-link-text {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink);
+  }
+
+  .cat-link-text svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+  }
+
+  .cat-card:hover .cat-link-text svg {
+    transform: translateX(6px);
+  }
+
+  /* ===== Секція Новинки ===== */
+  .arrivals {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 20px 32px 72px;
+  }
+
+  .arrivals-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 12px;
+  }
+
+  .arrivals-head h2 {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .arrivals-head a {
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 22px;
+  }
+
+  .product-card {
+    display: flex;
+    flex-direction: column;
+    color: inherit;
+    text-decoration: none;
+    background: #ffffff;
+    border: 1px solid transparent;
+    padding: 10px;
+    border-radius: 4px;
+    transition: all 0.25s ease;
+  }
+
+  .product-card:hover {
+    border-color: var(--line);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  }
+
+  .product-media {
+    position: relative;
+    background: var(--smoke);
+    aspect-ratio: 1/1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .product-media img, .product-media svg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .35s ease;
+  }
+
+  .product-card:hover .product-media img {
+    transform: scale(1.05);
+  }
+
+  .wish-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(2px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    z-index: 3;
+    transition: transform 0.15s;
+  }
+
+  .wish-btn:hover {
+    transform: scale(1.1);
+  }
+
+  .wish-btn svg {
+    width: 15px;
+    height: 15px;
+    stroke: var(--ink);
+    fill: none;
+    transition: .15s;
+  }
+
+  .wish-btn.active svg {
+    fill: var(--accent);
+    stroke: var(--accent);
+  }
+
+  .product-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    line-height: 1.35;
+    height: 36px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .product-price {
+    font-size: 14px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: var(--ink);
+  }
+
+  .size-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .size-row span {
+    font-size: 10px;
+    color: var(--mute);
+    border: 1px solid var(--line);
+    padding: 3px 6px;
+    border-radius: 2px;
+    font-weight: 600;
+    background: #fafafa;
   }
 
   /* ===== Footer ===== */
-  footer{background:var(--ink);color:#fff;padding:40px 0 28px;}
-  .foot-bottom{
-    max-width:1240px;margin:0 auto;padding:0 32px;
-    display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#84837f;
+  footer {
+    background: var(--ink);
+    color: #fff;
+    padding: 40px 0 28px;
+    margin-top: 40px;
   }
 
-  @media (max-width:980px){
-    nav.main-nav{display:none;}
-    .hero-brand-logo b{font-size:32px;}
-    .hero-brand-logo span{font-size:10px;letter-spacing:8px;}
-    .cats{grid-template-columns:1fr;}
-    .product-grid{grid-template-columns:repeat(2,1fr);}
+  .foot-bottom {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #84837f;
   }
-  @media (max-width:560px){
-    .header-row{padding:16px 20px;}
-    .wrap,.cats,.arrivals,.foot-bottom{padding-left:20px;padding-right:20px;}
-    .hero-banner{min-height:460px;padding:40px 16px;}
-    .hero-brand-logo{padding:12px 20px;}
-    .hero-brand-logo b{font-size:24px;}
-    .hero-brand-logo span{font-size:9px;letter-spacing:6px;}
-    .hero-search-form{flex-direction:column;background:transparent;box-shadow:none;}
-    .hero-search-input{border-radius:2px;margin-bottom:8px;}
-    .hero-search-btn{border-radius:2px;justify-content:center;}
+
+  @media (max-width: 980px) {
+    nav.main-nav { display: none; }
+    .hero-brand-logo b { font-size: 32px; }
+    .hero-brand-logo span { font-size: 10px; letter-spacing: 8px; }
+    .cats { grid-template-columns: 1fr; }
+    .product-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 560px) {
+    .header-row { padding: 16px 20px; }
+    .wrap, .cats, .arrivals, .foot-bottom { padding-left: 20px; padding-right: 20px; }
+    .hero-banner { min-height: 440px; padding: 40px 16px; }
+    .hero-brand-logo { padding: 12px 20px; }
+    .hero-brand-logo b { font-size: 24px; }
+    .hero-brand-logo span { font-size: 9px; letter-spacing: 6px; }
+    .hero-search-form { flex-direction: column; background: transparent; box-shadow: none; }
+    .hero-search-input { border-radius: 2px; margin-bottom: 8px; }
+    .hero-search-btn { border-radius: 2px; justify-content: center; }
   }
 </style>
 </head>
@@ -253,20 +455,14 @@
   </div>
 </header>
 
-<!-- Чорно-білий баннер з логотипом бренду -->
 <section class="hero-banner">
   <div class="hero-banner-content">
-    
-    <!-- Логотип NEXXTLEVEL STORE на баннері -->
     <div class="hero-brand-logo">
       <b>NEXXTLEVEL</b>
       <span>S T O R E</span>
     </div>
-
-    <!-- Новий текст -->
     <p class="hero-banner-subtitle">Оригінальний одяг, взуття та аксесуари із США</p>
     
-    <!-- Форма пошуку -->
     <form class="hero-search-form" id="heroSearchForm">
       <input 
         type="text" 
@@ -283,24 +479,34 @@
   </div>
 </section>
 
+<!-- Оновлені красиві плашки категорій -->
 <section class="cats" id="categories">
-  <div class="cat-card">
-    <div class="cat-head">
-      <h3>Чоловіче взуття</h3>
-      <a href="catalog.html?cat=Чоловічі кросівки">Дивитись все <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  <a href="catalog.html?cat=Чоловічі кросівки" class="cat-card">
+    <div>
+      <h3>Чоловіча колекція</h3>
+      <p>Оригінальне взуття та одяг провідних світових брендів</p>
     </div>
-  </div>
-  <div class="cat-card">
-    <div class="cat-head">
-      <h3>Жіноче взуття</h3>
-      <a href="catalog.html?cat=Жіночі кросівки">Дивитись все <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <span class="cat-link-text">
+      Переглянути каталог 
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </span>
+  </a>
+
+  <a href="catalog.html?cat=Жіночі кросівки" class="cat-card">
+    <div>
+      <h3>Жіноча колекція</h3>
+      <p>Стильні речі та топові моделі із гарантією автентичності</p>
     </div>
-  </div>
+    <span class="cat-link-text">
+      Переглянути каталог 
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </span>
+  </a>
 </section>
 
 <section class="arrivals" id="arrivals">
   <div class="arrivals-head">
-    <h2>Новинки</h2>
+    <h2>Останні Новинки</h2>
     <a href="catalog.html">Дивитись все <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
   </div>
   <div class="product-grid" id="productGrid"></div>
@@ -339,7 +545,7 @@ function placeholderSVG(){
 
 async function loadProducts(){
   const grid = document.getElementById('productGrid');
-  grid.innerHTML = '<p style="grid-column:1/-1;color:var(--mute);font-size:13px;">Завантаження товарів...</p>';
+  grid.innerHTML = '<p style="grid-column:1/-1;color:var(--mute);font-size:13px;padding:20px 0;">Завантаження товарів...</p>';
 
   const { data, error } = await supabaseClient
     .from('product_summary')
@@ -376,9 +582,9 @@ async function loadProducts(){
         </button>
         ${photo ? `<img src="${photo}" alt="${p.name}" loading="lazy">` : placeholderSVG()}
       </div>
-      <div class="product-name">${p.name}</div>
+      <div class="product-name" title="${p.name}">${p.name}</div>
       <div class="product-price">${Number(p.price).toLocaleString('uk-UA')} грн</div>
-      <div class="size-row">${sizes.slice(0, 5).map(s=>`<span>${s}</span>`).join('')}</div>
+      <div class="size-row">${sizes.slice(0, 4).map(s=>`<span>${s}</span>`).join('')}</div>
     `;
     grid.appendChild(card);
   });
