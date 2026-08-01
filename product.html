@@ -257,7 +257,7 @@ function renderProduct(product, sizeMap) {
   // 2. Разбиваем по ';' или ',', чистим ссылки від пробілів і пустих значень,
   //    та прибираємо дублікати (однакове фото могло потрапити в список кілька разів)
   const seen = new Set();
-  const rawPhotos = rawString
+  let rawPhotos = rawString
     .split(/[;,]/)
     .map(p => p.trim())
     .filter(Boolean)
@@ -267,6 +267,14 @@ function renderProduct(product, sizeMap) {
       seen.add(norm);
       return true;
     });
+
+  // 2b. Якщо серед фото є хоч одне з нашого Supabase Storage - показуємо
+  //     ТІЛЬКИ ці фото (це "чистий" набір, завантажений вручну), а старі
+  //     посилання постачальника (які могли дублювати ті самі кадри) ховаємо.
+  const ownStorage = rawPhotos.filter(p => p.includes('supabase.co/storage/'));
+  if (ownStorage.length > 0) {
+    rawPhotos = ownStorage;
+  }
 
   // 3. Формируем чистые, валидные URL для Weserv
   const photos = rawPhotos.map(p => {
