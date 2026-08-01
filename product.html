@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Товар — NEXXTLEVEL STORE</title>
   <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   /* Стили для иконок в шапке */
@@ -28,7 +31,7 @@
 .icon-btn svg {
   width: 22px;
   height: 22px;
-  stroke: var(--ink);
+  stroke: #fff;
 }
 :root{
   --ink:#111111;
@@ -51,26 +54,33 @@ a{color:inherit;text-decoration:none;}
 
 header.site{
   position:sticky;top:0;z-index:50;
-  background:rgba(255,255,255,.92);
-  backdrop-filter:blur(8px);
-  border-bottom:1px solid var(--line);
+  background:#0a0a0a;
+  border-bottom:1px solid #222;
 }
 .header-inner{
   max-width:1200px;margin:0 auto;padding:16px 24px;
   display:flex;align-items:center;justify-content:space-between;gap:24px;
   flex-wrap:wrap;
 }
-.brand{font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;flex-shrink:0;}
-.brand span{display:block;font-size:10px;color:var(--mute);letter-spacing:3px;}
-nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;}
+.brand{font-family:'Oswald',sans-serif;color:#fff;font-weight:700;font-size:22px;letter-spacing:1px;text-transform:uppercase;flex-shrink:0;}
+.brand span{display:block;font-size:10px;color:#8a8a8a;letter-spacing:3px;}
+nav.menu{display:flex;gap:24px;font-size:13.5px;font-weight:600;flex-shrink:0;}
+nav.menu a{font-family:'Oswald',sans-serif;color:#f2f2f2;letter-spacing:.04em;text-transform:uppercase;}
+nav.menu a:hover{opacity:.6;}
+.badge-count{
+  position:absolute;top:-7px;right:-8px;background:var(--accent);color:#fff;
+  font-size:10px;font-weight:700;width:16px;height:16px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
 
 .site-search{
   display:flex;align-items:center;flex:1;min-width:180px;max-width:320px;
-  border:1px solid var(--line);border-radius:20px;padding:6px 14px;gap:8px;
-  background:var(--smoke);
+  border:1px solid #2c2c2c;border-radius:20px;padding:6px 14px;gap:8px;
+  background:#1a1a1a;
 }
-.site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);}
-.site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
+.site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:#fff;}
+.site-search input::placeholder{color:#8a8a8a;}
+.site-search svg{width:15px;height:15px;stroke:#8a8a8a;flex-shrink:0;}
 
 .product-page{max-width:1200px;margin:40px auto;padding:0 24px;flex:1;}
 .product-layout{display:grid;grid-template-columns:1fr 1fr;gap:48px;}
@@ -149,7 +159,7 @@ nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;}
 /* Details */
 .product-details{display:flex;flex-direction:column;gap:24px;}
 .p-brand{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);}
-.p-title{font-size:32px;font-weight:900;text-transform:uppercase;line-height:1.1;}
+.p-title{font-family:'Oswald',sans-serif;font-size:32px;font-weight:700;text-transform:uppercase;line-height:1.1;}
 .p-articul{font-size:12px;color:var(--mute);}
 .p-price{font-size:24px;font-weight:800;color:var(--ink);}
 .size-section{margin-top:16px;}

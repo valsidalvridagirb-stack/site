@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Каталог — NEXXTLEVEL STORE</title>
   <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   /* Стили для иконок в шапке */
@@ -28,7 +31,7 @@
 .icon-btn svg {
   width: 22px;
   height: 22px;
-  stroke: var(--ink);
+  stroke: #fff;
 }
   :root{
     --ink:#111111;
@@ -58,35 +61,35 @@
   /* Header */
   header.site{
     position:sticky;top:0;z-index:50;
-    background:rgba(255,255,255,.95);
-    backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--line);
+    background:#0a0a0a;
+    border-bottom:1px solid #222;
   }
   .header-row{
     display:flex;align-items:center;justify-content:space-between;gap:20px;
     padding:20px 32px;max-width:1240px;margin:0 auto;flex-wrap:wrap;
   }
   .logo{display:flex;flex-direction:column;line-height:1;flex-shrink:0;}
-  .logo b{font-size:21px;letter-spacing:.02em;font-weight:800;}
-  .logo span{font-size:9px;letter-spacing:.32em;color:var(--mute);margin-top:4px;font-weight:600;}
+  .logo b{font-family:'Oswald',sans-serif;color:#fff;font-size:23px;letter-spacing:.02em;font-weight:700;text-transform:uppercase;}
+  .logo span{font-size:9px;letter-spacing:.32em;color:#8a8a8a;margin-top:4px;font-weight:600;}
   nav.main-nav{display:flex;gap:36px;flex-shrink:0;}
-  nav.main-nav a{font-size:14px;font-weight:500;padding:4px 0;transition:opacity .2s;}
-  nav.main-nav a:hover{opacity:.55;}
+  nav.main-nav a{font-family:'Oswald',sans-serif;color:#f2f2f2;font-size:13.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:4px 0;transition:opacity .2s;}
+  nav.main-nav a:hover{opacity:.6;}
   .header-icons{display:flex;align-items:center;gap:22px;flex-shrink:0;}
   .icon-btn{position:relative;display:flex;}
-  .icon-btn svg{width:19px;height:19px;stroke:var(--ink);}
+  .icon-btn svg{width:19px;height:19px;stroke:#fff;}
   .badge-count{
-    position:absolute;top:-7px;right:-8px;background:var(--ink);color:#fff;
+    position:absolute;top:-7px;right:-8px;background:var(--accent);color:#fff;
     font-size:10px;font-weight:700;width:16px;height:16px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
   }
   .site-search{
     display:flex;align-items:center;flex:1;min-width:180px;max-width:300px;
-    border:1px solid var(--line);border-radius:20px;padding:7px 14px;gap:8px;
-    background:var(--smoke);
+    border:1px solid #2c2c2c;border-radius:20px;padding:7px 14px;gap:8px;
+    background:#1a1a1a;
   }
-  .site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);}
-  .site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
+  .site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:#fff;}
+  .site-search input::placeholder{color:#8a8a8a;}
+  .site-search svg{width:15px;height:15px;stroke:#8a8a8a;flex-shrink:0;}
 
   /* Main Section */
   .catalog-container {
@@ -97,6 +100,7 @@
   }
 
   .catalog-title {
+    font-family:'Oswald',sans-serif;
     font-size: 24px;
     font-weight: 900;
     letter-spacing: 1px;
