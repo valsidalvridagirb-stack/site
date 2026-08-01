@@ -421,20 +421,28 @@
     margin: 0 auto;
     padding: 0 32px 40px;
     display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr;
     gap: 32px;
     border-bottom: 1px solid #2a2a2a;
-    margin-bottom: 28px;
+    margin-bottom: 20px;
   }
 
-  .foot-brand .logo b { color: #fff; font-size: 20px; }
-  .foot-brand .logo span { color: #84837f; }
+  .foot-logo-box {
+    width: 64px; height: 64px;
+    background: #fff;
+    color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 15px; letter-spacing: -.02em;
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+
   .foot-brand p {
     color: #b4b3af;
     font-size: 13px;
     line-height: 1.6;
     margin-top: 14px;
-    max-width: 280px;
+    max-width: 260px;
   }
 
   .foot-col h4 {
@@ -454,6 +462,7 @@
     transition: color .15s;
   }
   .foot-col a:hover { color: #fff; }
+  .foot-col span { color: #7a7975; cursor: default; }
 
   .foot-social {
     display: flex;
@@ -470,6 +479,22 @@
   }
   .foot-social a:hover { border-color: #fff; background: rgba(255,255,255,.06); }
   .foot-social svg { width: 17px; height: 17px; stroke: #fff; fill: none; }
+
+  .foot-legal {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .foot-legal span {
+    font-size: 12.5px;
+    color: #9a9995;
+    cursor: default;
+  }
 
   .foot-bottom {
     max-width: 1240px;
@@ -488,7 +513,7 @@
     .hero-brand-logo span { font-size: 10px; letter-spacing: 8px; }
     .cats { grid-template-columns: 1fr; }
     .product-grid { grid-template-columns: repeat(2, 1fr); }
-    .foot-main { grid-template-columns: 1fr; }
+    .foot-main { grid-template-columns: 1fr 1fr; }
   }
 
   @media (max-width: 560px) {
@@ -597,11 +622,7 @@
 <footer>
   <div class="foot-main">
     <div class="foot-brand">
-      <a href="index.html" class="logo">
-        <b>NEXXTLEVEL</b>
-        <span>S T O R E</span>
-      </a>
-      <p>Оригінальні кросівки з США та Європи. Перевірена автентичність на кожен товар.</p>
+      <div class="foot-logo-box">NL</div>
       <div class="foot-social">
         <a href="https://www.instagram.com/nexxtlevelstore/" target="_blank" rel="noopener" aria-label="Instagram">
           <svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
@@ -610,6 +631,15 @@
           <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         </a>
       </div>
+      <p>Оригінальні кросівки з США та Європи. Перевірена автентичність на кожен товар.</p>
+    </div>
+    <div class="foot-col">
+      <h4>Клієнтам</h4>
+      <a href="tel:+380934382093">Зв'язатися з нами</a>
+      <span>Доставка</span>
+      <span>Оплата</span>
+      <span>Повернення</span>
+      <span>Розмірна сітка</span>
     </div>
     <div class="foot-col">
       <h4>Каталог</h4>
@@ -623,6 +653,10 @@
       <a href="https://www.instagram.com/nexxtlevelstore/" target="_blank" rel="noopener">Instagram</a>
       <a href="https://t.me/nexxtlevelstore" target="_blank" rel="noopener">Telegram</a>
     </div>
+  </div>
+  <div class="foot-legal">
+    <span>Умови використання</span>
+    <span>Політика конфіденційності</span>
   </div>
   <div class="foot-bottom">
     <span>© 2026 NexxtLevelStore. Всі права захищені.</span>
