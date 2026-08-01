@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NEXXTLEVEL STORE — Оригінальний одяг, взуття та аксесуари із США</title>
 <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   /* Стили для иконок в шапке */
@@ -31,7 +28,7 @@
 .icon-btn svg {
   width: 22px;
   height: 22px;
-  stroke: #fff;
+  stroke: var(--ink);
 }
   :root{
     --ink:#111111;
@@ -43,12 +40,14 @@
     --radius:4px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  html{scroll-behavior:smooth;}
+  html{scroll-behavior:smooth;overflow-x:hidden;}
   body{
     font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
     color:var(--ink);
     background:var(--paper);
     -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    width:100%;
   }
   img,svg{display:block;max-width:100%;}
   a{color:inherit;text-decoration:none;}
@@ -59,40 +58,39 @@
   /* ===== Header ===== */
   header.site{
     position:sticky;top:0;z-index:50;
-    background:#0a0a0a;
-    border-bottom:1px solid #222;
+    background:rgba(255,255,255,.95);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
   }
   .header-row{
     display:flex;align-items:center;justify-content:space-between;
     padding:20px 32px;max-width:1240px;margin:0 auto;gap:16px;flex-wrap:wrap;
   }
   .logo{display:flex;flex-direction:column;line-height:1;}
-  .logo b{font-family:'Oswald',sans-serif;color:#fff;font-size:23px;letter-spacing:.02em;font-weight:700;text-transform:uppercase;}
-  .logo span{font-size:9px;letter-spacing:.32em;color:#8a8a8a;margin-top:4px;font-weight:600;}
+  .logo b{font-size:21px;letter-spacing:.02em;font-weight:800;}
+  .logo span{font-size:9px;letter-spacing:.32em;color:var(--mute);margin-top:4px;font-weight:600;}
   nav.main-nav{display:flex;gap:36px;}
   nav.main-nav a{
-    font-family:'Oswald',sans-serif;color:#f2f2f2;
-    font-size:13.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;position:relative;padding:4px 0;
+    font-size:14px;font-weight:500;letter-spacing:.01em;position:relative;padding:4px 0;
     transition:opacity .2s;
   }
-  nav.main-nav a:hover{opacity:.6;}
+  nav.main-nav a:hover{opacity:.55;}
   nav.main-nav a.sale{color:var(--accent);font-weight:700;}
   .header-icons{display:flex;align-items:center;gap:22px;}
   .icon-btn{position:relative;display:flex;}
-  .icon-btn svg{width:19px;height:19px;stroke:#fff;}
+  .icon-btn svg{width:19px;height:19px;stroke:var(--ink);}
   .badge-count{
-    position:absolute;top:-7px;right:-8px;background:var(--accent);color:#fff;
+    position:absolute;top:-7px;right:-8px;background:var(--ink);color:#fff;
     font-size:10px;font-weight:700;width:16px;height:16px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
   }
   .site-search{
     display:flex;align-items:center;flex:1;min-width:180px;max-width:320px;
-    border:1px solid #2c2c2c;border-radius:20px;padding:7px 14px;gap:8px;
-    background:#1a1a1a;
+    border:1px solid var(--line);border-radius:20px;padding:7px 14px;gap:8px;
+    background:var(--smoke);
   }
-  .site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:#fff;}
-  .site-search input::placeholder{color:#8a8a8a;}
-  .site-search svg{width:15px;height:15px;stroke:#8a8a8a;flex-shrink:0;}
+  .site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);}
+  .site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
 
   /* ===== Hero Banner у Чорно-Білому Стилі ===== */
   .hero-banner {
@@ -101,7 +99,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-image: linear-gradient(rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.78)), url('https://images.unsplash.com/photo-1669671943625-e20799ee5f42?q=80&w=1800&auto=format&fit=crop');
+    background-image: linear-gradient(rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.72)), url('https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=1600&auto=format&fit=crop');
     background-size: cover;
     background-position: center;
     filter: grayscale(100%);
@@ -130,9 +128,8 @@
   }
 
   .hero-brand-logo b {
-    font-family:'Oswald',sans-serif;
-    font-size: 46px;
-    font-weight: 700;
+    font-size: 42px;
+    font-weight: 900;
     letter-spacing: 4px;
     line-height: 1;
     text-transform: uppercase;
@@ -232,7 +229,7 @@
 
   /* Фонові фото для Чоловічої та Жіночої колекцій */
   .cat-card-men .cat-card-bg {
-    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1500191240172-0d6a860885af?q=80&w=1200&auto=format&fit=crop');
+    background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('https://images.unsplash.com/photo-1483721310020-03333e577078?q=80&w=1000&auto=format&fit=crop');
   }
 
   .cat-card-women .cat-card-bg {
@@ -258,10 +255,9 @@
   }
 
   .cat-card h3 {
-    font-family:'Oswald',sans-serif;
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: 1px;
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     margin-bottom: 8px;
     text-shadow: 0 2px 4px rgba(0,0,0,0.4);
@@ -313,10 +309,9 @@
   }
 
   .arrivals-head h2 {
-    font-family:'Oswald',sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: .1em;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: .12em;
     text-transform: uppercase;
   }
 
@@ -598,10 +593,10 @@
       </a>
 
       <!-- Иконка Избранного (Wishlist) -->
-      <a href="wishlist.html" class="icon-btn" id="wishlistBtn" title="Обране" aria-label="Обране">
+      <button class="icon-btn" id="wishlistBtn" title="Обране" aria-label="Обране">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7.5-4.9-10-9.3C0.3 8.1 2 4.5 5.7 4c2-.3 3.7.7 6.3 3 2.6-2.3 4.3-3.3 6.3-3 3.7.5 5.4 4.1 3.7 7.7C19.5 16.1 12 21 12 21z"/></svg>
         <span class="badge-count" id="wishCount">0</span>
-      </a>
+      </button>
     </div>
   </div>
 </header>

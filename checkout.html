@@ -9,7 +9,8 @@
 <style>
   :root { --ink:#111111; --paper:#ffffff; --smoke:#f8f8f6; --line:#e6e5e2; --mute:#767470; --radius:4px; }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:'Inter', system-ui, sans-serif; color:var(--ink); background:var(--paper); min-height:100vh; display:flex; flex-direction:column; }
+  html { overflow-x:hidden; }
+  body { font-family:'Inter', system-ui, sans-serif; color:var(--ink); background:var(--paper); min-height:100vh; display:flex; flex-direction:column; overflow-x:hidden; width:100%; }
   
   header.site { position:sticky; top:0; z-index:50; background:rgba(255,255,255,.95); border-bottom:1px solid var(--line); }
   .header-row { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; max-width:1240px; margin:0 auto; }
