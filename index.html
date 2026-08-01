@@ -586,9 +586,7 @@ async function loadProducts(){
 
   grid.innerHTML = '';
   data.forEach(p => {
-    let rawPhoto = p.photos ? p.photos.split(',')[0].trim() : null;
-    if (!rawPhoto && p.photos) rawPhoto = p.photos.split(';')[0].trim();
-    
+    let rawPhoto = p.photos ? p.photos.split(';')[0].trim() : null;
     let photo = null;
     if (rawPhoto) {
       if (rawPhoto.startsWith('http://')) rawPhoto = rawPhoto.replace('http://', 'https://');
