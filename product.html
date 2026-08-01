@@ -20,6 +20,9 @@
 body{
   font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
   color:var(--ink);background:var(--paper);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 a{color:inherit;text-decoration:none;}
 
@@ -46,7 +49,7 @@ nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;}
 .site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);}
 .site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
 
-.product-page{max-width:1200px;margin:40px auto;padding:0 24px;}
+.product-page{max-width:1200px;margin:40px auto;padding:0 24px;flex:1;}
 .product-layout{display:grid;grid-template-columns:1fr 1fr;gap:48px;}
 .product-layout > *{min-width:0;}
 
@@ -72,7 +75,7 @@ nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;}
 }
 .zoom-hint svg{width:16px;height:16px;stroke:#fff;}
 
-/* ===== Лайтбокс (повноекранний перегляд фото) ===== */
+/* ===== Лайтбокс ===== */
 .lightbox-overlay{
   position:fixed;inset:0;z-index:1000;
   background:rgba(10,10,10,.94);
@@ -143,6 +146,110 @@ nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;}
   border:none;cursor:pointer;margin-top:16px;
 }
 .add-btn:hover{opacity:0.9;}
+
+/* Footer */
+footer.site-footer {
+  background-color: var(--ink);
+  color: #ffffff;
+  padding: 60px 24px 30px;
+  margin-top: 60px;
+}
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+.footer-col h4 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #888888;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+.footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.footer-col ul li {
+  margin-bottom: 12px;
+}
+.footer-col ul li a {
+  color: #cccccc;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+.footer-col ul li a:hover {
+  color: #ffffff;
+}
+.footer-logo img {
+  max-width: 100px;
+  background: #ffffff;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+.footer-socials {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.social-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #222222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.social-icon:hover {
+  background: #333333;
+}
+.footer-desc {
+  font-size: 13px;
+  color: #888888;
+  line-height: 1.6;
+  margin: 0;
+}
+.footer-bottom {
+  max-width: 1200px;
+  margin: 40px auto 0;
+  padding-top: 30px;
+  border-top: 1px solid #222222;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #666666;
+}
+.footer-bottom-links a {
+  color: #888888;
+  text-decoration: none;
+  margin-right: 20px;
+}
+.footer-bottom-links a:hover {
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+}
 </style>
 </head>
 <body>
@@ -186,6 +293,67 @@ nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;}
   <div class="lightbox-thumbs" id="lightboxThumbs"></div>
 </div>
 
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-col brand-col">
+      <div class="footer-logo">
+        <img src="assets/logo.jpg" alt="NEXXTLEVEL STORE">
+      </div>
+      <div class="footer-socials">
+        <a href="https://instagram.com" target="_blank" class="social-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+        </a>
+        <a href="https://t.me" target="_blank" class="social-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </a>
+      </div>
+      <p class="footer-desc">
+        Оригінальні кросівки з США та Європи.<br>
+        Перевірена автентичність на кожен товар.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>КЛІЄНТАМ</h4>
+      <ul>
+        <li><a href="#">Зв'язатися з нами</a></li>
+        <li><a href="#">Доставка</a></li>
+        <li><a href="#">Оплата</a></li>
+        <li><a href="#">Повернення</a></li>
+        <li><a href="#">Розмірна сітка</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>КАТАЛОГ</h4>
+      <ul>
+        <li><a href="catalog.html?cat=Чоловічі кросівки">Чоловічі кросівки</a></li>
+        <li><a href="catalog.html?cat=Жіночі кросівки">Жіночі кросівки</a></li>
+        <li><a href="catalog.html">Усі товари</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>КОНТАКТИ</h4>
+      <ul class="contacts-list">
+        <li><a href="tel:+380934382093">+38 093 438 20 93</a></li>
+        <li><a href="https://instagram.com" target="_blank">Instagram</a></li>
+        <li><a href="https://t.me" target="_blank">Telegram</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="footer-bottom-links">
+      <a href="#">Умови використання</a>
+      <a href="#">Політика конфіденційності</a>
+    </div>
+    <div class="footer-copyright">
+      © 2026 NexxtLevelStore. Всі права захищені.
+    </div>
+  </div>
+</footer>
+
 <script>
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
@@ -202,8 +370,6 @@ async function fetchProduct() {
 
   let articul = productArticul;
 
-  // Зворотна сумісність зі старими посиланнями product.html?id=...:
-  // спочатку знаходимо articul цього конкретного рядка, а далі підтягуємо ВСІ розміри цього товару.
   if (!articul && productId) {
     const { data: idRow, error: idErr } = await supabaseClient
       .from('products')
@@ -245,18 +411,14 @@ async function fetchProduct() {
   renderProduct(baseProduct, sizeMap);
 }
 
-// Природне сортування розмірів: "36-37" -> 36, "38.5" -> 38.5
 function sizeSortKey(sz) {
   const m = String(sz).match(/[\d.]+/);
   return m ? parseFloat(m[0]) : 9999;
 }
 
 function renderProduct(product, sizeMap) {
-  // 1. Достаем строку с фото или из photos, или из image_url
   const rawString = product.photos || product.image_url || '';
 
-  // 2. Разбиваем по ';' или ',', чистим ссылки від пробілів і пустих значень,
-  //    та прибираємо дублікати (однакове фото могло потрапити в список кілька разів)
   const seen = new Set();
   let rawPhotos = rawString
     .split(/[;,]/)
@@ -269,15 +431,11 @@ function renderProduct(product, sizeMap) {
       return true;
     });
 
-  // 2b. Якщо серед фото є хоч одне з нашого Supabase Storage - показуємо
-  //     ТІЛЬКИ ці фото (це "чистий" набір, завантажений вручну), а старі
-  //     посилання постачальника (які могли дублювати ті самі кадри) ховаємо.
   const ownStorage = rawPhotos.filter(p => p.includes('supabase.co/storage/'));
   if (ownStorage.length > 0) {
     rawPhotos = ownStorage;
   }
 
-  // 3. Формируем чистые, валидные URL для Weserv
   const photos = rawPhotos.map(p => {
     let clean = p;
     if (clean.startsWith('http://')) clean = clean.replace('http://', 'https://');
@@ -374,7 +532,6 @@ function addToCart() {
   alert(`Товар додано в кошик! Розмір: ${selectedSize}, Ціна: ${currentPrice} грн`);
 }
 
-// ===== Лайтбокс: клік по фото → повноекранний перегляд зі стрілками та мініатюрами =====
 let lightboxPhotos = [];
 let lightboxIndex = 0;
 let currentPhotoIndex = 0;
@@ -398,7 +555,6 @@ function updateLightboxImage() {
   document.querySelectorAll('.lightbox-thumbs img').forEach((img, i) => {
     img.classList.toggle('active', i === lightboxIndex);
   });
-  // синхронізуємо і головне фото на сторінці
   currentPhotoIndex = lightboxIndex;
   const mainImg = document.getElementById('mainPhoto');
   if (mainImg) mainImg.src = lightboxPhotos[lightboxIndex];
