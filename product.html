@@ -58,21 +58,64 @@ nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;}
 .thumb-img.active{border-color:var(--ink);}
 .main-image-wrap{
   flex:1;aspect-ratio:1;background:var(--smoke);border-radius:var(--radius);
-  overflow:hidden;position:relative;cursor:crosshair;
+  overflow:hidden;position:relative;cursor:zoom-in;
 }
 .main-image-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
-
-/* Лупа при наведенні */
-.img-lens{
-  position:absolute;display:none;
-  width:160px;height:160px;
-  border:2px solid var(--ink);border-radius:50%;
-  pointer-events:none;background-repeat:no-repeat;
-  box-shadow:0 6px 20px rgba(0,0,0,.28);
-  z-index:5;
+.zoom-hint{
+  position:absolute;bottom:12px;right:12px;
+  background:rgba(17,17,17,.72);color:#fff;
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
 }
-@media (hover:none){
-  .img-lens{display:none !important;}
+.zoom-hint svg{width:16px;height:16px;stroke:#fff;}
+
+/* ===== Лайтбокс (повноекранний перегляд фото) ===== */
+.lightbox-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(10,10,10,.94);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;
+}
+.lightbox-overlay.open{display:flex;}
+.lightbox-top{
+  position:absolute;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 24px;color:#fff;
+}
+.lightbox-counter{font-size:13px;font-weight:700;letter-spacing:.08em;color:#e6e5e2;}
+.lightbox-close{
+  width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.1);
+  display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;
+  transition:background .2s;
+}
+.lightbox-close:hover{background:rgba(255,255,255,.22);}
+.lightbox-close svg{width:18px;height:18px;stroke:#fff;}
+.lightbox-body{
+  display:flex;align-items:center;justify-content:center;gap:20px;
+  width:100%;max-width:1100px;
+}
+.lightbox-arrow{
+  width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);
+  display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;
+  flex-shrink:0;transition:background .2s;
+}
+.lightbox-arrow:hover{background:rgba(255,255,255,.22);}
+.lightbox-arrow svg{width:20px;height:20px;stroke:#fff;}
+.lightbox-main{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;}
+.lightbox-main img{max-width:100%;max-height:66vh;object-fit:contain;border-radius:var(--radius);}
+.lightbox-thumbs{
+  display:flex;gap:10px;margin-top:22px;max-width:90vw;overflow-x:auto;padding:4px 2px;
+}
+.lightbox-thumbs img{
+  width:58px;height:58px;object-fit:cover;border-radius:var(--radius);cursor:pointer;
+  opacity:.45;transition:opacity .2s,border-color .2s;
+  border:2px solid transparent;flex-shrink:0;
+}
+.lightbox-thumbs img.active{opacity:1;border-color:#fff;}
+@media (max-width:640px){
+  .lightbox-arrow{width:36px;height:36px;}
+  .lightbox-body{gap:10px;}
 }
 
 /* Details */
@@ -119,6 +162,27 @@ nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;}
 <main class="product-page" id="productContainer">
   <div style="text-align:center;padding:48px;">Завантаження товару...</div>
 </main>
+
+<div class="lightbox-overlay" id="lightboxOverlay">
+  <div class="lightbox-top">
+    <span class="lightbox-counter" id="lightboxCounter"></span>
+    <div class="lightbox-close" onclick="closeLightbox()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </div>
+  </div>
+  <div class="lightbox-body">
+    <div class="lightbox-arrow" onclick="lightboxPrev()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </div>
+    <div class="lightbox-main">
+      <img id="lightboxImg" src="" alt="">
+    </div>
+    <div class="lightbox-arrow" onclick="lightboxNext()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+  </div>
+  <div class="lightbox-thumbs" id="lightboxThumbs"></div>
+</div>
 
 <script>
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
@@ -198,6 +262,9 @@ function renderProduct(product, sizeMap) {
   const sortedSizes = Object.keys(sizeMap).sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
   const initialPrice = sortedSizes.length ? sizeMap[sortedSizes[0]].price : Number(product.price);
 
+  lightboxPhotos = photos;
+  currentPhotoIndex = 0;
+
   const container = document.getElementById('productContainer');
   container.innerHTML = `
     <div class="product-layout">
@@ -205,12 +272,17 @@ function renderProduct(product, sizeMap) {
         ${photos.length > 1 ? `
           <div class="thumbs-list">
             ${photos.map((ph, idx) => `
-              <img src="${ph}" class="thumb-img ${idx === 0 ? 'active' : ''}" onclick="changePhoto('${ph}', this)">
+              <img src="${ph}" class="thumb-img ${idx === 0 ? 'active' : ''}" onclick="changePhoto('${ph}', this, ${idx})">
             `).join('')}
           </div>
         ` : ''}
-        <div class="main-image-wrap" id="mainImageWrap">
+        <div class="main-image-wrap" id="mainImageWrap" onclick="openLightbox(currentPhotoIndex)">
           <img id="mainPhoto" src="${photos[0] || ''}" alt="${product.name}">
+          ${photos.length ? `
+            <div class="zoom-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg>
+            </div>
+          ` : ''}
         </div>
       </div>
 
@@ -245,13 +317,16 @@ function renderProduct(product, sizeMap) {
     </div>
   `;
 
-  initMagnifier();
+  document.getElementById('lightboxThumbs').innerHTML = photos.map((ph, idx) => `
+    <img src="${ph}" class="${idx === 0 ? 'active' : ''}" onclick="event.stopPropagation();lightboxIndex=${idx};updateLightboxImage();">
+  `).join('');
 }
 
-function changePhoto(src, btn) {
+function changePhoto(src, btn, idx) {
   document.getElementById('mainPhoto').src = src;
   document.querySelectorAll('.thumb-img').forEach(img => img.classList.remove('active'));
   btn.classList.add('active');
+  currentPhotoIndex = idx;
 }
 
 function selectSize(size, price, btn) {
@@ -270,46 +345,60 @@ function addToCart() {
   alert(`Товар додано в кошик! Розмір: ${selectedSize}, Ціна: ${currentPrice} грн`);
 }
 
-// ===== Лупа (zoom) на головному фото =====
-function initMagnifier() {
-  const wrap = document.getElementById('mainImageWrap');
-  const img = document.getElementById('mainPhoto');
-  if (!wrap || !img) return;
+// ===== Лайтбокс: клік по фото → повноекранний перегляд зі стрілками та мініатюрами =====
+let lightboxPhotos = [];
+let lightboxIndex = 0;
+let currentPhotoIndex = 0;
 
-  let lens = wrap.querySelector('.img-lens');
-  if (!lens) {
-    lens = document.createElement('div');
-    lens.className = 'img-lens';
-    wrap.appendChild(lens);
-  }
-
-  const zoomFactor = 2.4;
-
-  function moveLens(clientX, clientY) {
-    const rect = img.getBoundingClientRect();
-    let x = clientX - rect.left;
-    let y = clientY - rect.top;
-
-    const lensSize = lens.offsetWidth;
-    let lx = x - lensSize / 2;
-    let ly = y - lensSize / 2;
-
-    const maxX = rect.width - lensSize;
-    const maxY = rect.height - lensSize;
-    lx = Math.max(0, Math.min(lx, maxX));
-    ly = Math.max(0, Math.min(ly, maxY));
-
-    lens.style.left = lx + 'px';
-    lens.style.top = ly + 'px';
-    lens.style.backgroundImage = `url('${img.src}')`;
-    lens.style.backgroundSize = `${rect.width * zoomFactor}px ${rect.height * zoomFactor}px`;
-    lens.style.backgroundPosition = `-${lx * zoomFactor}px -${ly * zoomFactor}px`;
-  }
-
-  img.onmouseenter = () => { lens.style.display = 'block'; };
-  img.onmouseleave = () => { lens.style.display = 'none'; };
-  img.onmousemove = (e) => moveLens(e.clientX, e.clientY);
+function openLightbox(index) {
+  if (!lightboxPhotos.length) return;
+  lightboxIndex = index || 0;
+  updateLightboxImage();
+  document.getElementById('lightboxOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
+
+function closeLightbox() {
+  document.getElementById('lightboxOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function updateLightboxImage() {
+  document.getElementById('lightboxImg').src = lightboxPhotos[lightboxIndex];
+  document.getElementById('lightboxCounter').textContent = `${lightboxIndex + 1} / ${lightboxPhotos.length}`;
+  document.querySelectorAll('.lightbox-thumbs img').forEach((img, i) => {
+    img.classList.toggle('active', i === lightboxIndex);
+  });
+  // синхронізуємо і головне фото на сторінці
+  currentPhotoIndex = lightboxIndex;
+  const mainImg = document.getElementById('mainPhoto');
+  if (mainImg) mainImg.src = lightboxPhotos[lightboxIndex];
+  document.querySelectorAll('.thumb-img').forEach((img, i) => {
+    img.classList.toggle('active', i === lightboxIndex);
+  });
+}
+
+function lightboxPrev() {
+  lightboxIndex = (lightboxIndex - 1 + lightboxPhotos.length) % lightboxPhotos.length;
+  updateLightboxImage();
+}
+
+function lightboxNext() {
+  lightboxIndex = (lightboxIndex + 1) % lightboxPhotos.length;
+  updateLightboxImage();
+}
+
+document.getElementById('lightboxOverlay').addEventListener('click', e => {
+  if (e.target.id === 'lightboxOverlay') closeLightbox();
+});
+
+document.addEventListener('keydown', e => {
+  const overlay = document.getElementById('lightboxOverlay');
+  if (!overlay.classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') lightboxPrev();
+  if (e.key === 'ArrowRight') lightboxNext();
+});
 
 document.getElementById('siteSearchForm').addEventListener('submit', e => {
   e.preventDefault();
