@@ -7,6 +7,29 @@
 <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+  /* Стили для иконок в шапке */
+.header-icons {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+}
+.icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  transition: opacity 0.2s;
+}
+.icon-btn:hover {
+  opacity: 0.6;
+}
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--ink);
+}
   :root{
     --ink:#111111;
     --paper:#ffffff;
