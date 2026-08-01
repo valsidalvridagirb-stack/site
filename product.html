@@ -250,14 +250,25 @@ function sizeSortKey(sz) {
 }
 
 function renderProduct(product, sizeMap) {
-  let rawPhotos = product.photos ? product.photos.split(';') : (product.image_url ? [product.image_url] : []);
+  // 1. Достаем строку с фото или из photos, или из image_url
+  const rawString = product.photos || product.image_url || '';
+
+  // 2. Разбиваем по ';' или ',', чистим ссылки от пробелов и пустых значений
+  const rawPhotos = rawString
+    .split(/[;,]/)
+    .map(p => p.trim())
+    .filter(Boolean);
+
+  // 3. Формируем чистые, валидные URL для Weserv
   const photos = rawPhotos.map(p => {
-    let clean = p.trim();
-    if (!clean) return null;
+    let clean = p;
     if (clean.startsWith('http://')) clean = clean.replace('http://', 'https://');
     else if (clean.startsWith('//')) clean = 'https:' + clean;
-    return clean.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(clean)}` : clean;
-  }).filter(Boolean);
+    
+    return clean.startsWith('http') 
+      ? `https://images.weserv.nl/?url=${encodeURIComponent(clean)}` 
+      : clean;
+  });
 
   const sortedSizes = Object.keys(sizeMap).sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
   const initialPrice = sortedSizes.length ? sizeMap[sortedSizes[0]].price : Number(product.price);
