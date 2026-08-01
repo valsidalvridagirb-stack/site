@@ -159,7 +159,7 @@
     color: #000000;
   }
 
-  /* ===== Оновлені Картки Категорій (Чоловіче / Жіноче) ===== */
+  /* ===== Картки Категорій із Фоновими Фотографіями ===== */
   .cats {
     max-width: 1240px;
     margin: 50px auto 0;
@@ -171,68 +171,88 @@
 
   .cat-card {
     position: relative;
-    background: linear-gradient(135deg, #fbfbfb 0%, #f0f0ed 100%);
-    border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 40px 36px;
+    padding: 44px 36px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 180px;
+    min-height: 240px;
     text-decoration: none;
-    color: var(--ink);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    color: #ffffff;
     overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
 
-  .cat-card::before {
-    content: '';
+  .cat-card-bg {
     position: absolute;
-    top: 0; left: 0; width: 4px; height: 100%;
-    background: var(--ink);
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.5s ease;
+    z-index: 1;
+    filter: grayscale(80%); /* Градація сірого для преміального стилю */
+  }
+
+  /* Фонові фото для Чоловічої та Жіночої колекцій */
+  .cat-card-men .cat-card-bg {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('https://images.unsplash.com/photo-1483721310020-03333e577078?q=80&w=1000&auto=format&fit=crop');
+  }
+
+  .cat-card-women .cat-card-bg {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('https://images.unsplash.com/photo-1518310383802-640c2de311b2?q=80&w=1000&auto=format&fit=crop');
+  }
+
+  .cat-card-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
   }
 
   .cat-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 14px 28px rgba(0,0,0,0.06);
-    border-color: #d0cfca;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.2);
   }
 
-  .cat-card:hover::before {
-    opacity: 1;
+  .cat-card:hover .cat-card-bg {
+    transform: scale(1.06); /* Плавний зум при наведенні */
   }
 
   .cat-card h3 {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 900;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
   }
 
   .cat-card p {
-    font-size: 13px;
-    color: var(--mute);
+    font-size: 13.5px;
+    color: #e0e0e0;
     margin-bottom: 20px;
+    max-width: 90%;
+    line-height: 1.4;
   }
 
   .cat-link-text {
     font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
+    font-weight: 800;
+    letter-spacing: 1px;
     text-transform: uppercase;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: var(--ink);
+    color: #ffffff;
   }
 
   .cat-link-text svg {
     width: 16px;
     height: 16px;
-    transition: transform 0.2s ease;
+    transition: transform 0.25s ease;
   }
 
   .cat-card:hover .cat-link-text svg {
@@ -479,28 +499,34 @@
   </div>
 </section>
 
-<!-- Оновлені красиві плашки категорій -->
+<!-- Категорії з фотографіями чоловіка та жінки -->
 <section class="cats" id="categories">
-  <a href="catalog.html?cat=Чоловічі кросівки" class="cat-card">
-    <div>
-      <h3>Чоловіча колекція</h3>
-      <p>Оригінальне взуття та одяг провідних світових брендів</p>
+  <a href="catalog.html?cat=Чоловічі кросівки" class="cat-card cat-card-men">
+    <div class="cat-card-bg"></div>
+    <div class="cat-card-content">
+      <div>
+        <h3>Чоловіча колекція</h3>
+        <p>Оригінальне взуття та одяг провідних світових брендів</p>
+      </div>
+      <span class="cat-link-text">
+        Переглянути каталог 
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </span>
     </div>
-    <span class="cat-link-text">
-      Переглянути каталог 
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </span>
   </a>
 
-  <a href="catalog.html?cat=Жіночі кросівки" class="cat-card">
-    <div>
-      <h3>Жіноча колекція</h3>
-      <p>Стильні речі та топові моделі із гарантією автентичності</p>
+  <a href="catalog.html?cat=Жіночі кросівки" class="cat-card cat-card-women">
+    <div class="cat-card-bg"></div>
+    <div class="cat-card-content">
+      <div>
+        <h3>Жіноча колекція</h3>
+        <p>Стильні речі та топові моделі із гарантією автентичності</p>
+      </div>
+      <span class="cat-link-text">
+        Переглянути каталог 
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </span>
     </div>
-    <span class="cat-link-text">
-      Переглянути каталог 
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </span>
   </a>
 </section>
 
