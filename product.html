@@ -30,11 +30,20 @@ header.site{
 }
 .header-inner{
   max-width:1200px;margin:0 auto;padding:16px 24px;
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  flex-wrap:wrap;
 }
-.brand{font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;}
+.brand{font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;flex-shrink:0;}
 .brand span{display:block;font-size:10px;color:var(--mute);letter-spacing:3px;}
-nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;}
+nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;}
+
+.site-search{
+  display:flex;align-items:center;flex:1;min-width:180px;max-width:320px;
+  border:1px solid var(--line);border-radius:20px;padding:6px 14px;gap:8px;
+  background:var(--smoke);
+}
+.site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);}
+.site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
 
 .product-page{max-width:1200px;margin:40px auto;padding:0 24px;}
 .product-layout{display:grid;grid-template-columns:1fr 1fr;gap:48px;}
@@ -47,12 +56,30 @@ nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;}
   cursor:pointer;border-radius:var(--radius);
 }
 .thumb-img.active{border-color:var(--ink);}
-.main-image-wrap{flex:1;aspect-ratio:1;background:var(--smoke);border-radius:var(--radius);overflow:hidden;}
-.main-image-wrap img{width:100%;height:100%;object-fit:cover;}
+.main-image-wrap{
+  flex:1;aspect-ratio:1;background:var(--smoke);border-radius:var(--radius);
+  overflow:hidden;position:relative;cursor:crosshair;
+}
+.main-image-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+
+/* Лупа при наведенні */
+.img-lens{
+  position:absolute;display:none;
+  width:160px;height:160px;
+  border:2px solid var(--ink);border-radius:50%;
+  pointer-events:none;background-repeat:no-repeat;
+  box-shadow:0 6px 20px rgba(0,0,0,.28);
+  z-index:5;
+}
+@media (hover:none){
+  .img-lens{display:none !important;}
+}
 
 /* Details */
 .product-details{display:flex;flex-direction:column;gap:24px;}
+.p-brand{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);}
 .p-title{font-size:32px;font-weight:900;text-transform:uppercase;line-height:1.1;}
+.p-articul{font-size:12px;color:var(--mute);}
 .p-price{font-size:24px;font-weight:800;color:var(--ink);}
 .size-section{margin-top:16px;}
 .size-title{font-size:14px;font-weight:700;margin-bottom:12px;text-transform:uppercase;}
@@ -63,6 +90,7 @@ nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;}
 }
 .size-btn:hover{border-color:var(--ink);}
 .size-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.size-btn:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through;}
 
 .add-btn{
   width:100%;padding:18px;background:var(--ink);color:var(--paper);
@@ -81,6 +109,10 @@ nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;}
       <a href="catalog.html?cat=Чоловічі%20кросівки">Чоловічі кросівки</a>
       <a href="catalog.html?cat=Жіночі%20кросівки">Жіночі кросівки</a>
     </nav>
+    <form class="site-search" id="siteSearchForm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="siteSearchInput" placeholder="Пошук за назвою або артикулом">
+    </form>
   </div>
 </header>
 
@@ -98,80 +130,73 @@ let currentPrice = null;
 
 async function fetchProduct() {
   const urlParams = new URLSearchParams(window.location.search);
-  const productArticul = urlParams.get('articul');
   const productName = urlParams.get('name');
+  const productArticul = urlParams.get('articul');
   const productId = urlParams.get('id');
 
-  let variants = null;
+  let articul = productArticul;
 
-  if (productArticul) {
-    // Найнадійніший спосіб: тягнемо ВСІ рядки з цим артикулом,
-    // незалежно від того, під яким саме варіантом назви вони збережені.
-    const { data, error } = await supabaseClient
+  // Зворотна сумісність зі старими посиланнями product.html?id=...:
+  // спочатку знаходимо articul цього конкретного рядка, а далі підтягуємо ВСІ розміри цього товару.
+  if (!articul && productId) {
+    const { data: idRow, error: idErr } = await supabaseClient
       .from('products')
-      .select('*')
-      .eq('articul', productArticul);
-    if (!error) variants = data;
-  } else {
-    let nameToLoad = productName;
-
-    // Старі посилання з ?id= - спочатку дізнаємось articul цього рядка,
-    // а далі підтягнемо всі розміри по артикулу (так само, як вище).
-    if (!nameToLoad && productId) {
-      const { data: idRow, error: idError } = await supabaseClient
-        .from('products')
-        .select('articul, name')
-        .eq('id', productId)
-        .single();
-
-      if (!idError && idRow) {
-        const { data: byArticul } = await supabaseClient
-          .from('products')
-          .select('*')
-          .eq('articul', idRow.articul);
-        variants = byArticul;
-      }
-    }
-
-    if (!variants && nameToLoad) {
-      const { data } = await supabaseClient
-        .from('products')
-        .select('*')
-        .eq('name', nameToLoad);
-      variants = data;
-    }
+      .select('articul')
+      .eq('id', productId)
+      .maybeSingle();
+    if (!idErr && idRow) articul = idRow.articul;
   }
 
-  if (!variants || variants.length === 0) {
+  let query = supabaseClient.from('products').select('*');
+  if (articul) {
+    query = query.eq('articul', articul);
+  } else if (productName) {
+    query = query.eq('name', productName);
+  } else {
     document.getElementById('productContainer').innerHTML = '<h2>Товар не знайдено</h2>';
     return;
   }
 
-  // серед варіантів назви обираємо найдовшу (зазвичай найбільш описову)
-  const baseProduct = variants.reduce((best, v) =>
-    (v.name || '').length > (best.name || '').length ? v : best, variants[0]);
+  const { data: variants, error } = await query;
+  if (error || !variants || variants.length === 0) {
+    document.getElementById('productContainer').innerHTML = '<h2>Товар не знайдено</h2>';
+    return;
+  }
 
+  const baseProduct = variants.find(v => v.photos) || variants[0];
   const sizeMap = {};
 
-  // кожен варіант - це один розмір (поле size, в однині) з власною кількістю в наявності
   variants.forEach(variant => {
-    const sz = variant.size;
-    if (sz && Number(variant.quantity) > 0 && !(sz in sizeMap)) {
-      sizeMap[sz] = Number(variant.price);
+    const sz = variant.size !== null && variant.size !== undefined ? String(variant.size).trim() : '';
+    if (sz && !(sz in sizeMap)) {
+      sizeMap[sz] = {
+        price: Number(variant.price),
+        available: (variant.quantity === undefined || variant.quantity === null) ? true : Number(variant.quantity) > 0
+      };
     }
   });
 
   renderProduct(baseProduct, sizeMap);
 }
 
+// Природне сортування розмірів: "36-37" -> 36, "38.5" -> 38.5
+function sizeSortKey(sz) {
+  const m = String(sz).match(/[\d.]+/);
+  return m ? parseFloat(m[0]) : 9999;
+}
+
 function renderProduct(product, sizeMap) {
   let rawPhotos = product.photos ? product.photos.split(';') : (product.image_url ? [product.image_url] : []);
   const photos = rawPhotos.map(p => {
     let clean = p.trim();
+    if (!clean) return null;
+    if (clean.startsWith('http://')) clean = clean.replace('http://', 'https://');
+    else if (clean.startsWith('//')) clean = 'https:' + clean;
     return clean.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(clean)}` : clean;
   }).filter(Boolean);
 
-  const initialPrice = Object.values(sizeMap)[0] || Number(product.price);
+  const sortedSizes = Object.keys(sizeMap).sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
+  const initialPrice = sortedSizes.length ? sizeMap[sortedSizes[0]].price : Number(product.price);
 
   const container = document.getElementById('productContainer');
   container.innerHTML = `
@@ -184,28 +209,33 @@ function renderProduct(product, sizeMap) {
             `).join('')}
           </div>
         ` : ''}
-        <div class="main-image-wrap">
+        <div class="main-image-wrap" id="mainImageWrap">
           <img id="mainPhoto" src="${photos[0] || ''}" alt="${product.name}">
         </div>
       </div>
 
       <div class="product-details">
+        ${product.brand ? `<div class="p-brand">${product.brand}</div>` : ''}
         <h1 class="p-title">${product.name || product.title}</h1>
+        ${product.articul ? `<div class="p-articul">Артикул: ${product.articul}</div>` : ''}
         <div class="p-price" id="productPrice">${initialPrice.toLocaleString('uk-UA')} грн</div>
 
-        <div class="size-section">
-          <div class="size-title">Оберіть розмір (US)</div>
-          <div class="size-grid">
-            ${Object.keys(sizeMap).sort((a, b) => parseFloat(a) - parseFloat(b)).map(size => `
-              <button class="size-btn" onclick="selectSize('${size}', ${sizeMap[size]}, this)">
-                ${size}
-              </button>
-            `).join('')}
+        ${sortedSizes.length ? `
+          <div class="size-section">
+            <div class="size-title">Оберіть розмір (US)</div>
+            <div class="size-grid">
+              ${sortedSizes.map(size => `
+                <button class="size-btn" ${sizeMap[size].available ? '' : 'disabled'}
+                  onclick="selectSize('${size}', ${sizeMap[size].price}, this)">
+                  ${size}
+                </button>
+              `).join('')}
+            </div>
           </div>
-        </div>
+        ` : ''}
 
         <button class="add-btn" onclick="addToCart()">Додати в кошик</button>
-        
+
         ${product.description ? `
           <div style="margin-top:24px;line-height:1.6;color:var(--mute);">
             <strong style="color:var(--ink);">ОПИС</strong><br>${product.description}
@@ -214,6 +244,8 @@ function renderProduct(product, sizeMap) {
       </div>
     </div>
   `;
+
+  initMagnifier();
 }
 
 function changePhoto(src, btn) {
@@ -237,6 +269,54 @@ function addToCart() {
   }
   alert(`Товар додано в кошик! Розмір: ${selectedSize}, Ціна: ${currentPrice} грн`);
 }
+
+// ===== Лупа (zoom) на головному фото =====
+function initMagnifier() {
+  const wrap = document.getElementById('mainImageWrap');
+  const img = document.getElementById('mainPhoto');
+  if (!wrap || !img) return;
+
+  let lens = wrap.querySelector('.img-lens');
+  if (!lens) {
+    lens = document.createElement('div');
+    lens.className = 'img-lens';
+    wrap.appendChild(lens);
+  }
+
+  const zoomFactor = 2.4;
+
+  function moveLens(clientX, clientY) {
+    const rect = img.getBoundingClientRect();
+    let x = clientX - rect.left;
+    let y = clientY - rect.top;
+
+    const lensSize = lens.offsetWidth;
+    let lx = x - lensSize / 2;
+    let ly = y - lensSize / 2;
+
+    const maxX = rect.width - lensSize;
+    const maxY = rect.height - lensSize;
+    lx = Math.max(0, Math.min(lx, maxX));
+    ly = Math.max(0, Math.min(ly, maxY));
+
+    lens.style.left = lx + 'px';
+    lens.style.top = ly + 'px';
+    lens.style.backgroundImage = `url('${img.src}')`;
+    lens.style.backgroundSize = `${rect.width * zoomFactor}px ${rect.height * zoomFactor}px`;
+    lens.style.backgroundPosition = `-${lx * zoomFactor}px -${ly * zoomFactor}px`;
+  }
+
+  img.onmouseenter = () => { lens.style.display = 'block'; };
+  img.onmouseleave = () => { lens.style.display = 'none'; };
+  img.onmousemove = (e) => moveLens(e.clientX, e.clientY);
+}
+
+document.getElementById('siteSearchForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const term = document.getElementById('siteSearchInput').value.trim();
+  const url = term ? `catalog.html?search=${encodeURIComponent(term)}` : 'catalog.html';
+  window.location.href = url;
+});
 
 fetchProduct();
 </script>

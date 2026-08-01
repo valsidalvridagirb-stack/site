@@ -26,6 +26,7 @@ body{
 img,svg{display:block;max-width:100%;}
 a{color:inherit;text-decoration:none;}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+input,select{font-family:inherit;}
 
 /* ===== Header ===== */
 header.site{
@@ -36,18 +37,84 @@ header.site{
 }
 .header-inner{
   max-width:1200px;margin:0 auto;padding:16px 24px;
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  flex-wrap:wrap;
 }
-.brand{font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;}
+.brand{font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;flex-shrink:0;}
 .brand span{display:block;font-size:10px;color:var(--mute);letter-spacing:3px;}
-nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;}
+nav.menu{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;flex-wrap:wrap;}
 nav.menu a:hover{color:var(--accent);}
+
+.site-search{
+  display:flex;align-items:center;flex:1;min-width:180px;max-width:320px;
+  border:1px solid var(--line);border-radius:20px;padding:6px 14px;gap:8px;
+  background:var(--smoke);
+}
+.site-search input{
+  border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);
+}
+.site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
 
 /* ===== Catalog Grid ===== */
 .catalog-container{max-width:1200px;margin:40px auto;padding:0 24px;}
 .catalog-header{margin-bottom:24px;}
 .catalog-title{font-size:28px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;}
 .catalog-count{color:var(--mute);font-size:14px;margin-top:4px;}
+
+/* ===== Toolbar (sort + filters toggle) ===== */
+.toolbar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:12px;
+  padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  margin-bottom:28px;
+}
+.toolbar-btn{
+  display:flex;align-items:center;gap:6px;padding:9px 16px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+  transition:border-color .2s, background .2s;
+}
+.toolbar-btn:hover{border-color:var(--ink);}
+.toolbar-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+.toolbar-btn .count-pill{
+  background:var(--accent);color:#fff;border-radius:50%;
+  font-size:10px;width:16px;height:16px;display:flex;align-items:center;justify-content:center;
+}
+.sort-select{
+  padding:9px 14px;border:1px solid var(--line);border-radius:var(--radius);
+  font-size:13px;font-weight:600;color:var(--ink);background:var(--paper);cursor:pointer;
+}
+.reset-btn{
+  font-size:12px;color:var(--mute);text-decoration:underline;font-weight:600;
+  margin-left:auto;
+}
+.reset-btn:hover{color:var(--accent);}
+
+/* ===== Filter panel ===== */
+.filter-panel{
+  display:none;
+  grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
+  gap:28px;padding:20px;margin-bottom:28px;
+  background:var(--smoke);border-radius:var(--radius);
+}
+.filter-panel.open{display:grid;}
+.filter-group h4{
+  font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
+  margin-bottom:12px;color:var(--mute);
+}
+.filter-options{display:flex;flex-wrap:wrap;gap:8px;max-height:200px;overflow-y:auto;}
+.chip-check{
+  display:flex;align-items:center;gap:6px;font-size:13px;
+  border:1px solid var(--line);padding:7px 12px;border-radius:14px;
+  background:var(--paper);cursor:pointer;user-select:none;transition:.15s;
+}
+.chip-check input{display:none;}
+.chip-check.checked{background:var(--ink);color:#fff;border-color:var(--ink);}
+.price-inputs{display:flex;align-items:center;gap:8px;}
+.price-inputs input{
+  width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);
+  font-size:13px;background:var(--paper);color:var(--ink);
+}
+.price-inputs span{color:var(--mute);font-size:13px;}
 
 .product-grid{
   display:grid;
@@ -64,6 +131,7 @@ nav.menu a:hover{color:var(--accent);}
 .product-media img{width:100%;height:100%;object-fit:cover;transition:transform .3s ease;}
 .product-name{font-weight:700;font-size:15px;line-height:1.3;margin-top:4px;}
 .product-price{font-weight:800;font-size:16px;color:var(--ink);}
+.product-brand{font-size:11px;color:var(--mute);font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
 .empty-state{grid-column:1/-1;text-align:center;padding:48px 0;color:var(--mute);}
 </style>
 </head>
@@ -73,10 +141,16 @@ nav.menu a:hover{color:var(--accent);}
   <div class="header-inner">
     <a href="index.html" class="brand">NEXXTLEVEL<span>STORE</span></a>
     <nav class="menu">
-      <a href="catalog.html?cat=Чоловічі кросівки">Чоловічі кросівки</a>
-      <a href="catalog.html?cat=Жіночі кросівки">Жіночі кросівки</a>
+      <a href="catalog.html?cat=Чоловіче%20взуття">Чоловіче взуття</a>
+      <a href="catalog.html?cat=Жіноче%20взуття">Жіноче взуття</a>
+      <a href="catalog.html?cat=Чоловічий%20одяг">Чоловічий одяг</a>
+      <a href="catalog.html?cat=Жіночий%20одяг">Жіночий одяг</a>
       <a href="catalog.html">Усі товари</a>
     </nav>
+    <form class="site-search" id="siteSearchForm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="siteSearchInput" placeholder="Пошук за назвою або артикулом">
+    </form>
   </div>
 </header>
 
@@ -85,10 +159,40 @@ nav.menu a:hover{color:var(--accent);}
     <h1 class="catalog-title" id="pageTitle">Каталог</h1>
     <div class="catalog-count" id="resultsCount">Завантаження товарів...</div>
   </div>
-  <div class="product-grid" id="productGrid"></div>
-  <div style="text-align:center;margin-top:32px;">
-    <button id="loadMoreBtn" style="display:none;padding:14px 32px;border:1px solid var(--line);background:none;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;border-radius:var(--radius);">Показати ще</button>
+
+  <div class="toolbar">
+    <button class="toolbar-btn" id="filterToggleBtn">
+      Фільтри
+      <span class="count-pill" id="filterCountPill" style="display:none;">0</span>
+    </button>
+    <select class="sort-select" id="sortSelect">
+      <option value="default">Сортування: за замовчуванням</option>
+      <option value="price_asc">Спочатку дешевші</option>
+      <option value="price_desc">Спочатку дорожчі</option>
+    </select>
+    <button class="reset-btn" id="resetFiltersBtn">Скинути фільтри</button>
   </div>
+
+  <div class="filter-panel" id="filterPanel">
+    <div class="filter-group">
+      <h4>Бренд</h4>
+      <div class="filter-options" id="brandOptions"></div>
+    </div>
+    <div class="filter-group">
+      <h4>Розмір</h4>
+      <div class="filter-options" id="sizeOptions"></div>
+    </div>
+    <div class="filter-group">
+      <h4>Ціна, грн</h4>
+      <div class="price-inputs">
+        <input type="number" id="priceMinInput" placeholder="від">
+        <span>—</span>
+        <input type="number" id="priceMaxInput" placeholder="до">
+      </div>
+    </div>
+  </div>
+
+  <div class="product-grid" id="productGrid"></div>
 </main>
 
 <script>
@@ -97,104 +201,271 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const PAGE_SIZE = 40;
-let currentOffset = 0;
-let currentCat = null;
-let totalLoaded = 0;
-
 const fallbackPhoto = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='100%25' height='100%25' fill='%2523f4f4f2'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%2523767470'%3ENo Photo%3C/text%3E%3C/svg%3E";
 
-function cardHTML(p) {
-  let rawPhoto = p.photos ? p.photos.split(';')[0].trim() : null;
-  let photo = fallbackPhoto;
+let allProducts = [];       // все товари поточної категорії (з Supabase, без фільтрів)
+let activeFilters = {
+  brands: new Set(),
+  sizes: new Set(),
+  priceMin: null,
+  priceMax: null,
+  search: '',
+  sort: 'default'
+};
 
-  if (rawPhoto) {
-    if (rawPhoto.startsWith('http://')) rawPhoto = rawPhoto.replace('http://', 'https://');
-    else if (rawPhoto.startsWith('//')) rawPhoto = 'https:' + rawPhoto;
-    photo = `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}`;
-  }
-
-  const title = p.name || 'Без назви';
-
-  return `
-    <div class="product-card">
-      <a href="product.html?articul=${encodeURIComponent(p.articul || '')}" class="product-link">
-        <div class="product-media">
-          <img src="${photo}" alt="${title}" loading="lazy" onerror="this.onerror=null;this.src='${fallbackPhoto}';">
-        </div>
-        <div class="product-info">
-          <h3 class="product-name">${title}</h3>
-          <div class="product-price">${Number(p.price || 0)} грн</div>
-        </div>
-      </a>
-    </div>
-  `;
+function photoUrlFor(rawPhoto) {
+  if (!rawPhoto) return fallbackPhoto;
+  let clean = rawPhoto.trim();
+  if (clean.startsWith('http://')) clean = clean.replace('http://', 'https://');
+  else if (clean.startsWith('//')) clean = 'https:' + clean;
+  if (!clean.startsWith('http')) return fallbackPhoto;
+  return `https://images.weserv.nl/?url=${encodeURIComponent(clean)}`;
 }
 
-async function loadPage() {
-  const grid = document.getElementById('productGrid');
-  const countEl = document.getElementById('resultsCount');
-  const loadMoreBtn = document.getElementById('loadMoreBtn');
+// Природне сортування розмірів: "36-37" -> 36, "38.5" -> 38.5
+function sizeSortKey(sz) {
+  const m = String(sz).match(/[\d.]+/);
+  return m ? parseFloat(m[0]) : 9999;
+}
 
-  loadMoreBtn.disabled = true;
-  loadMoreBtn.textContent = 'Завантаження...';
+async function fetchAllRows(buildQuery) {
+  const pageSize = 1000;
+  let from = 0;
+  let rows = [];
+  while (true) {
+    const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+    if (error) return { data: null, error };
+    if (!data || data.length === 0) break;
+    rows = rows.concat(data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return { data: rows, error: null };
+}
 
-  let query = supabaseClient
-    .from('product_summary')
-    .select('id, articul, name, price, photos', { count: 'exact' })
-    .order('id', { ascending: false })
-    .range(currentOffset, currentOffset + PAGE_SIZE - 1);
+function buildBaseQuery(cat, searchTerm) {
+  return () => {
+    let query = supabaseClient
+      .from('product_summary')
+      .select('id, articul, name, brand, gender, price, photos, sizes, site_categories, category_1, category_2');
 
-  if (currentCat) {
-    query = query.contains('site_categories', [currentCat]);
+    if (cat) {
+      const isMale = /чоловіч/i.test(cat);
+      const isFemale = /жіноч/i.test(cat);
+      const isFootwear = /взуття|кросівки/i.test(cat);
+      const isClothing = /одяг/i.test(cat);
+      const shoeKeywords = ['крос', 'кед', 'взут', 'шльоп', 'сланц', 'крокс', 'тапоч', 'бутс', 'сандал', 'папуч', 'сабо'];
+
+      if (isFootwear) {
+        const footwearOr = shoeKeywords.map(k => `name.ilike.%${k}%,category_1.ilike.%${k}%,category_2.ilike.%${k}%`).join(',');
+        query = query.or(footwearOr);
+      } else if (isClothing) {
+        shoeKeywords.forEach(k => {
+          query = query.not('name', 'ilike', `%${k}%`).not('category_1', 'ilike', `%${k}%`).not('category_2', 'ilike', `%${k}%`);
+        });
+      }
+
+      if (isMale) {
+        query = query.or('gender.ilike.%Чолов%,gender.ilike.%Унісекс%');
+      } else if (isFemale) {
+        query = query.or('gender.ilike.%Жін%,gender.ilike.%Унісекс%');
+      }
+    }
+
+    if (searchTerm) {
+      const term = searchTerm.replace(/[%_]/g, '');
+      query = query.or(`name.ilike.%${term}%,articul.ilike.%${term}%`);
+    }
+
+    return query;
+  };
+}
+
+function populateFilterOptions() {
+  const brandSet = new Set();
+  const sizeSet = new Set();
+  allProducts.forEach(p => {
+    if (p.brand) brandSet.add(p.brand);
+    (p.sizes || []).forEach(s => sizeSet.add(s));
+  });
+
+  const brandOptions = document.getElementById('brandOptions');
+  brandOptions.innerHTML = '';
+  Array.from(brandSet).sort().forEach(brand => {
+    const label = document.createElement('label');
+    label.className = 'chip-check';
+    label.innerHTML = `<input type="checkbox" value="${brand}"> ${brand}`;
+    label.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) activeFilters.brands.add(brand);
+      else activeFilters.brands.delete(brand);
+      label.classList.toggle('checked', e.target.checked);
+      applyFiltersAndRender();
+    });
+    brandOptions.appendChild(label);
+  });
+
+  const sizeOptions = document.getElementById('sizeOptions');
+  sizeOptions.innerHTML = '';
+  Array.from(sizeSet).sort((a, b) => sizeSortKey(a) - sizeSortKey(b)).forEach(size => {
+    const label = document.createElement('label');
+    label.className = 'chip-check';
+    label.innerHTML = `<input type="checkbox" value="${size}"> ${size}`;
+    label.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) activeFilters.sizes.add(size);
+      else activeFilters.sizes.delete(size);
+      label.classList.toggle('checked', e.target.checked);
+      applyFiltersAndRender();
+    });
+    sizeOptions.appendChild(label);
+  });
+}
+
+function updateFilterCountPill() {
+  const total = activeFilters.brands.size + activeFilters.sizes.size
+    + (activeFilters.priceMin !== null ? 1 : 0) + (activeFilters.priceMax !== null ? 1 : 0);
+  const pill = document.getElementById('filterCountPill');
+  if (total > 0) {
+    pill.style.display = 'flex';
+    pill.textContent = total;
+  } else {
+    pill.style.display = 'none';
+  }
+}
+
+function applyFiltersAndRender() {
+  updateFilterCountPill();
+
+  let filtered = allProducts.filter(p => {
+    if (activeFilters.brands.size > 0 && !activeFilters.brands.has(p.brand)) return false;
+    if (activeFilters.sizes.size > 0) {
+      const productSizes = p.sizes || [];
+      const hasSize = productSizes.some(s => activeFilters.sizes.has(s));
+      if (!hasSize) return false;
+    }
+    const price = Number(p.price) || 0;
+    if (activeFilters.priceMin !== null && price < activeFilters.priceMin) return false;
+    if (activeFilters.priceMax !== null && price > activeFilters.priceMax) return false;
+    return true;
+  });
+
+  if (activeFilters.sort === 'price_asc') {
+    filtered = filtered.slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+  } else if (activeFilters.sort === 'price_desc') {
+    filtered = filtered.slice().sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
   }
 
-  const { data, error, count } = await query;
+  renderGrid(filtered);
+}
+
+function renderGrid(products) {
+  const grid = document.getElementById('productGrid');
+  const countEl = document.getElementById('resultsCount');
+
+  countEl.textContent = `Знайдено: ${products.length} товарів`;
+
+  if (products.length === 0) {
+    grid.innerHTML = '<p class="empty-state">Товарів за цими критеріями не знайдено.</p>';
+    return;
+  }
+
+  grid.innerHTML = products.map(p => {
+    const firstPhoto = p.photos ? p.photos.split(';')[0].trim() : null;
+    const photo = photoUrlFor(firstPhoto);
+    const title = p.name || 'Без назви';
+    const priceNum = Number(p.price) || 0;
+
+    return `
+      <div class="product-card">
+        <a href="product.html?articul=${encodeURIComponent(p.articul || '')}" class="product-link">
+          <div class="product-media">
+            <img src="${photo}" alt="${title}" loading="lazy" onerror="this.onerror=null;this.src='${fallbackPhoto}';">
+          </div>
+          <div class="product-info">
+            ${p.brand ? `<div class="product-brand">${p.brand}</div>` : ''}
+            <h3 class="product-name">${title}</h3>
+            <div class="product-price">${priceNum.toLocaleString('uk-UA')} грн</div>
+          </div>
+        </a>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadCatalog() {
+  const grid = document.getElementById('productGrid');
+  const countEl = document.getElementById('resultsCount');
+  const urlParams = new URLSearchParams(window.location.search);
+  const cat = urlParams.get('cat');
+  const searchTerm = urlParams.get('search') || '';
+
+  if (cat) {
+    document.getElementById('pageTitle').textContent = cat;
+  } else if (searchTerm) {
+    document.getElementById('pageTitle').textContent = `Результати пошуку: "${searchTerm}"`;
+  }
+
+  document.getElementById('siteSearchInput').value = searchTerm;
+
+  countEl.textContent = 'Завантаження товарів...';
+
+  const { data, error } = await fetchAllRows(buildBaseQuery(cat, searchTerm));
 
   if (error) {
     console.error('Помилка Supabase:', error);
     grid.innerHTML = `<p class="empty-state">Помилка завантаження: ${error.message}</p>`;
     countEl.textContent = 'Помилка';
-    loadMoreBtn.style.display = 'none';
     return;
   }
 
-  if (currentOffset === 0 && (!data || data.length === 0)) {
-    grid.innerHTML = '<p class="empty-state">Товарів у цій категорії не знайдено.</p>';
-    countEl.textContent = 'Знайдено: 0 товарів';
-    loadMoreBtn.style.display = 'none';
-    return;
-  }
-
-  const html = data.map(cardHTML).join('');
-  grid.insertAdjacentHTML('beforeend', html);
-
-  totalLoaded += data.length;
-  currentOffset += PAGE_SIZE;
-  countEl.textContent = `Знайдено: ${count ?? totalLoaded} товарів (показано ${totalLoaded})`;
-
-  loadMoreBtn.disabled = false;
-  loadMoreBtn.textContent = 'Показати ще';
-  loadMoreBtn.style.display = (count && totalLoaded < count) ? 'inline-block' : 'none';
+  allProducts = data || [];
+  populateFilterOptions();
+  applyFiltersAndRender();
 }
 
-function loadCatalog() {
-  const urlParams = new URLSearchParams(window.location.search);
-  currentCat = urlParams.get('cat');
-  currentOffset = 0;
-  totalLoaded = 0;
+// ===== Toolbar interactions =====
+document.getElementById('filterToggleBtn').addEventListener('click', () => {
+  const panel = document.getElementById('filterPanel');
+  const btn = document.getElementById('filterToggleBtn');
+  panel.classList.toggle('open');
+  btn.classList.toggle('active');
+});
 
-  if (currentCat) {
-    document.getElementById('pageTitle').textContent = currentCat;
-  }
+document.getElementById('sortSelect').addEventListener('change', e => {
+  activeFilters.sort = e.target.value;
+  applyFiltersAndRender();
+});
 
-  document.getElementById('productGrid').innerHTML = '';
-  document.getElementById('resultsCount').textContent = 'Завантаження товарів...';
+document.getElementById('priceMinInput').addEventListener('input', e => {
+  activeFilters.priceMin = e.target.value === '' ? null : Number(e.target.value);
+  applyFiltersAndRender();
+});
+document.getElementById('priceMaxInput').addEventListener('input', e => {
+  activeFilters.priceMax = e.target.value === '' ? null : Number(e.target.value);
+  applyFiltersAndRender();
+});
 
-  loadPage();
-}
+document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+  activeFilters.brands.clear();
+  activeFilters.sizes.clear();
+  activeFilters.priceMin = null;
+  activeFilters.priceMax = null;
+  document.getElementById('priceMinInput').value = '';
+  document.getElementById('priceMaxInput').value = '';
+  document.querySelectorAll('.chip-check input').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.chip-check').classList.remove('checked');
+  });
+  document.getElementById('sortSelect').value = 'default';
+  activeFilters.sort = 'default';
+  applyFiltersAndRender();
+});
 
-document.getElementById('loadMoreBtn').addEventListener('click', loadPage);
+document.getElementById('siteSearchForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const term = document.getElementById('siteSearchInput').value.trim();
+  const url = term ? `catalog.html?search=${encodeURIComponent(term)}` : 'catalog.html';
+  window.location.href = url;
+});
 
 loadCatalog();
 </script>
