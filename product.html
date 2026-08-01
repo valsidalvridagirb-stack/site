@@ -254,11 +254,19 @@ function renderProduct(product, sizeMap) {
   // 1. Достаем строку с фото или из photos, или из image_url
   const rawString = product.photos || product.image_url || '';
 
-  // 2. Разбиваем по ';' или ',', чистим ссылки от пробелов и пустых значений
+  // 2. Разбиваем по ';' или ',', чистим ссылки від пробілів і пустих значень,
+  //    та прибираємо дублікати (однакове фото могло потрапити в список кілька разів)
+  const seen = new Set();
   const rawPhotos = rawString
     .split(/[;,]/)
     .map(p => p.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter(p => {
+      const norm = p.toLowerCase().replace(/^https?:/, '').replace(/\/$/, '');
+      if (seen.has(norm)) return false;
+      seen.add(norm);
+      return true;
+    });
 
   // 3. Формируем чистые, валидные URL для Weserv
   const photos = rawPhotos.map(p => {
