@@ -259,6 +259,7 @@
       <h4>КЛІЄНТАМ</h4>
       <ul>
         <li><a href="#">Зв'язатися з нами</a></li>
+        <li><a href="track-order.html">Перевірити замовлення</a></li>
         <li><a href="#">Доставка</a></li>
         <li><a href="#">Оплата</a></li>
         <li><a href="#">Повернення</a></li>
@@ -420,7 +421,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   if (itemsErr) {
     showToast('Помилка при збереженні товарів замовлення.', 'error');
   } else {
-    showToast(`Дякуємо! Замовлення №${order.id} успішно оформлено.`, 'success');
+    showToast(`Дякуємо! Замовлення №${order.id} успішно оформлено.${currentUser ? '' : ' Запам\'ятайте номер замовлення — за ним можна перевірити статус.'}`, 'success');
     localStorage.removeItem('cart');
 
     // Сповіщення адміну в Telegram — не блокує оформлення, якщо не спрацює
@@ -439,8 +440,8 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     }).catch(() => {});
 
     setTimeout(() => {
-      window.location.href = currentUser ? 'account.html' : 'index.html';
-    }, 1500);
+      window.location.href = currentUser ? 'account.html' : `track-order.html?order=${order.id}`;
+    }, 1800);
   }
 });
 

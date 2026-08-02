@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Перевірити замовлення — NEXXTLEVEL STORE</title>
+<link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#111111; --paper:#ffffff; --smoke:#f8f8f6; --line:#e6e5e2; --mute:#767470; --radius:4px; --accent:#c0392b; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { overflow-x:hidden; }
+  body { font-family:'Manrope', system-ui, sans-serif; color:var(--ink); background:var(--paper); display:flex; flex-direction:column; min-height:100vh; overflow-x:hidden; width:100%; }
+  a { text-decoration:none; color:inherit; }
+
+  header.site { position:sticky; top:0; z-index:50; background:rgba(255,255,255,.95); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .header-row { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; max-width:1240px; margin:0 auto; gap:20px; }
+  .logo { display:flex; flex-direction:column; align-items:center; line-height:1; }
+  .logo b { font-size:21px; font-weight:500; }
+  .logo span { font-size:9px; letter-spacing:.32em; color:var(--mute); font-weight:600; display:block; }
+  nav.main-nav { display:flex; gap:24px; font-size:14px; font-weight:600; }
+
+  .site-search{
+    display:flex;align-items:center;flex:1;min-width:140px;max-width:300px;
+    border:1px solid var(--line);border-radius:20px;padding:7px 14px;gap:8px;
+    background:var(--smoke);
+  }
+  .site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);}
+  .site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
+
+  .track-container { max-width:560px; margin:60px auto; padding:0 24px; flex:1; width:100%; }
+  .track-container h1 { font-size:22px; font-weight:500; text-transform:uppercase; margin-bottom:8px; text-align:center; }
+  .track-hint { font-size:13px; color:var(--mute); text-align:center; margin-bottom:28px; }
+
+  .track-box { border:1px solid var(--line); border-radius:var(--radius); background:var(--smoke); padding:28px; }
+  .form-group { margin-bottom:16px; }
+  .form-group label { display:block; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:6px; color:var(--mute); }
+  .form-group input { width:100%; padding:12px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; outline:none; background:#fff; }
+  .btn { width:100%; padding:14px; background:var(--ink); color:#fff; font-weight:500; font-size:14px; border:none; border-radius:var(--radius); cursor:pointer; text-transform:uppercase; letter-spacing:1px; margin-top:8px; }
+  .btn:hover { opacity:0.9; }
+  .btn:disabled { opacity:0.6; cursor:default; }
+
+  .result-card { border:1px solid var(--line); border-radius:var(--radius); padding:24px; margin-top:24px; }
+  .result-header { display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:15px; margin-bottom:8px; }
+  .order-status { background:#e2f0d9; color:#385723; padding:2px 10px; border-radius:10px; font-size:12px; }
+  .result-meta { font-size:13px; color:var(--mute); margin-bottom:12px; }
+  .result-items { font-size:14px; margin-bottom:12px; }
+  .result-items div { padding:6px 0; border-bottom:1px solid var(--line); }
+  .result-items div:last-child { border-bottom:none; }
+  .result-total { text-align:right; font-weight:700; margin-top:8px; }
+
+  .ttn-info { margin-top:16px; padding-top:16px; border-top:1px dashed var(--line); font-size:13px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .ttn-info b { font-weight:700; }
+  .status-pill { background:var(--smoke); border:1px solid var(--line); color:var(--mute); padding:3px 10px; border-radius:12px; font-size:12px; }
+  .refresh-btn { background:none; border:1px solid var(--line); border-radius:var(--radius); padding:4px 10px; font-size:12px; cursor:pointer; color:var(--ink); }
+  .refresh-btn:hover { background:var(--smoke); }
+
+  .empty-state { text-align:center; color:var(--mute); font-size:14px; padding:20px 0; }
+  .error-state { text-align:center; color:var(--accent); font-size:14px; padding:20px 0; }
+
+  footer.site-footer { background-color: var(--ink); color: #ffffff; padding: 60px 32px 30px; margin-top: auto; }
+  .footer-container { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
+  .footer-col h4 { font-size: 13px; font-weight: 700; letter-spacing: 1px; color: #888888; margin-bottom: 20px; text-transform: uppercase; }
+  .footer-col ul { list-style: none; padding: 0; margin: 0; }
+  .footer-col ul li { margin-bottom: 12px; }
+  .footer-col ul li a { color: #cccccc; text-decoration: none; font-size: 14px; transition: color 0.2s; }
+  .footer-col ul li a:hover { color: #ffffff; }
+  .footer-logo img { max-width: 100px; background: #ffffff; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
+  .footer-socials { display: flex; gap: 12px; margin-bottom: 20px; }
+  .social-icon { width: 36px; height: 36px; border-radius: 50%; background: #222222; display: flex; align-items: center; justify-content: center; color: #ffffff; text-decoration: none; transition: background 0.2s; }
+  .social-icon:hover { background: #333333; }
+  .footer-desc { font-size: 13px; color: #888888; line-height: 1.6; margin: 0; }
+  .footer-bottom { max-width: 1240px; margin: 40px auto 0; padding-top: 30px; border-top: 1px solid #222222; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #666666; }
+  .footer-bottom-links a { color: #888888; text-decoration: none; margin-right: 20px; }
+  .footer-bottom-links a:hover { color: #ffffff; }
+
+  #toastContainer{ position:fixed;top:20px;right:20px;z-index:1000; display:flex;flex-direction:column;gap:10px;max-width:360px; }
+  .toast{ display:flex;align-items:flex-start;gap:10px; background:#fff;border-left:4px solid var(--ink); border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,.15); padding:14px 16px;font-size:14px;line-height:1.4;color:var(--ink); animation:toastIn .25s ease; }
+  .toast.success{border-left-color:#2f8f4e;}
+  .toast.error{border-left-color:var(--accent);}
+  .toast-icon{flex-shrink:0;width:20px;height:20px;margin-top:1px;}
+  .toast.success .toast-icon{color:#2f8f4e;}
+  .toast.error .toast-icon{color:var(--accent);}
+  .toast.fade-out{animation:toastOut .25s ease forwards;}
+  @keyframes toastIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
+  @keyframes toastOut{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(20px);}}
+
+  @media (max-width:768px) {
+    .header-row { padding: 16px 20px; flex-wrap: wrap; gap: 10px; }
+    .footer-container { grid-template-columns: 1fr; gap: 30px; }
+    .footer-bottom { flex-direction: column; gap: 15px; text-align: center; }
+  }
+  @media (max-width:480px){
+    #toastContainer{left:16px;right:16px;top:16px;max-width:none;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="header-row">
+    <a href="index.html" class="logo"><b>NEXXTLEVEL</b><span>S T O R E</span></a>
+
+    <form class="site-search" id="siteSearchForm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="siteSearchInput" placeholder="Пошук за назвою або артикулом">
+    </form>
+
+    <nav class="main-nav">
+      <a href="catalog.html">Каталог</a>
+      <a href="wishlist.html">Обране</a>
+      <a href="checkout.html">Кошик / Оформлення</a>
+    </nav>
+  </div>
+</header>
+
+<main class="track-container">
+  <h1>Перевірити замовлення</h1>
+  <p class="track-hint">Введіть номер замовлення (був показаний одразу після оформлення) та телефон, вказаний при замовленні.</p>
+
+  <div class="track-box">
+    <form id="trackForm">
+      <div class="form-group">
+        <label>Номер замовлення</label>
+        <input type="text" id="orderIdInput" inputmode="numeric" placeholder="Напр. 42" required>
+      </div>
+      <div class="form-group">
+        <label>Телефон</label>
+        <input type="tel" id="phoneInput" placeholder="+380930000000" required>
+      </div>
+      <button type="submit" class="btn" id="trackSubmitBtn">Перевірити</button>
+    </form>
+  </div>
+
+  <div id="resultArea"></div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-col brand-col">
+      <div class="footer-logo">
+        <img src="assets/logo.jpg" alt="NEXXTLEVEL STORE">
+      </div>
+      <div class="footer-socials">
+        <a href="https://www.instagram.com/nexxtlevelstore/" target="_blank" class="social-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+        </a>
+        <a href="https://t.me/nexxtlevelstore" target="_blank" class="social-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </a>
+      </div>
+      <p class="footer-desc">
+        Оригінальні кросівки з США та Європи.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>КЛІЄНТАМ</h4>
+      <ul>
+        <li><a href="#">Зв'язатися з нами</a></li>
+        <li><a href="track-order.html">Перевірити замовлення</a></li>
+        <li><a href="#">Доставка</a></li>
+        <li><a href="#">Оплата</a></li>
+        <li><a href="#">Повернення</a></li>
+        <li><a href="#">Розмірна сітка</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>КАТАЛОГ</h4>
+      <ul>
+        <li><a href="catalog.html?cat=Чоловічі кросівки">Чоловічі кросівки</a></li>
+        <li><a href="catalog.html?cat=Жіночі кросівки">Жіночі кросівки</a></li>
+        <li><a href="catalog.html">Усі товари</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>КОНТАКТИ</h4>
+      <ul class="contacts-list">
+        <li><a href="tel:+380934382093">+38 093 438 20 93</a></li>
+        <li><a href="https://instagram.com" target="_blank">Instagram</a></li>
+        <li><a href="https://t.me" target="_blank">Telegram</a></li>
+        <li><a href="mailto:nexxtlevelstore@ukr.net">nexxtlevelstore@ukr.net</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="footer-bottom-links">
+      <a href="#">Умови використання</a>
+      <a href="#">Політика конфіденційності</a>
+    </div>
+    <div class="footer-copyright">
+      © 2026 NexxtLevelStore. Всі права захищені.
+    </div>
+  </div>
+</footer>
+
+<script>
+document.getElementById('siteSearchForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const term = document.getElementById('siteSearchInput').value.trim();
+  const url = term ? `catalog.html?search=${encodeURIComponent(term)}` : 'catalog.html';
+  window.location.href = url;
+});
+
+function showToast(message, type = "info") {
+  let container = document.getElementById("toastContainer");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toastContainer";
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  const icon = type === "success"
+    ? `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`
+    : type === "error"
+      ? `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>`
+      : `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-5M12 8h.01"/></svg>`;
+  toast.innerHTML = icon + `<span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add("fade-out");
+    setTimeout(() => toast.remove(), 250);
+  }, 4000);
+}
+
+let lastOrderId = null;
+let lastPhone = null;
+
+function renderResult(order) {
+  const area = document.getElementById('resultArea');
+  const itemsHtml = (order.items || []).map(i =>
+    `<div>${i.product_name} (${i.size}) x${i.quantity} — ${Number(i.price).toLocaleString()} грн</div>`
+  ).join('');
+
+  area.innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <span>Замовлення №${order.id}</span>
+        <span class="order-status">${order.status || '-'}</span>
+      </div>
+      <div class="result-meta">Дата: ${new Date(order.created_at).toLocaleDateString()} · ${order.city || ''}${order.nova_poshta_dept ? ', ' + order.nova_poshta_dept : ''}</div>
+      ${itemsHtml ? `<div class="result-items">${itemsHtml}</div>` : ''}
+      <div class="result-total">Разом: ${Number(order.total_price).toLocaleString()} грн</div>
+      ${order.ttn ? `
+      <div class="ttn-info">
+        ТТН: <b>${order.ttn}</b>
+        <span class="status-pill" id="ttnStatusPill">${order.ttn_status || 'статус ще не оновлювався'}</span>
+        <button class="refresh-btn" id="refreshTtnBtn">Оновити статус</button>
+      </div>` : ''}
+    </div>
+  `;
+
+  const refreshBtn = document.getElementById('refreshTtnBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', refreshTtn);
+  }
+}
+
+async function refreshTtn() {
+  if (!lastOrderId || !lastPhone) return;
+  const btn = document.getElementById('refreshTtnBtn');
+  const pill = document.getElementById('ttnStatusPill');
+  if (btn) { btn.disabled = true; btn.textContent = 'Оновлюємо…'; }
+  try {
+    const r = await fetch(`/api/track-guest?orderId=${encodeURIComponent(lastOrderId)}&phone=${encodeURIComponent(lastPhone)}`);
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || 'Помилка');
+    if (pill && j.order.ttn_status) pill.textContent = j.order.ttn_status;
+    showToast('Статус оновлено', 'success');
+  } catch (err) {
+    showToast('Не вдалось оновити статус', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Оновити статус'; }
+  }
+}
+
+document.getElementById('trackForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const orderId = document.getElementById('orderIdInput').value.trim();
+  const phone = document.getElementById('phoneInput').value.trim();
+  const area = document.getElementById('resultArea');
+  const submitBtn = document.getElementById('trackSubmitBtn');
+
+  if (!orderId || !phone) return;
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Перевіряємо…';
+  area.innerHTML = '';
+
+  try {
+    const r = await fetch(`/api/track-guest?orderId=${encodeURIComponent(orderId)}&phone=${encodeURIComponent(phone)}`);
+    const j = await r.json();
+    if (r.status === 404) {
+      area.innerHTML = '<div class="error-state">Замовлення не знайдено. Перевірте номер та телефон.</div>';
+      return;
+    }
+    if (!r.ok || !j.ok) {
+      area.innerHTML = '<div class="error-state">Сталася помилка. Спробуйте ще раз пізніше.</div>';
+      return;
+    }
+    lastOrderId = orderId;
+    lastPhone = phone;
+    renderResult(j.order);
+  } catch (err) {
+    area.innerHTML = '<div class="error-state">Сталася помилка. Спробуйте ще раз пізніше.</div>';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Перевірити';
+  }
+});
+
+// Якщо прийшли одразу після оформлення замовлення — підставляємо номер
+const params = new URLSearchParams(window.location.search);
+const prefillOrder = params.get('order');
+if (prefillOrder) {
+  document.getElementById('orderIdInput').value = prefillOrder;
+  document.getElementById('phoneInput').focus();
+}
+</script>
+</body>
+</html>
