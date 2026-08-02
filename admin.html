@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Панель товарів — NEXXTLEVEL STORE</title>
+<link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root { --ink:#111111; --paper:#ffffff; --smoke:#f8f8f6; --line:#e6e5e2; --mute:#767470; --radius:4px; --ok:#385723; --okbg:#e2f0d9; --err:#8a1f11; --errbg:#fbe4e0; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { overflow-x:hidden; }
+  body { font-family:'Manrope', system-ui, sans-serif; color:var(--ink); background:var(--paper); min-height:100vh; }
+  a { text-decoration:none; color:inherit; }
+
+  header.site { position:sticky; top:0; z-index:50; background:rgba(255,255,255,.95); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .header-row { display:flex; align-items:center; justify-content:space-between; padding:18px 32px; max-width:1240px; margin:0 auto; gap:20px; }
+  .logo b { font-size:19px; font-weight:500; }
+  .logo span { font-size:9px; letter-spacing:.32em; color:var(--mute); font-weight:600; display:block; }
+  .logout-link { font-size:13px; font-weight:600; color:var(--mute); cursor:pointer; }
+
+  .wrap { max-width:900px; margin:40px auto; padding:0 24px 80px; }
+  h1 { font-size:20px; font-weight:500; text-transform:uppercase; margin-bottom:6px; }
+  .sub { font-size:13px; color:var(--mute); margin-bottom:28px; }
+
+  .auth-box { max-width:380px; margin:60px auto; padding:32px; border:1px solid var(--line); border-radius:var(--radius); background:var(--smoke); }
+  .auth-box h2 { font-size:18px; font-weight:500; margin-bottom:20px; text-transform:uppercase; text-align:center; }
+  .form-group { margin-bottom:16px; }
+  .form-group label { display:block; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:6px; color:var(--mute); }
+  .form-group input { width:100%; padding:12px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; outline:none; }
+  .btn { padding:13px 20px; background:var(--ink); color:#fff; font-weight:500; font-size:13px; border:none; border-radius:var(--radius); cursor:pointer; text-transform:uppercase; letter-spacing:.6px; }
+  .btn:hover { opacity:.9; }
+  .btn:disabled { opacity:.4; cursor:default; }
+  .btn-block { width:100%; margin-top:8px; }
+  .btn-secondary { background:none; color:var(--ink); border:1px solid var(--ink); }
+  .btn-danger { background:none; color:var(--err); border:1px solid var(--err); }
+
+  .card { border:1px solid var(--line); border-radius:var(--radius); padding:22px; margin-bottom:20px; }
+  .card h3 { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--mute); margin-bottom:14px; }
+
+  .search-row { display:flex; gap:10px; }
+  .search-row input { flex:1; padding:13px 14px; border:1px solid var(--line); border-radius:var(--radius); font-size:15px; outline:none; }
+
+  .match-info { margin-top:16px; font-size:14px; line-height:1.6; }
+  .match-info b { font-weight:700; }
+  .pill { display:inline-block; padding:2px 9px; border-radius:12px; font-size:12px; font-weight:600; margin:2px 4px 2px 0; }
+  .pill-ok { background:var(--okbg); color:var(--ok); }
+  .pill-mute { background:var(--smoke); color:var(--mute); border:1px solid var(--line); }
+  .sizes-list { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+
+  .drop { border:2px dashed var(--line); border-radius:var(--radius); padding:34px 16px; text-align:center; cursor:pointer; color:var(--mute); font-size:14px; transition:.15s; }
+  .drop.drag { border-color:var(--ink); color:var(--ink); background:var(--smoke); }
+  .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; margin-top:16px; }
+  .photo-cell { position:relative; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; aspect-ratio:1; background:var(--smoke); }
+  .photo-cell img { width:100%; height:100%; object-fit:cover; display:block; }
+  .photo-cell .num { position:absolute; top:4px; left:4px; background:rgba(17,17,17,.75); color:#fff; font-size:11px; font-weight:700; padding:1px 6px; border-radius:3px; }
+  .photo-cell .rm { position:absolute; top:4px; right:4px; background:rgba(17,17,17,.75); color:#fff; width:20px; height:20px; border-radius:50%; border:none; cursor:pointer; font-size:13px; line-height:1; }
+  .photo-cell .rm:hover { background:var(--err); }
+  .photo-cell.new .num { background:var(--ok); }
+  .existing-note { font-size:12px; color:var(--mute); margin-top:6px; }
+
+  .actions-row { display:flex; gap:10px; margin-top:20px; align-items:center; }
+  .status-line { font-size:13px; margin-top:12px; }
+  .status-ok { color:var(--ok); }
+  .status-err { color:var(--err); }
+  .progress { height:4px; background:var(--line); border-radius:2px; overflow:hidden; margin-top:10px; display:none; }
+  .progress i { display:block; height:100%; width:0%; background:var(--ink); transition:width .2s; }
+
+  #toastContainer{ position:fixed;top:20px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:10px;max-width:360px; }
+  .toast{ display:flex;align-items:flex-start;gap:10px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.08); }
+  .toast.success{ border-color:var(--ok); }
+  .toast.error{ border-color:var(--err); }
+  .toast.fade-out{ opacity:0; transition:opacity .25s; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="header-row">
+    <a href="index.html" class="logo"><b>NEXXTLEVEL</b><span>STORE</span></a>
+    <span class="logout-link" id="logoutBtn" style="display:none;">Вийти</span>
+  </div>
+</header>
+
+<div id="toastContainer"></div>
+
+<div class="wrap">
+
+  <div id="authSection" style="display:none;">
+    <div class="auth-box">
+      <h2>Вхід до панелі</h2>
+      <form id="authForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="authEmail" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label>Пароль</label>
+          <input type="password" id="authPassword" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-block">Увійти</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="deniedSection" style="display:none;">
+    <div class="auth-box">
+      <h2>Немає доступу</h2>
+      <p style="text-align:center; font-size:14px; color:var(--mute);">Цей акаунт не має прав на панель товарів.</p>
+    </div>
+  </div>
+
+  <div id="panelSection" style="display:none;">
+    <h1>Панель товарів</h1>
+    <p class="sub">Введіть артикул, завантажте фото — розміри, ціни та опис підтягнуться з каталогу автоматично.</p>
+
+    <div class="card">
+      <h3>1. Артикул</h3>
+      <div class="search-row">
+        <input type="text" id="artInput" placeholder="напр. DX7999-001" autocomplete="off">
+        <button class="btn" id="artSearchBtn">Знайти</button>
+      </div>
+      <div id="matchInfo" class="match-info"></div>
+    </div>
+
+    <div class="card" id="photoCard" style="display:none;">
+      <h3>2. Фото</h3>
+      <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
+      <div class="drop" id="dropZone">Перетягніть фото сюди або натисніть, щоб обрати файли<br><span style="font-size:12px;">Порядок файлів = порядок на сайті</span></div>
+      <div class="photo-grid" id="photoGrid"></div>
+      <div class="existing-note" id="existingNote"></div>
+    </div>
+
+    <div class="card" id="publishCard" style="display:none;">
+      <h3>3. Публікація</h3>
+      <div class="actions-row">
+        <button class="btn" id="publishBtn">Опублікувати на сайті</button>
+        <button class="btn btn-danger" id="unpublishBtn" style="display:none;">Прибрати з сайту</button>
+      </div>
+      <div class="progress" id="progressWrap"><i id="progressBar"></i></div>
+      <div class="status-line" id="statusLine"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const BUCKET = 'product-images';
+
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 250);
+  }, 4500);
+}
+
+// ---------- авторизація ----------
+const authSection = document.getElementById('authSection');
+const deniedSection = document.getElementById('deniedSection');
+const panelSection = document.getElementById('panelSection');
+const logoutBtn = document.getElementById('logoutBtn');
+
+document.getElementById('authForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('authEmail').value;
+  const password = document.getElementById('authPassword').value;
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) showToast('Помилка входу: ' + error.message, 'error');
+  else init();
+});
+
+logoutBtn.addEventListener('click', async () => {
+  await supabaseClient.auth.signOut();
+  location.reload();
+});
+
+async function init() {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) {
+    authSection.style.display = 'block';
+    deniedSection.style.display = 'none';
+    panelSection.style.display = 'none';
+    logoutBtn.style.display = 'none';
+    return;
+  }
+  const { data: profile } = await supabaseClient.from('profiles').select('is_admin').eq('id', user.id).maybeSingle();
+  logoutBtn.style.display = 'inline';
+  if (!profile || !profile.is_admin) {
+    authSection.style.display = 'none';
+    deniedSection.style.display = 'block';
+    panelSection.style.display = 'none';
+    return;
+  }
+  authSection.style.display = 'none';
+  deniedSection.style.display = 'none';
+  panelSection.style.display = 'block';
+  loadCatalog();
+}
+
+// ---------- каталог (Excel) ----------
+let CATALOG = null; // {cols, rows}
+let catalogPromise = null;
+function loadCatalog() {
+  if (catalogPromise) return catalogPromise;
+  catalogPromise = fetch('data/excel-catalog.json').then(r => r.json()).then(j => { CATALOG = j; return j; });
+  return catalogPromise;
+}
+
+function findByArticul(articul) {
+  if (!CATALOG) return [];
+  const idx = CATALOG.cols;
+  const ai = idx.indexOf('art');
+  const needle = articul.trim().toLowerCase();
+  return CATALOG.rows.filter(r => String(r[ai]).trim().toLowerCase() === needle)
+    .map(r => Object.fromEntries(idx.map((c, i) => [c, r[i]])));
+}
+
+const GENDER_PHRASE = { 'Чоловіки':'чоловіків', 'Жінки':'жінок', 'Унісекс':'чоловіків та жінок' };
+function buildDescription(name, brand, cat1, gender) {
+  const gp = GENDER_PHRASE[gender] || null;
+  if (cat1 === 'Одяг') {
+    return `${name} — стильний одяг від ${brand}${gp ? `, призначений для ${gp}` : ''}. Виготовлений з якісних матеріалів для максимального комфорту.`;
+  }
+  return `${name} — оригінальне взуття від ${brand}${gp ? `, розраховане на ${gp}` : ''}. Поєднання стилю та функціональності робить цю модель чудовим вибором для повсякденного носіння та активного способу життя.`;
+}
+
+// групуємо збіги каталогу по розміру (кілька постачальників на один розмір — беремо суму кількості і мінімальну ціну)
+function groupBySize(matches) {
+  const bySize = new Map();
+  for (const m of matches) {
+    const key = m.size;
+    if (!bySize.has(key)) {
+      bySize.set(key, { size: m.size, price: m.price, qty: m.qty, name: m.name, brand: m.brand,
+                         gender: m.gender, cat1: m.cat1, cat2: m.cat2, cat3: m.cat3, suppliers: new Set([m.supplier]) });
+    } else {
+      const g = bySize.get(key);
+      g.qty += m.qty;
+      g.price = Math.min(g.price, m.price);
+      g.suppliers.add(m.supplier);
+    }
+  }
+  return [...bySize.values()];
+}
+
+// ---------- пошук артикула ----------
+let currentArticul = null;
+let currentMatches = [];
+let existingPhotos = []; // фото, які вже є в базі для цього артикула
+let newFiles = []; // File[] нових фото для завантаження
+let existingKept = []; // URL-и існуючих фото, які лишаємо (можна видаляти)
+
+document.getElementById('artSearchBtn').addEventListener('click', doSearch);
+document.getElementById('artInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+async function doSearch() {
+  const art = document.getElementById('artInput').value.trim();
+  if (!art) return;
+  await loadCatalog();
+  currentArticul = art;
+  currentMatches = groupBySize(findByArticul(art));
+  newFiles = [];
+
+  const info = document.getElementById('matchInfo');
+  if (!currentMatches.length) {
+    info.innerHTML = `<span class="pill" style="background:var(--errbg); color:var(--err);">Не знайдено в Excel-каталозі</span>`;
+    document.getElementById('photoCard').style.display = 'none';
+    document.getElementById('publishCard').style.display = 'none';
+    return;
+  }
+  const first = currentMatches[0];
+  const totalQty = currentMatches.reduce((s, m) => s + (Number(m.qty) || 0), 0);
+  info.innerHTML = `<div><b>${first.name}</b></div>` +
+    `<div style="margin-top:4px;">${first.brand} · ${first.gender} · ${first.cat1}/${first.cat2}${first.cat3 ? '/' + first.cat3 : ''}</div>` +
+    `<div class="sizes-list">${currentMatches.map(m => `<span class="pill pill-mute">${m.size} · ${m.price}₴ · ${m.qty}шт</span>`).join('')}</div>` +
+    `<div style="margin-top:8px; font-size:12px; color:var(--mute);">Разом на складі: ${totalQty} шт · ${currentMatches.length} розмір(ів)</div>`;
+
+  // чи вже опубліковано на сайті
+  const { data: existing } = await supabaseClient.from('products').select('photos').eq('articul', art).limit(1);
+  existingPhotos = [];
+  existingKept = [];
+  if (existing && existing.length && existing[0].photos) {
+    existingPhotos = existing[0].photos.split(/[;,]/).map(s => s.trim()).filter(Boolean);
+    existingKept = [...existingPhotos];
+    document.getElementById('unpublishBtn').style.display = 'inline-block';
+    document.getElementById('existingNote').textContent = 'Товар вже опубліковано на сайті — нижче поточні фото, їх можна видалити або додати нові.';
+  } else {
+    document.getElementById('unpublishBtn').style.display = 'none';
+    document.getElementById('existingNote').textContent = '';
+  }
+
+  document.getElementById('photoCard').style.display = 'block';
+  document.getElementById('publishCard').style.display = 'block';
+  document.getElementById('statusLine').textContent = '';
+  renderPhotoGrid();
+}
+
+// ---------- фото: drag&drop / вибір ----------
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  addFiles([...e.dataTransfer.files].filter(f => f.type.startsWith('image/')));
+});
+fileInput.addEventListener('change', e => { addFiles([...e.target.files]); fileInput.value = ''; });
+
+function addFiles(files) {
+  newFiles.push(...files);
+  renderPhotoGrid();
+}
+
+function renderPhotoGrid() {
+  const grid = document.getElementById('photoGrid');
+  grid.innerHTML = '';
+  let n = 1;
+  existingKept.forEach((url, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'photo-cell';
+    cell.innerHTML = `<span class="num">${n++}</span><img src="${url}"><button class="rm" data-kind="existing" data-i="${i}">×</button>`;
+    grid.appendChild(cell);
+  });
+  newFiles.forEach((file, i) => {
+    const url = URL.createObjectURL(file);
+    const cell = document.createElement('div');
+    cell.className = 'photo-cell new';
+    cell.innerHTML = `<span class="num">${n++}</span><img src="${url}"><button class="rm" data-kind="new" data-i="${i}">×</button>`;
+    grid.appendChild(cell);
+  });
+  grid.querySelectorAll('.rm').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = Number(btn.dataset.i);
+      if (btn.dataset.kind === 'existing') existingKept.splice(i, 1);
+      else newFiles.splice(i, 1);
+      renderPhotoGrid();
+    });
+  });
+}
+
+// ---------- публікація ----------
+document.getElementById('publishBtn').addEventListener('click', publish);
+document.getElementById('unpublishBtn').addEventListener('click', unpublish);
+
+function extOf(name) {
+  const m = /\.([a-zA-Z0-9]+)$/.exec(name);
+  return m ? m[1].toLowerCase() : 'jpg';
+}
+
+async function publish() {
+  if (!currentArticul || !currentMatches.length) return;
+  if (!existingKept.length && !newFiles.length) { showToast('Додайте хоча б одне фото', 'error'); return; }
+
+  const statusLine = document.getElementById('statusLine');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const publishBtn = document.getElementById('publishBtn');
+  publishBtn.disabled = true;
+  progressWrap.style.display = 'block';
+  statusLine.className = 'status-line';
+  statusLine.textContent = 'Завантаження фото…';
+
+  try {
+    const uploadedUrls = [];
+    for (let i = 0; i < newFiles.length; i++) {
+      const file = newFiles[i];
+      const path = `${currentArticul}/${crypto.randomUUID()}.${extOf(file.name)}`;
+      const { error: upErr } = await supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: false });
+      if (upErr) throw new Error('Не вдалось завантажити ' + file.name + ': ' + upErr.message);
+      const { data: pub } = supabaseClient.storage.from(BUCKET).getPublicUrl(path);
+      uploadedUrls.push(pub.publicUrl);
+      progressBar.style.width = Math.round(((i + 1) / Math.max(newFiles.length, 1)) * 70) + '%';
+    }
+
+    const finalPhotos = [...existingKept, ...uploadedUrls].join(';');
+
+    statusLine.textContent = 'Оновлення бази…';
+    progressBar.style.width = '85%';
+
+    const first = currentMatches[0];
+    const description = buildDescription(first.name, first.brand, first.cat1, first.gender);
+
+    await supabaseClient.from('products').delete().eq('articul', currentArticul);
+
+    const rows = currentMatches.map(m => ({
+      articul: currentArticul,
+      name: m.name,
+      size: m.size,
+      price: m.price,
+      quantity: m.qty,
+      brand: m.brand,
+      gender: m.gender,
+      category_1: m.cat1,
+      category_2: m.cat2,
+      category_3: m.cat3,
+      description,
+      photos: finalPhotos,
+      supplier: [...m.suppliers].join(', ')
+    }));
+    const { error: insErr } = await supabaseClient.from('products').insert(rows);
+    if (insErr) throw new Error('Не вдалось зберегти товар: ' + insErr.message);
+
+    progressBar.style.width = '100%';
+    statusLine.className = 'status-line status-ok';
+    statusLine.textContent = `Опубліковано: ${currentArticul} · ${rows.length} розмір(ів) · ${finalPhotos.split(';').length} фото`;
+    showToast('Товар опубліковано на сайті', 'success');
+    newFiles = [];
+    existingKept = finalPhotos.split(';');
+    document.getElementById('unpublishBtn').style.display = 'inline-block';
+    renderPhotoGrid();
+  } catch (err) {
+    statusLine.className = 'status-line status-err';
+    statusLine.textContent = err.message;
+    showToast(err.message, 'error');
+  } finally {
+    publishBtn.disabled = false;
+    setTimeout(() => { progressWrap.style.display = 'none'; progressBar.style.width = '0%'; }, 800);
+  }
+}
+
+async function unpublish() {
+  if (!currentArticul) return;
+  if (!confirm(`Прибрати ${currentArticul} з сайту? Фото в сховищі не видаляються, лише запис товару.`)) return;
+  const { error } = await supabaseClient.from('products').delete().eq('articul', currentArticul);
+  if (error) { showToast('Помилка: ' + error.message, 'error'); return; }
+  showToast('Товар прибрано з сайту', 'success');
+  document.getElementById('unpublishBtn').style.display = 'none';
+  document.getElementById('existingNote').textContent = '';
+}
+
+init();
+</script>
+</body>
+</html>
