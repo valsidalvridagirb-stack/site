@@ -807,6 +807,13 @@ function updateWishBadge(){
   document.getElementById('wishCount').textContent = wishlist.size;
 }
 
+document.getElementById('siteSearchForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const term = document.getElementById('siteSearchInput').value.trim();
+  const url = term ? `catalog.html?search=${encodeURIComponent(term)}` : 'catalog.html';
+  window.location.href = url;
+});
+
 function placeholderSVG(){
   return `<svg viewBox="0 0 260 170" fill="none">
     <path d="M15 140c0-18 14-30 36-35l64-16c11-3 17-11 20-22l5-16c2-6 8-10 15-9l22 6c8 2 11 9 9 17l-6 26c-3 14-1 25 6 34 6 8 8 17 3 25-6 11-20 15-36 15H45c-18 0-30-11-30-25z" fill="#e6e5e2" stroke="#767470" stroke-width="2"/>

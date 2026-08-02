@@ -17,10 +17,18 @@
   a { text-decoration:none; color:inherit; }
   
   header.site { position:sticky; top:0; z-index:50; background:rgba(255,255,255,.95); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
-  .header-row { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; max-width:1240px; margin:0 auto; }
+  .header-row { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; max-width:1240px; margin:0 auto; gap:20px; }
   .logo b { font-size:21px; font-weight:500; }
   .logo span { font-size:9px; letter-spacing:.32em; color:var(--mute); font-weight:600; display:block; }
   nav.main-nav { display:flex; gap:24px; font-size:14px; font-weight:600; }
+
+  .site-search{
+    display:flex;align-items:center;flex:1;min-width:140px;max-width:300px;
+    border:1px solid var(--line);border-radius:20px;padding:7px 14px;gap:8px;
+    background:var(--smoke);
+  }
+  .site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);}
+  .site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
 
   .account-container { max-width:1000px; margin:40px auto; padding:0 24px; flex:1; width:100%; }
   .auth-box { max-width:400px; margin:40px auto; padding:32px; border:1px solid var(--line); border-radius:var(--radius); background:var(--smoke); }
@@ -180,6 +188,12 @@
 <header class="site">
   <div class="header-row">
     <a href="index.html" class="logo"><b>NEXXTLEVEL</b><span>S T O R E</span></a>
+
+    <form class="site-search" id="siteSearchForm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="siteSearchInput" placeholder="Пошук за назвою або артикулом">
+    </form>
+
     <nav class="main-nav">
       <a href="catalog.html">Каталог</a>
       <a href="wishlist.html">Обране</a>
@@ -307,6 +321,13 @@
 </footer>
 
 <script>
+document.getElementById('siteSearchForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const term = document.getElementById('siteSearchInput').value.trim();
+  const url = term ? `catalog.html?search=${encodeURIComponent(term)}` : 'catalog.html';
+  window.location.href = url;
+});
+
 function showToast(message, type = "info") {
   let container = document.getElementById("toastContainer");
   if (!container) {
