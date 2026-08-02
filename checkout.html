@@ -385,30 +385,12 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     return;
   }
 
-  const totalPrice = cart.reduce((sum, item) => sum + Number(item.price) * (item.quantity || 1), 0);
+  const customerName = document.getElementById('custName').value;
+  const customerPhone = document.getElementById('custPhone').value;
+  const city = document.getElementById('custCity').value;
+  const novaPoshtaDept = document.getElementById('custNP').value;
 
-  // 1. Создаем заказ в `orders`
-  const { data: order, error: orderErr } = await supabaseClient
-    .from('orders')
-    .insert([{
-      user_id: currentUser ? currentUser.id : null,
-      customer_name: document.getElementById('custName').value,
-      customer_phone: document.getElementById('custPhone').value,
-      city: document.getElementById('custCity').value,
-      nova_poshta_dept: document.getElementById('custNP').value,
-      total_price: totalPrice
-    }])
-    .select()
-    .single();
-
-  if (orderErr) {
-    showToast('Помилка при створенні замовлення: ' + orderErr.message, 'error');
-    return;
-  }
-
-  // 2. Добавляем позиции заказа в `order_items`
-  const orderItems = cart.map(item => ({
-    order_id: order.id,
+  const rpcItems = cart.map(item => ({
     product_name: item.name,
     articul: item.articul || '',
     size: item.size,
@@ -416,33 +398,46 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     quantity: item.quantity || 1
   }));
 
-  const { error: itemsErr } = await supabaseClient.from('order_items').insert(orderItems);
+  // Створюємо заказ + позиції атомарно на сервері (SECURITY DEFINER RPC):
+  // сума рахується з items на сервері, user_id береться з сесії — це не можна
+  // підмінити з клієнта. Для гостя (без входу) звичайний .insert().select()
+  // тут не підійде: PostgREST повертає рядок через RETURNING, а це
+  // перевіряється проти SELECT-політик (auth.uid() = user_id), яких у
+  // анонімного відвідувача просто немає — весь insert відкочувався.
+  const { data: order, error: orderErr } = await supabaseClient.rpc('create_order', {
+    p_customer_name: customerName,
+    p_customer_phone: customerPhone,
+    p_city: city,
+    p_nova_poshta_dept: novaPoshtaDept,
+    p_items: rpcItems
+  });
 
-  if (itemsErr) {
-    showToast('Помилка при збереженні товарів замовлення.', 'error');
-  } else {
-    showToast(`Дякуємо! Замовлення №${order.id} успішно оформлено.${currentUser ? '' : ' Запам\'ятайте номер замовлення — за ним можна перевірити статус.'}`, 'success');
-    localStorage.removeItem('cart');
-
-    // Сповіщення адміну в Telegram — не блокує оформлення, якщо не спрацює
-    fetch('/api/notify-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        orderId: order.id,
-        customerName: order.customer_name,
-        customerPhone: order.customer_phone,
-        city: order.city,
-        novaPoshtaDept: order.nova_poshta_dept,
-        totalPrice: order.total_price,
-        items: orderItems.map(it => ({ name: it.product_name, size: it.size, quantity: it.quantity, price: it.price }))
-      })
-    }).catch(() => {});
-
-    setTimeout(() => {
-      window.location.href = currentUser ? 'account.html' : `track-order.html?order=${order.id}`;
-    }, 1800);
+  if (orderErr) {
+    showToast('Помилка при створенні замовлення: ' + orderErr.message, 'error');
+    return;
   }
+
+  showToast(`Дякуємо! Замовлення №${order.id} успішно оформлено.${currentUser ? '' : ' Запам\'ятайте номер замовлення — за ним можна перевірити статус.'}`, 'success');
+  localStorage.removeItem('cart');
+
+  // Сповіщення адміну в Telegram — не блокує оформлення, якщо не спрацює
+  fetch('/api/notify-order', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      orderId: order.id,
+      customerName,
+      customerPhone,
+      city,
+      novaPoshtaDept,
+      totalPrice: order.total_price,
+      items: rpcItems.map(it => ({ name: it.product_name, size: it.size, quantity: it.quantity, price: it.price }))
+    })
+  }).catch(() => {});
+
+  setTimeout(() => {
+    window.location.href = currentUser ? 'account.html' : `track-order.html?order=${order.id}`;
+  }, 1800);
 });
 
 initCheckout();
