@@ -111,6 +111,10 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
   width:100%;height:100%;object-fit:cover;display:block;
   user-select:none;-webkit-user-select:none;-webkit-user-drag:none;
 }
+.media-placeholder{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  background:var(--smoke);
+}
 .main-nav-arrows{
   position:absolute;bottom:16px;right:16px;
   display:flex;gap:8px;z-index:4;
@@ -551,6 +555,12 @@ function sizeSortKey(sz) {
   return m ? parseFloat(m[0]) : 9999;
 }
 
+function placeholderSVG(){
+  return `<svg viewBox="0 0 260 170" fill="none" style="width:40%;height:40%;">
+    <path d="M15 140c0-18 14-30 36-35l64-16c11-3 17-11 20-22l5-16c2-6 8-10 15-9l22 6c8 2 11 9 9 17l-6 26c-3 14-1 25 6 34 6 8 8 17 3 25-6 11-20 15-36 15H45c-18 0-30-11-30-25z" fill="#e6e5e2" stroke="#767470" stroke-width="2"/>
+  </svg>`;
+}
+
 function renderProduct(product, sizeMap) {
   const rawString = product.photos || product.image_url || '';
 
@@ -594,12 +604,16 @@ function renderProduct(product, sizeMap) {
         ${photos.length > 1 ? `
           <div class="thumbs-list">
             ${photos.map((ph, idx) => `
-              <img src="${ph}" class="thumb-img ${idx === 0 ? 'active' : ''}" draggable="false" onclick="changePhoto('${ph}', this, ${idx})">
+              <img src="${ph}" class="thumb-img ${idx === 0 ? 'active' : ''}" draggable="false" onclick="changePhoto('${ph}', this, ${idx})" onerror="this.onerror=null;this.style.display='none';">
             `).join('')}
           </div>
         ` : ''}
-        <div class="main-image-wrap" id="mainImageWrap" onclick="openLightbox(currentPhotoIndex)">
-          <img id="mainPhoto" src="${photos[0] || ''}" alt="${product.name}" draggable="false">
+        <div class="main-image-wrap" id="mainImageWrap" onclick="${photos.length ? 'openLightbox(currentPhotoIndex)' : ''}">
+          ${photos.length ? `
+            <img id="mainPhoto" src="${photos[0]}" alt="${product.name}" draggable="false" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className:'media-placeholder', innerHTML: placeholderSVG()}));">
+          ` : `
+            <div class="media-placeholder" id="mainPhoto">${placeholderSVG()}</div>
+          `}
           ${photos.length > 1 ? `
             <div class="main-nav-arrows">
               <div class="nav-arrow-btn" onclick="event.stopPropagation();mainPhotoStep(-1)">
