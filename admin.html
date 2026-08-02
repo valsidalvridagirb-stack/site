@@ -171,7 +171,7 @@
 
   <div id="ordersTab" style="display:none;">
     <h1>Замовлення</h1>
-    <p class="sub">ТТН створюється автоматично через API Нової пошти — з вашого відправника, за містом і відділенням клієнта.</p>
+    <p class="sub">ТТН вводиться вручну (дропшипінг — накладну створює постачальник), статус доставки підтягується з Нової пошти за номером.</p>
     <div id="ordersList"></div>
   </div>
 
@@ -532,7 +532,10 @@ function renderOrderCard(o, items) {
   card.innerHTML = `
     <div class="order-head">
       <div><span class="order-id">Замовлення №${o.id}</span> · <span class="order-date">${fmtDate(o.created_at)}</span></div>
-      <span class="ttn-status">${o.status || 'В обробці'}</span>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="ttn-status">${o.status || 'В обробці'}</span>
+        <button class="btn btn-danger" data-delete="${o.id}" style="padding:5px 10px; font-size:12px;">Видалити</button>
+      </div>
     </div>
     <div class="order-body">
       <b>${o.customer_name}</b> · ${o.customer_phone}<br>
@@ -543,6 +546,7 @@ function renderOrderCard(o, items) {
     <div class="ttn-box" id="ttnBox-${o.id}"></div>
   `;
 
+  card.querySelector('[data-delete]').addEventListener('click', () => deleteOrder(o, card));
   renderTtnBox(o, card);
   return card;
 }
@@ -585,6 +589,16 @@ async function saveTtnManual(o) {
   o.status = 'Відправлено';
   showToast('ТТН збережено', 'success');
   loadOrders();
+}
+
+async function deleteOrder(o, card) {
+  if (!confirm(`Видалити замовлення №${o.id}? Цю дію не можна скасувати.`)) return;
+  const { error } = await supabaseClient.from('orders').delete().eq('id', o.id);
+  if (error) { showToast('Помилка видалення: ' + error.message, 'error'); return; }
+  card.remove();
+  showToast(`Замовлення №${o.id} видалено`, 'success');
+  const list = document.getElementById('ordersList');
+  if (!list.children.length) list.innerHTML = '<div class="order-empty">Замовлень поки немає.</div>';
 }
 
 async function refreshTtnStatus(o) {
