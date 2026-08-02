@@ -57,10 +57,6 @@
   .ttn-box { margin-top:12px; padding-top:12px; border-top:1px solid var(--line); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .ttn-num { font-weight:700; font-size:14px; }
   .ttn-status { font-size:12px; padding:3px 9px; border-radius:12px; background:var(--smoke); border:1px solid var(--line); color:var(--mute); }
-  .ttn-form { margin-top:12px; padding-top:12px; border-top:1px solid var(--line); display:none; }
-  .ttn-form.open { display:block; }
-  .ttn-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
-  .ttn-form-row input { flex:1; min-width:140px; padding:9px 11px; border:1px solid var(--line); border-radius:var(--radius); font-size:13px; }
   .order-empty { color:var(--mute); font-size:14px; padding:20px 0; }
 
   .search-row { display:flex; gap:10px; }
@@ -545,23 +541,14 @@ function renderOrderCard(o, items) {
       <div class="order-items">${itemsText}</div>
     </div>
     <div class="ttn-box" id="ttnBox-${o.id}"></div>
-    <div class="ttn-form" id="ttnForm-${o.id}">
-      <div class="ttn-form-row">
-        <input type="number" id="ttnWeight-${o.id}" placeholder="Вага, кг" value="1" step="0.1" min="0.1">
-        <input type="number" id="ttnCost-${o.id}" placeholder="Оціночна вартість, ₴" value="${o.total_price}">
-      </div>
-      <div class="ttn-form-row">
-        <input type="text" id="ttnDesc-${o.id}" placeholder="Опис відправлення" value="${itemsText.replace(/"/g,'&quot;').slice(0,90)}">
-      </div>
-      <button class="btn" id="ttnSubmit-${o.id}">Підтвердити і створити ТТН</button>
-    </div>
   `;
 
   renderTtnBox(o, card);
-  card.querySelector(`#ttnSubmit-${o.id}`).addEventListener('click', () => createTtn(o.id));
   return card;
 }
 
+// ТТН вводиться вручну (дропшипінг — накладну створює постачальник),
+// статус доставки все одно можна підтягувати з Нової пошти за номером.
 function renderTtnBox(o, scope) {
   scope = scope || document;
   const box = scope.querySelector(`#ttnBox-${o.id}`);
@@ -569,42 +556,35 @@ function renderTtnBox(o, scope) {
   if (o.ttn) {
     box.innerHTML = `<span class="ttn-num">ТТН: ${o.ttn}</span>` +
       `<span class="ttn-status">${o.ttn_status || 'статус ще не оновлювався'}</span>` +
-      `<button class="btn btn-secondary" data-refresh="${o.id}" style="padding:6px 12px;">Оновити статус</button>`;
+      `<button class="btn btn-secondary" data-refresh="${o.id}" style="padding:6px 12px;">Оновити статус</button>` +
+      `<button class="btn btn-secondary" data-edit="${o.id}" style="padding:6px 12px;">Змінити ТТН</button>`;
     box.querySelector('[data-refresh]').addEventListener('click', () => refreshTtnStatus(o));
+    box.querySelector('[data-edit]').addEventListener('click', () => renderTtnInput(o, box));
   } else {
-    box.innerHTML = `<button class="btn btn-secondary" data-create="${o.id}" style="padding:8px 16px;">Створити ТТН</button>`;
-    box.querySelector('[data-create]').addEventListener('click', () => {
-      document.getElementById(`ttnForm-${o.id}`).classList.toggle('open');
-    });
+    renderTtnInput(o, box);
   }
 }
 
-async function createTtn(orderId) {
-  const btn = document.getElementById(`ttnSubmit-${orderId}`);
-  btn.disabled = true; btn.textContent = 'Створюємо…';
-  try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    const r = await fetch('/api/np-create-ttn', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
-      body: JSON.stringify({
-        orderId,
-        weight: document.getElementById(`ttnWeight-${orderId}`).value,
-        cost: document.getElementById(`ttnCost-${orderId}`).value,
-        description: document.getElementById(`ttnDesc-${orderId}`).value
-      })
-    });
-    const j = await r.json();
-    if (!r.ok) throw new Error(j.message || j.error || 'Помилка створення ТТН');
-    if (j.warning) showToast(j.warning, 'error');
-    else showToast(`ТТН створено: ${j.ttn}`, 'success');
-    document.getElementById(`ttnForm-${orderId}`).classList.remove('open');
-    loadOrders();
-  } catch (err) {
-    showToast(err.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Підтвердити і створити ТТН';
-  }
+function renderTtnInput(o, box) {
+  box.innerHTML = `
+    <input type="text" id="ttnManual-${o.id}" placeholder="Номер ТТН" value="${o.ttn || ''}" style="flex:1; min-width:180px; padding:9px 11px; border:1px solid var(--line); border-radius:var(--radius); font-size:13px;">
+    <button class="btn" data-save="${o.id}" style="padding:8px 16px;">Зберегти</button>
+  `;
+  box.querySelector('[data-save]').addEventListener('click', () => saveTtnManual(o));
+}
+
+async function saveTtnManual(o) {
+  const input = document.getElementById(`ttnManual-${o.id}`);
+  const ttn = input.value.trim();
+  if (!ttn) { showToast('Введіть номер ТТН', 'error'); return; }
+  const { error } = await supabaseClient.from('orders')
+    .update({ ttn, status: 'Відправлено' })
+    .eq('id', o.id);
+  if (error) { showToast('Помилка: ' + error.message, 'error'); return; }
+  o.ttn = ttn;
+  o.status = 'Відправлено';
+  showToast('ТТН збережено', 'success');
+  loadOrders();
 }
 
 async function refreshTtnStatus(o) {
