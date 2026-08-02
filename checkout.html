@@ -5,23 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Оформлення замовлення — NEXXTLEVEL STORE</title>
 <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root { --ink:#111111; --paper:#ffffff; --smoke:#f8f8f6; --line:#e6e5e2; --mute:#767470; --radius:4px; }
   * { box-sizing:border-box; margin:0; padding:0; }
   html { overflow-x:hidden; }
-  body { font-family:'Inter', system-ui, sans-serif; color:var(--ink); background:var(--paper); min-height:100vh; display:flex; flex-direction:column; overflow-x:hidden; width:100%; }
+  body { font-family:'Manrope', system-ui, sans-serif; color:var(--ink); background:var(--paper); min-height:100vh; display:flex; flex-direction:column; overflow-x:hidden; width:100%; }
   
   header.site { position:sticky; top:0; z-index:50; background:rgba(255,255,255,.95); border-bottom:1px solid var(--line); }
   .header-row { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; max-width:1240px; margin:0 auto; }
-  .logo b { font-size:21px; font-weight:800; }
+  .logo b { font-size:21px; font-weight:500; }
   .logo span { font-size:9px; letter-spacing:.32em; color:var(--mute); font-weight:600; display:block; }
   
   .checkout-container { max-width:1100px; margin:40px auto; padding:0 24px; flex:1; width:100%; }
   .checkout-grid { display:grid; grid-template-columns:1.5fr 1fr; gap:40px; }
   
   .form-section, .summary-section { border:1px solid var(--line); padding:24px; border-radius:var(--radius); }
-  h2 { font-size:18px; font-weight:800; text-transform:uppercase; margin-bottom:20px; }
+  h2 { font-size:18px; font-weight:500; text-transform:uppercase; margin-bottom:20px; }
   
   .form-group { margin-bottom:14px; }
   .form-group label { display:block; font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:4px; color:var(--mute); }
@@ -30,7 +33,7 @@
   .cart-item { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding:10px 0; }
   .cart-item:last-child { border-bottom:none; }
   
-  .btn-submit { width:100%; padding:16px; background:var(--ink); color:#fff; font-weight:800; border:none; border-radius:var(--radius); cursor:pointer; text-transform:uppercase; font-size:14px; margin-top:20px; }
+  .btn-submit { width:100%; padding:16px; background:var(--ink); color:#fff; font-weight:500; border:none; border-radius:var(--radius); cursor:pointer; text-transform:uppercase; font-size:14px; margin-top:20px; }
   .btn-submit:hover { opacity:0.9; }
 
   
@@ -110,7 +113,7 @@
     <div class="summary-section">
       <h2>Ваше замовлення</h2>
       <div id="cartList"></div>
-      <div style="border-top:2px solid var(--ink); margin-top:16px; padding-top:16px; display:flex; justify-content:space-between; font-weight:800; font-size:18px;">
+      <div style="border-top:2px solid var(--ink); margin-top:16px; padding-top:16px; display:flex; justify-content:space-between; font-weight:500; font-size:18px;">
         <span>Разом:</span>
         <span id="totalPrice">0 грн</span>
       </div>

@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Товар — NEXXTLEVEL STORE</title>
   <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   /* Стили для иконок в шапке */
@@ -42,7 +45,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 html{overflow-x:hidden;}
 body{
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-family:'Manrope',-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
   color:var(--ink);background:var(--paper);
   overflow-x:hidden;
   width:100%;
@@ -64,7 +67,7 @@ header.site{
   flex-wrap:wrap;
 }
 .logo{display:flex;flex-direction:column;line-height:1;flex-shrink:0;}
-.logo b{font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;}
+.logo b{font-weight:600;font-size:20px;letter-spacing:1px;text-transform:uppercase;}
 .logo span{display:block;font-size:10px;color:var(--mute);letter-spacing:3px;margin-top:4px;font-weight:600;}
 nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;}
 .badge-count{
@@ -171,10 +174,10 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 
 /* Details */
 .product-details{display:flex;flex-direction:column;gap:24px;}
-.p-brand{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);}
-.p-title{font-size:32px;font-weight:900;text-transform:uppercase;line-height:1.1;}
+.p-brand{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);}
+.p-title{font-size:32px;font-weight:600;text-transform:uppercase;line-height:1.1;}
 .p-articul{font-size:12px;color:var(--mute);}
-.p-price{font-size:24px;font-weight:800;color:var(--ink);}
+.p-price{font-size:24px;font-weight:500;color:var(--ink);}
 .size-section{margin-top:16px;}
 .size-title{font-size:14px;font-weight:700;margin-bottom:12px;text-transform:uppercase;}
 .size-grid{display:flex;flex-wrap:wrap;gap:8px;}
@@ -188,7 +191,7 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 
 .add-btn{
   width:100%;padding:18px;background:var(--ink);color:var(--paper);
-  font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:1px;
+  font-weight:500;font-size:16px;text-transform:uppercase;letter-spacing:1px;
   border:none;cursor:pointer;margin-top:16px;
 }
 .add-btn:hover{opacity:0.9;}
