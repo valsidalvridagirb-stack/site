@@ -33,6 +33,31 @@
   .btn-submit { width:100%; padding:16px; background:var(--ink); color:#fff; font-weight:800; border:none; border-radius:var(--radius); cursor:pointer; text-transform:uppercase; font-size:14px; margin-top:20px; }
   .btn-submit:hover { opacity:0.9; }
 
+  
+  /* ===== Toast-повідомлення ===== */
+  #toastContainer{
+    position:fixed;top:20px;right:20px;z-index:1000;
+    display:flex;flex-direction:column;gap:10px;max-width:360px;
+  }
+  .toast{
+    display:flex;align-items:flex-start;gap:10px;
+    background:#fff;border-left:4px solid var(--ink);
+    border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,.15);
+    padding:14px 16px;font-size:14px;line-height:1.4;color:var(--ink);
+    animation:toastIn .25s ease;
+  }
+  .toast.success{border-left-color:#2f8f4e;}
+  .toast.error{border-left-color:var(--accent);}
+  .toast-icon{flex-shrink:0;width:20px;height:20px;margin-top:1px;}
+  .toast.success .toast-icon{color:#2f8f4e;}
+  .toast.error .toast-icon{color:var(--accent);}
+  .toast.fade-out{animation:toastOut .25s ease forwards;}
+  @keyframes toastIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
+  @keyframes toastOut{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(20px);}}
+  @media (max-width:480px){
+    #toastContainer{left:16px;right:16px;top:16px;max-width:none;}
+  }
+
   footer { background:var(--ink); color:#fff; padding:30px; text-align:center; font-size:12px; margin-top:auto; }
 
   @media (max-width: 768px) {
@@ -96,6 +121,28 @@
 <footer>© 2026 NexxtLevelStore. Всі права захищені.</footer>
 
 <script>
+function showToast(message, type = "info") {
+  let container = document.getElementById("toastContainer");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toastContainer";
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  const icon = type === "success"
+    ? `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`
+    : type === "error"
+      ? `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>`
+      : `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-5M12 8h.01"/></svg>`;
+  toast.innerHTML = icon + `<span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add("fade-out");
+    setTimeout(() => toast.remove(), 250);
+  }, 4000);
+}
+
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -149,7 +196,7 @@ function renderCart() {
 document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (cart.length === 0) {
-    alert('Ваш кошик порожній!');
+    showToast('Ваш кошик порожній!', 'error');
     return;
   }
 
@@ -170,7 +217,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     .single();
 
   if (orderErr) {
-    alert('Помилка при створенні замовлення: ' + orderErr.message);
+    showToast('Помилка при створенні замовлення: ' + orderErr.message, 'error');
     return;
   }
 
@@ -187,11 +234,13 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   const { error: itemsErr } = await supabaseClient.from('order_items').insert(orderItems);
 
   if (itemsErr) {
-    alert('Помилка при збереженні товарів замовлення.');
+    showToast('Помилка при збереженні товарів замовлення.', 'error');
   } else {
-    alert(`Дякуємо! Замовлення №${order.id} успішно оформлено.`);
+    showToast(`Дякуємо! Замовлення №${order.id} успішно оформлено.`, 'success');
     localStorage.removeItem('cart');
-    window.location.href = currentUser ? 'account.html' : 'index.html';
+    setTimeout(() => {
+      window.location.href = currentUser ? 'account.html' : 'index.html';
+    }, 1500);
   }
 });
 
