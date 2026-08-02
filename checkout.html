@@ -98,7 +98,7 @@
 <script>
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let currentUser = null;
@@ -108,10 +108,10 @@ async function initCheckout() {
   renderCart();
 
   // Автоподстановка данных, если юзер залогинен
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabaseClient.auth.getUser();
   if (user) {
     currentUser = user;
-    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
     if (profile) {
       if (profile.full_name) document.getElementById('custName').value = profile.full_name;
       if (profile.phone) document.getElementById('custPhone').value = profile.phone;
@@ -156,7 +156,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   const totalPrice = cart.reduce((sum, item) => sum + Number(item.price) * (item.quantity || 1), 0);
 
   // 1. Создаем заказ в `orders`
-  const { data: order, error: orderErr } = await supabase
+  const { data: order, error: orderErr } = await supabaseClient
     .from('orders')
     .insert([{
       user_id: currentUser ? currentUser.id : null,
@@ -184,7 +184,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     quantity: item.quantity || 1
   }));
 
-  const { error: itemsErr } = await supabase.from('order_items').insert(orderItems);
+  const { error: itemsErr } = await supabaseClient.from('order_items').insert(orderItems);
 
   if (itemsErr) {
     alert('Помилка при збереженні товарів замовлення.');

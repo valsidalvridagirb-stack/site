@@ -122,7 +122,7 @@
 <script>
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let isSignUp = false;
 let currentUser = null;
@@ -145,23 +145,23 @@ authForm.addEventListener('submit', async (e) => {
   const password = document.getElementById('authPassword').value;
 
   if (isSignUp) {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
     if (error) alert('Помилка реєстрації: ' + error.message);
     else { alert('Реєстрація успішна!'); initAccount(); }
   } else {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) alert('Помилка входу: ' + error.message);
     else initAccount();
   }
 });
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   location.reload();
 });
 
 async function initAccount() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) {
     authSection.style.display = 'block';
     profileSection.style.display = 'none';
@@ -173,7 +173,7 @@ async function initAccount() {
   profileSection.style.display = 'block';
 
   // Загружаем профиль
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+  const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
   if (profile) {
     document.getElementById('profName').value = profile.full_name || '';
     document.getElementById('profPhone').value = profile.phone || '';
@@ -194,14 +194,14 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
     nova_poshta_dept: document.getElementById('profNP').value
   };
 
-  const { error } = await supabase.from('profiles').upsert(updates);
+  const { error } = await supabaseClient.from('profiles').upsert(updates);
   if (error) alert('Помилка збереження');
   else alert('Дані оновлено!');
 });
 
 async function loadOrders(userId) {
   const container = document.getElementById('ordersList');
-  const { data: orders, error } = await supabase.from('orders').select('*, order_items(*)').eq('user_id', userId).order('created_at', {ascending: false});
+  const { data: orders, error } = await supabaseClient.from('orders').select('*, order_items(*)').eq('user_id', userId).order('created_at', {ascending: false});
   
   if (!orders || orders.length === 0) {
     container.innerHTML = '<p style="color:var(--mute);">У вас поки немає замовлень.</p>';
