@@ -61,11 +61,110 @@
     #toastContainer{left:16px;right:16px;top:16px;max-width:none;}
   }
 
-  footer { background:var(--ink); color:#fff; padding:30px; text-align:center; font-size:12px; margin-top:auto; }
+  /* Footer */
+  footer.site-footer {
+    background-color: var(--ink);
+    color: #ffffff;
+    padding: 60px 32px 30px;
+    margin-top: auto;
+  }
+  .footer-container {
+    max-width: 1240px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 40px;
+  }
+  .footer-col h4 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #888888;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+  .footer-col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .footer-col ul li {
+    margin-bottom: 12px;
+  }
+  .footer-col ul li a {
+    color: #cccccc;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  .footer-col ul li a:hover {
+    color: #ffffff;
+  }
+  .footer-logo img {
+    max-width: 100px;
+    background: #ffffff;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  .footer-socials {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .social-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #222222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .social-icon:hover {
+    background: #333333;
+  }
+  .footer-desc {
+    font-size: 13px;
+    color: #888888;
+    line-height: 1.6;
+    margin: 0;
+  }
+  .footer-bottom {
+    max-width: 1240px;
+    margin: 40px auto 0;
+    padding-top: 30px;
+    border-top: 1px solid #222222;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #666666;
+  }
+  .footer-bottom-links a {
+    color: #888888;
+    text-decoration: none;
+    margin-right: 20px;
+  }
+  .footer-bottom-links a:hover {
+    color: #ffffff;
+  }
 
   @media (max-width: 768px) {
     .checkout-grid { grid-template-columns: 1fr; gap: 24px; }
     .header-row { padding: 16px 20px; flex-wrap: wrap; gap: 10px; }
+    .footer-container {
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+    .footer-bottom {
+      flex-direction: column;
+      gap: 15px;
+      text-align: center;
+    }
   }
 </style>
 </head>
@@ -122,7 +221,66 @@
   </div>
 </main>
 
-<footer>© 2026 NexxtLevelStore. Всі права захищені.</footer>
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-col brand-col">
+      <div class="footer-logo">
+        <img src="assets/logo.jpg" alt="NEXXTLEVEL STORE">
+      </div>
+      <div class="footer-socials">
+        <a href="https://www.instagram.com/nexxtlevelstore/" target="_blank" class="social-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+        </a>
+        <a href="https://t.me/nexxtlevelstore" target="_blank" class="social-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </a>
+      </div>
+      <p class="footer-desc">
+        Оригінальні кросівки з США та Європи.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>КЛІЄНТАМ</h4>
+      <ul>
+        <li><a href="#">Зв'язатися з нами</a></li>
+        <li><a href="#">Доставка</a></li>
+        <li><a href="#">Оплата</a></li>
+        <li><a href="#">Повернення</a></li>
+        <li><a href="#">Розмірна сітка</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>КАТАЛОГ</h4>
+      <ul>
+        <li><a href="catalog.html?cat=Чоловічі кросівки">Чоловічі кросівки</a></li>
+        <li><a href="catalog.html?cat=Жіночі кросівки">Жіночі кросівки</a></li>
+        <li><a href="catalog.html">Усі товари</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>КОНТАКТИ</h4>
+      <ul class="contacts-list">
+        <li><a href="tel:+380934382093">+38 093 438 20 93</a></li>
+        <li><a href="https://instagram.com" target="_blank">Instagram</a></li>
+        <li><a href="https://t.me" target="_blank">Telegram</a></li>
+        <li><a href="mailto:nexxtlevelstore@ukr.net">Пошта</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="footer-bottom-links">
+      <a href="#">Умови використання</a>
+      <a href="#">Політика конфіденційності</a>
+    </div>
+    <div class="footer-copyright">
+      © 2026 NexxtLevelStore. Всі права захищені.
+    </div>
+  </div>
+</footer>
 
 <script>
 function showToast(message, type = "info") {
