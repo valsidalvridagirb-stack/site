@@ -422,6 +422,22 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   } else {
     showToast(`Дякуємо! Замовлення №${order.id} успішно оформлено.`, 'success');
     localStorage.removeItem('cart');
+
+    // Сповіщення адміну в Telegram — не блокує оформлення, якщо не спрацює
+    fetch('/api/notify-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId: order.id,
+        customerName: order.customer_name,
+        customerPhone: order.customer_phone,
+        city: order.city,
+        novaPoshtaDept: order.nova_poshta_dept,
+        totalPrice: order.total_price,
+        items: orderItems.map(it => ({ name: it.product_name, size: it.size, quantity: it.quantity, price: it.price }))
+      })
+    }).catch(() => {});
+
     setTimeout(() => {
       window.location.href = currentUser ? 'account.html' : 'index.html';
     }, 1500);
