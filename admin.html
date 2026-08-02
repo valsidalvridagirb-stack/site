@@ -206,15 +206,23 @@ async function init() {
   authSection.style.display = 'none';
   deniedSection.style.display = 'none';
   panelSection.style.display = 'block';
-  loadCatalog();
+  loadCatalog().catch(() => {});
 }
 
 // ---------- каталог (Excel) ----------
+// каталог віддається лише авторизованому адміну через /api/catalog
+// (перевірка прав відбувається на сервері за токеном сесії)
 let CATALOG = null; // {cols, rows}
 let catalogPromise = null;
 function loadCatalog() {
   if (catalogPromise) return catalogPromise;
-  catalogPromise = fetch('data/excel-catalog.json').then(r => r.json()).then(j => { CATALOG = j; return j; });
+  catalogPromise = supabaseClient.auth.getSession().then(({ data: { session } }) => {
+    if (!session) throw new Error('Сесія недійсна, увійдіть ще раз');
+    return fetch('/api/catalog', { headers: { Authorization: 'Bearer ' + session.access_token } });
+  }).then(async r => {
+    if (!r.ok) throw new Error('Не вдалось завантажити каталог (' + r.status + ')');
+    return r.json();
+  }).then(j => { CATALOG = j; return j; });
   return catalogPromise;
 }
 
@@ -267,7 +275,12 @@ document.getElementById('artInput').addEventListener('keydown', e => { if (e.key
 async function doSearch() {
   const art = document.getElementById('artInput').value.trim();
   if (!art) return;
-  await loadCatalog();
+  try {
+    await loadCatalog();
+  } catch (err) {
+    showToast(err.message, 'error');
+    return;
+  }
   currentArticul = art;
   currentMatches = groupBySize(findByArticul(art));
   newFiles = [];
