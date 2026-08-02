@@ -171,6 +171,38 @@ const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Перекладаємо типові помилки Supabase Auth на зрозумілі повідомлення українською
+function translateAuthError(error) {
+  const msg = (error && error.message) || '';
+
+  if (msg.includes('Invalid login credentials')) {
+    // Supabase навмисно не розрізняє "невірний пароль" і "пошта не підтверджена" -
+    // це та сама помилка з міркувань безпеки, тому пишемо повідомлення, що охоплює обидва випадки
+    return 'Невірний email або пароль. Якщо ви щойно зареєструвалися — підтвердіть вашу пошту за посиланням у листі, який ми надіслали.';
+  }
+  if (msg.includes('Email not confirmed')) {
+    return 'Підтвердіть вашу пошту — ми надіслали лист з посиланням для підтвердження.';
+  }
+  if (msg.includes('User already registered')) {
+    return 'Акаунт з такою поштою вже існує. Спробуйте увійти замість реєстрації.';
+  }
+  if (msg.includes('Password should be at least')) {
+    return 'Пароль має містити щонайменше 6 символів.';
+  }
+  if (msg.includes('Unable to validate email address') || msg.includes('invalid format')) {
+    return 'Перевірте правильність email-адреси.';
+  }
+  if (msg.includes('rate limit') || msg.includes('Too many requests')) {
+    return 'Забагато спроб. Зачекайте хвилину і спробуйте ще раз.';
+  }
+  if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+    return 'Немає з’єднання з сервером. Перевірте інтернет і спробуйте ще раз.';
+  }
+
+  // якщо помилка невідома - показуємо загальний текст, а не сирий технічний message
+  return 'Щось пішло не так. Спробуйте ще раз трохи пізніше.';
+}
+
 let isSignUp = false;
 let currentUser = null;
 
@@ -193,11 +225,11 @@ authForm.addEventListener('submit', async (e) => {
 
   if (isSignUp) {
     const { data, error } = await supabaseClient.auth.signUp({ email, password });
-    if (error) showToast('Помилка реєстрації: ' + error.message, 'error');
-    else { showToast('Реєстрація успішна!', 'success'); initAccount(); }
+    if (error) showToast(translateAuthError(error), 'error');
+    else { showToast('Реєстрація успішна! Перевірте пошту, щоб підтвердити акаунт.', 'success'); initAccount(); }
   } else {
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) showToast('Помилка входу: ' + error.message, 'error');
+    if (error) showToast(translateAuthError(error), 'error');
     else initAccount();
   }
 });
