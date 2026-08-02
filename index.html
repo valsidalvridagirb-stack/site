@@ -389,7 +389,7 @@
   .product-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 22px;
+    gap: 26px;
   }
 
   .product-card {
@@ -398,26 +398,26 @@
     color: inherit;
     text-decoration: none;
     background: #ffffff;
-    border: 1px solid transparent;
-    padding: 10px;
-    border-radius: 4px;
-    transition: all 0.25s ease;
+    border: 1px solid var(--line);
+    padding: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   }
 
   .product-card:hover {
-    border-color: var(--line);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    transform: translateY(-5px);
+    border-color: transparent;
+    box-shadow: 0 20px 32px -12px rgba(0,0,0,0.16);
   }
 
   .product-media {
     position: relative;
-    background: var(--smoke);
-    aspect-ratio: 1/1;
+    background: linear-gradient(160deg, #f2f1ee, var(--smoke));
+    aspect-ratio: 4/5;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px;
-    border-radius: 2px;
     overflow: hidden;
   }
 
@@ -425,11 +425,34 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform .35s ease;
+    transition: transform .5s ease;
   }
 
   .product-card:hover .product-media img {
-    transform: scale(1.05);
+    transform: scale(1.08);
+  }
+
+  .product-media::after {
+    content: 'Переглянути';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(to top, rgba(0,0,0,.55), rgba(0,0,0,0));
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .3s ease, transform .3s ease;
+    pointer-events: none;
+  }
+
+  .product-card:hover .product-media::after {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .wish-btn {
@@ -438,7 +461,7 @@
     right: 10px;
     width: 32px;
     height: 32px;
-    background: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.92);
     backdrop-filter: blur(2px);
     border-radius: 50%;
     display: flex;
@@ -468,37 +491,45 @@
 
   .product-name {
     font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 6px;
+    font-weight: 500;
     line-height: 1.35;
     height: 36px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    padding: 14px 14px 0;
   }
 
   .product-price {
-    font-size: 14px;
-    font-weight:500;
+    font-size: 15px;
+    font-weight: 700;
     margin-bottom: 10px;
     color: var(--ink);
+    padding: 0 14px;
   }
 
   .size-row {
     display: flex;
-    gap: 4px;
+    gap: 5px;
     flex-wrap: wrap;
+    padding: 0 14px 16px;
   }
 
   .size-row span {
     font-size: 10px;
     color: var(--mute);
     border: 1px solid var(--line);
-    padding: 3px 6px;
-    border-radius: 2px;
+    padding: 4px 8px;
+    border-radius: 20px;
     font-weight: 600;
-    background: #fafafa;
+    background: var(--smoke);
+    transition: border-color .2s ease, color .2s ease;
+  }
+
+  .product-card:hover .size-row span {
+    border-color: var(--ink);
+    color: var(--ink);
   }
 
   /* ===== Footer ===== */
