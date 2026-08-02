@@ -107,60 +107,90 @@
   }
   .catalog-count{color:var(--mute);font-size:13px;margin-bottom:20px;}
 
-  /* Toolbar */
-  .toolbar{
-    display:flex;flex-wrap:wrap;align-items:center;gap:12px;
-    padding:16px 0;border-top:2px solid var(--ink);border-bottom:1px solid var(--line);
-    margin-bottom:28px;
-  }
-  .toolbar-btn{
-    display:flex;align-items:center;gap:6px;padding:9px 16px;
-    border:1px solid var(--line);border-radius:var(--radius);
-    font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
-    transition:border-color .2s, background .2s;
-  }
-  .toolbar-btn:hover{border-color:var(--ink);}
-  .toolbar-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
-  .toolbar-btn .count-pill{
-    background:var(--accent);color:#fff;border-radius:50%;
-    font-size:10px;width:16px;height:16px;display:flex;align-items:center;justify-content:center;
-  }
-  .sort-select{
-    padding:9px 14px;border:1px solid var(--line);border-radius:var(--radius);
-    font-size:13px;font-weight:600;color:var(--ink);background:var(--paper);cursor:pointer;
-  }
-  .reset-btn{
-    font-size:12px;color:var(--mute);text-decoration:underline;font-weight:600;
-    margin-left:auto;
-  }
-  .reset-btn:hover{color:var(--accent);}
+  /* ===== Каталог: сайдбар фільтрів + сітка товарів ===== */
+  .catalog-body{display:grid;grid-template-columns:240px 1fr;gap:40px;align-items:start;}
 
-  /* Filter panel */
-  .filter-panel{
-    display:none;
-    grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
-    gap:28px;padding:20px;margin-bottom:28px;
-    background:var(--smoke);border-radius:var(--radius);
+  .filters-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;
   }
-  .filter-panel.open{display:grid;}
-  .filter-group h4{
-    font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
-    margin-bottom:12px;color:var(--mute);
+  .filters-overlay.open{display:block;}
+
+  .filters-sidebar-header{display:none;}
+
+  .filter-block{border-bottom:1px solid var(--line);}
+  .filter-block-header{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:16px 0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    cursor:pointer;background:none;border:none;color:var(--ink);font-family:inherit;
   }
-  .filter-options{display:flex;flex-wrap:wrap;gap:8px;max-height:200px;overflow-y:auto;}
-  .chip-check{
-    display:flex;align-items:center;gap:6px;font-size:13px;
-    border:1px solid var(--line);padding:7px 12px;border-radius:14px;
-    background:var(--paper);cursor:pointer;user-select:none;transition:.15s;
+  .filter-block-header .chevron{width:14px;height:14px;stroke:var(--ink);flex-shrink:0;transition:transform .2s;}
+  .filter-block.open .filter-block-header .chevron{transform:rotate(180deg);}
+  .filter-block-body{display:none;padding-bottom:18px;}
+  .filter-block.open .filter-block-body{display:block;}
+
+  .filter-options{display:flex;flex-direction:column;gap:2px;max-height:220px;overflow-y:auto;}
+  .filter-row{
+    display:flex;align-items:center;gap:10px;font-size:13px;
+    padding:7px 4px;cursor:pointer;user-select:none;border-radius:var(--radius);
+    transition:background .15s;
   }
-  .chip-check input{display:none;}
-  .chip-check.checked{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .filter-row:hover{background:var(--smoke);}
+  .filter-row input{
+    width:16px;height:16px;accent-color:var(--ink);flex-shrink:0;cursor:pointer;
+  }
+  .filter-row.checked{font-weight:700;}
+
   .price-inputs{display:flex;align-items:center;gap:8px;}
   .price-inputs input{
     width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);
     font-size:13px;background:var(--paper);color:var(--ink);
   }
   .price-inputs span{color:var(--mute);font-size:13px;}
+
+  .sidebar-reset-btn{
+    font-size:12px;color:var(--mute);text-decoration:underline;font-weight:600;
+    margin-top:16px;
+  }
+  .sidebar-reset-btn:hover{color:var(--accent);}
+
+  /* Тулбар над сіткою: сортування + мобільна кнопка фільтрів */
+  .catalog-toolbar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding-bottom:20px;margin-bottom:8px;border-bottom:1px solid var(--line);
+  }
+  .mobile-filter-toggle{
+    display:none;align-items:center;gap:6px;padding:9px 16px;
+    border:1px solid var(--line);border-radius:var(--radius);
+    font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+    background:none;cursor:pointer;color:var(--ink);
+  }
+  .mobile-filter-toggle .count-pill{
+    background:var(--accent);color:#fff;border-radius:50%;
+    font-size:10px;width:16px;height:16px;display:flex;align-items:center;justify-content:center;
+  }
+  .sort-select{
+    padding:9px 14px;border:1px solid var(--line);border-radius:var(--radius);
+    font-size:13px;font-weight:600;color:var(--ink);background:var(--paper);cursor:pointer;
+    margin-left:auto;
+  }
+
+  @media (max-width: 900px) {
+    .catalog-body{grid-template-columns:1fr;}
+    .filters-sidebar{
+      position:fixed;top:0;left:0;bottom:0;width:300px;max-width:85vw;
+      background:#fff;z-index:200;padding:24px;overflow-y:auto;
+      transform:translateX(-100%);transition:transform .25s ease;
+      box-shadow:4px 0 24px rgba(0,0,0,.15);
+    }
+    .filters-sidebar.open{transform:translateX(0);}
+    .filters-sidebar-header{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line);
+      font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+    }
+    .filters-close-btn{width:28px;height:28px;cursor:pointer;background:none;border:none;color:var(--ink);}
+    .mobile-filter-toggle{display:flex;}
+  }
 
   /* Product Grid */
   .product-grid {
@@ -449,40 +479,71 @@
   <h1 class="catalog-title" id="pageTitle">Каталог Товарів</h1>
   <div class="catalog-count" id="resultsCount">Завантаження товарів...</div>
 
-  <div class="toolbar">
-    <button class="toolbar-btn" id="filterToggleBtn">
-      Фільтри
-      <span class="count-pill" id="filterCountPill" style="display:none;">0</span>
-    </button>
-    <select class="sort-select" id="sortSelect">
-      <option value="default">Сортування: за замовчуванням</option>
-      <option value="price_asc">Спочатку дешевші</option>
-      <option value="price_desc">Спочатку дорожчі</option>
-    </select>
-    <button class="reset-btn" id="resetFiltersBtn">Скинути фільтри</button>
-  </div>
+  <div class="filters-overlay" id="filtersOverlay"></div>
 
-  <div class="filter-panel" id="filterPanel">
-    <div class="filter-group">
-      <h4>Бренд</h4>
-      <div class="filter-options" id="brandOptions"></div>
-    </div>
-    <div class="filter-group">
-      <h4>Розмір</h4>
-      <div class="filter-options" id="sizeOptions"></div>
-    </div>
-    <div class="filter-group">
-      <h4>Ціна, грн</h4>
-      <div class="price-inputs">
-        <input type="number" id="priceMinInput" placeholder="від">
-        <span>—</span>
-        <input type="number" id="priceMaxInput" placeholder="до">
+  <div class="catalog-body">
+    <aside class="filters-sidebar" id="filtersSidebar">
+      <div class="filters-sidebar-header">
+        <span>Фільтри</span>
+        <button class="filters-close-btn" id="filtersCloseBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
       </div>
+
+      <div class="filter-block" id="brandBlock">
+        <button class="filter-block-header">
+          Бренд
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="filter-block-body">
+          <div class="filter-options" id="brandOptions"></div>
+        </div>
+      </div>
+
+      <div class="filter-block" id="sizeBlock">
+        <button class="filter-block-header">
+          Розмір
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="filter-block-body">
+          <div class="filter-options" id="sizeOptions"></div>
+        </div>
+      </div>
+
+      <div class="filter-block" id="priceBlock">
+        <button class="filter-block-header">
+          Ціна, грн
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="filter-block-body">
+          <div class="price-inputs">
+            <input type="number" id="priceMinInput" placeholder="від">
+            <span>—</span>
+            <input type="number" id="priceMaxInput" placeholder="до">
+          </div>
+        </div>
+      </div>
+
+      <button class="sidebar-reset-btn" id="resetFiltersBtn">Скинути фільтри</button>
+    </aside>
+
+    <div class="catalog-main">
+      <div class="catalog-toolbar">
+        <button class="mobile-filter-toggle" id="filterToggleBtn">
+          Фільтри
+          <span class="count-pill" id="filterCountPill" style="display:none;">0</span>
+        </button>
+        <select class="sort-select" id="sortSelect">
+          <option value="default">Сортування: за замовчуванням</option>
+          <option value="price_asc">Спочатку дешевші</option>
+          <option value="price_desc">Спочатку дорожчі</option>
+        </select>
+      </div>
+
+      <div class="product-grid" id="productGrid"></div>
+      <div class="pagination" id="pagination"></div>
     </div>
   </div>
-
-  <div class="product-grid" id="productGrid"></div>
-  <div class="pagination" id="pagination"></div>
 </main>
 
 <footer class="site-footer">
@@ -657,8 +718,8 @@ function populateFilterOptions() {
   brandOptions.innerHTML = '';
   Array.from(brandSet).sort().forEach(brand => {
     const label = document.createElement('label');
-    label.className = 'chip-check';
-    label.innerHTML = `<input type="checkbox" value="${brand}"> ${brand}`;
+    label.className = 'filter-row';
+    label.innerHTML = `<input type="checkbox" value="${brand}"> <span>${brand}</span>`;
     label.querySelector('input').addEventListener('change', e => {
       if (e.target.checked) activeFilters.brands.add(brand);
       else activeFilters.brands.delete(brand);
@@ -672,8 +733,8 @@ function populateFilterOptions() {
   sizeOptions.innerHTML = '';
   Array.from(sizeSet).sort((a, b) => sizeSortKey(a) - sizeSortKey(b)).forEach(size => {
     const label = document.createElement('label');
-    label.className = 'chip-check';
-    label.innerHTML = `<input type="checkbox" value="${size}"> ${size}`;
+    label.className = 'filter-row';
+    label.innerHTML = `<input type="checkbox" value="${size}"> <span>${size}</span>`;
     label.querySelector('input').addEventListener('change', e => {
       if (e.target.checked) activeFilters.sizes.add(size);
       else activeFilters.sizes.delete(size);
@@ -819,10 +880,31 @@ async function loadCatalog() {
   applyFiltersAndRender(true);
 }
 
-document.getElementById('filterToggleBtn').addEventListener('click', () => {
-  document.getElementById('filterPanel').classList.toggle('open');
-  document.getElementById('filterToggleBtn').classList.toggle('active');
+// ===== Акордеон фільтрів (розгортання/згортання секцій) =====
+document.querySelectorAll('.filter-block-header').forEach(header => {
+  header.addEventListener('click', () => {
+    header.closest('.filter-block').classList.toggle('open');
+  });
 });
+
+// ===== Мобільна шторка з фільтрами =====
+const filtersSidebar = document.getElementById('filtersSidebar');
+const filtersOverlay = document.getElementById('filtersOverlay');
+
+function openFiltersDrawer() {
+  filtersSidebar.classList.add('open');
+  filtersOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeFiltersDrawer() {
+  filtersSidebar.classList.remove('open');
+  filtersOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('filterToggleBtn').addEventListener('click', openFiltersDrawer);
+document.getElementById('filtersCloseBtn').addEventListener('click', closeFiltersDrawer);
+filtersOverlay.addEventListener('click', closeFiltersDrawer);
 
 document.getElementById('sortSelect').addEventListener('change', e => {
   activeFilters.sort = e.target.value;
@@ -845,9 +927,9 @@ document.getElementById('resetFiltersBtn').addEventListener('click', () => {
   activeFilters.priceMax = null;
   document.getElementById('priceMinInput').value = '';
   document.getElementById('priceMaxInput').value = '';
-  document.querySelectorAll('.chip-check input').forEach(cb => {
+  document.querySelectorAll('.filter-row input').forEach(cb => {
     cb.checked = false;
-    cb.closest('.chip-check').classList.remove('checked');
+    cb.closest('.filter-row').classList.remove('checked');
   });
   document.getElementById('sortSelect').value = 'default';
   activeFilters.sort = 'default';
