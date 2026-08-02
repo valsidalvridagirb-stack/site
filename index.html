@@ -236,27 +236,28 @@
     background-position: center;
     transition: transform 0.6s ease;
     z-index: 1;
-    filter: grayscale(55%);
+    filter: grayscale(25%);
   }
 
   .cat-card::after {
     content: '';
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    height: 65%;
-    background: linear-gradient(to top, rgba(0,0,0,.82), rgba(0,0,0,0));
+    height: 70%;
+    background: linear-gradient(to top, rgba(0,0,0,.88), rgba(0,0,0,0));
     z-index: 1;
     pointer-events: none;
   }
 
   /* Фонові фото для Чоловічої та Жіночої колекцій */
   .cat-card-men .cat-card-bg {
-    background-image: url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1200&auto=format&fit=crop');
+    background-image: url('https://images.unsplash.com/photo-1623596305214-19f21cbf48ee?q=80&w=1200&auto=format&fit=crop');
+    background-position: center 20%;
   }
 
   .cat-card-women .cat-card-bg {
-    background-image: url('https://images.unsplash.com/photo-1695508875136-d258bd114830?q=80&w=1200&auto=format&fit=crop');
-    background-position: center 25%;
+    background-image: url('https://images.unsplash.com/photo-1630435492662-1efae9f16636?q=80&w=1200&auto=format&fit=crop');
+    background-position: center 15%;
   }
 
   .cat-card:hover .cat-card-bg {
