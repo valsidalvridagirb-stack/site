@@ -709,20 +709,6 @@
       <span>S T O R E</span>
     </div>
     <p class="hero-banner-subtitle">Оригінальний одяг, взуття та аксесуари із США</p>
-    
-    <form class="hero-search-form" id="heroSearchForm">
-      <input 
-        type="text" 
-        class="hero-search-input" 
-        id="heroSearchInput" 
-        placeholder="Введіть артикул або назву товару (наприклад, GZ3625)..." 
-        required
-      >
-      <button type="submit" class="hero-search-btn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        Пошук
-      </button>
-    </form>
   </div>
 </section>
 
@@ -822,14 +808,6 @@ let wishlist = new Set(JSON.parse(localStorage.getItem('wishlist') || '[]'));
 function updateWishBadge(){
   document.getElementById('wishCount').textContent = wishlist.size;
 }
-
-document.getElementById('heroSearchForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const query = document.getElementById('heroSearchInput').value.trim();
-  if (query) {
-    window.location.href = `catalog.html?search=${encodeURIComponent(query)}`;
-  }
-});
 
 function placeholderSVG(){
   return `<svg viewBox="0 0 260 170" fill="none">
