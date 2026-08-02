@@ -48,6 +48,11 @@
   .profile-card h3, .orders-card h3 { font-size:16px; font-weight:500; text-transform:uppercase; margin-bottom:20px; border-bottom:1px solid var(--line); padding-bottom:10px; }
   
   .order-item { border:1px solid var(--line); padding:16px; border-radius:var(--radius); margin-bottom:12px; }
+  .ttn-info { margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13px; }
+  .ttn-info b { font-weight:700; }
+  .ttn-info .status-pill { background:var(--smoke); border:1px solid var(--line); color:var(--mute); padding:3px 10px; border-radius:12px; font-size:12px; }
+  .ttn-info .refresh-btn { background:none; border:1px solid var(--line); border-radius:var(--radius); padding:4px 10px; font-size:12px; cursor:pointer; color:var(--ink); }
+  .ttn-info .refresh-btn:hover { background:var(--smoke); }
   .order-header { display:flex; justify-content:space-between; font-weight:700; font-size:14px; margin-bottom:8px; }
   .order-status { background:#e2f0d9; color:#385723; padding:2px 8px; border-radius:10px; font-size:12px; }
   
@@ -472,7 +477,7 @@ async function loadOrders(userId) {
   }
 
   container.innerHTML = orders.map(o => `
-    <div class="order-item">
+    <div class="order-item" data-order-id="${o.id}">
       <div class="order-header">
         <span>Замовлення #${o.id}</span>
         <span class="order-status">${o.status}</span>
@@ -486,8 +491,38 @@ async function loadOrders(userId) {
       <div style="margin-top:8px; font-weight:700; text-align:right;">
         Сума: ${Number(o.total_price).toLocaleString()} грн
       </div>
+      ${o.ttn ? `
+      <div class="ttn-info">
+        ТТН: <b>${o.ttn}</b>
+        <span class="status-pill" data-status-for="${o.id}">${o.ttn_status || 'статус ще не оновлювався'}</span>
+        <button class="refresh-btn" data-refresh-ttn="${o.id}">Оновити статус</button>
+      </div>` : ''}
     </div>
   `).join('');
+
+  container.querySelectorAll('[data-refresh-ttn]').forEach(btn => {
+    btn.addEventListener('click', () => refreshTtnStatus(btn.dataset.refreshTtn));
+  });
+}
+
+async function refreshTtnStatus(orderId) {
+  const pill = document.querySelector(`[data-status-for="${orderId}"]`);
+  const btn = document.querySelector(`[data-refresh-ttn="${orderId}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Оновлюємо…'; }
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const r = await fetch('/api/np-track?orderId=' + orderId, {
+      headers: { Authorization: 'Bearer ' + session.access_token }
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.message || j.error || 'Помилка');
+    if (pill && j.status) pill.textContent = j.status;
+    showToast('Статус оновлено', 'success');
+  } catch (err) {
+    showToast('Не вдалось оновити статус: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Оновити статус'; }
+  }
 }
 
 initAccount();

@@ -43,6 +43,26 @@
   .card { border:1px solid var(--line); border-radius:var(--radius); padding:22px; margin-bottom:20px; }
   .card h3 { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--mute); margin-bottom:14px; }
 
+  .tabs { display:flex; gap:8px; margin-bottom:24px; border-bottom:1px solid var(--line); }
+  .tab-btn { background:none; border:none; padding:10px 4px; margin-right:20px; font-size:14px; font-weight:600; color:var(--mute); cursor:pointer; border-bottom:2px solid transparent; }
+  .tab-btn.active { color:var(--ink); border-bottom-color:var(--ink); }
+
+  .order-card { border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:14px; }
+  .order-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+  .order-id { font-weight:700; font-size:14px; }
+  .order-date { font-size:12px; color:var(--mute); }
+  .order-body { font-size:13px; line-height:1.7; margin-top:10px; color:var(--ink); }
+  .order-body b { font-weight:700; }
+  .order-items { font-size:12px; color:var(--mute); margin-top:4px; }
+  .ttn-box { margin-top:12px; padding-top:12px; border-top:1px solid var(--line); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .ttn-num { font-weight:700; font-size:14px; }
+  .ttn-status { font-size:12px; padding:3px 9px; border-radius:12px; background:var(--smoke); border:1px solid var(--line); color:var(--mute); }
+  .ttn-form { margin-top:12px; padding-top:12px; border-top:1px solid var(--line); display:none; }
+  .ttn-form.open { display:block; }
+  .ttn-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .ttn-form-row input { flex:1; min-width:140px; padding:9px 11px; border:1px solid var(--line); border-radius:var(--radius); font-size:13px; }
+  .order-empty { color:var(--mute); font-size:14px; padding:20px 0; }
+
   .search-row { display:flex; gap:10px; }
   .search-row input { flex:1; padding:13px 14px; border:1px solid var(--line); border-radius:var(--radius); font-size:15px; outline:none; }
 
@@ -116,6 +136,12 @@
   </div>
 
   <div id="panelSection" style="display:none;">
+    <div class="tabs">
+      <button class="tab-btn active" id="tabPhotosBtn">Фото товарів</button>
+      <button class="tab-btn" id="tabOrdersBtn">Замовлення</button>
+    </div>
+
+  <div id="photosTab">
     <h1>Панель товарів</h1>
     <p class="sub">Введіть артикул, завантажте фото — розміри, ціни та опис підтягнуться з каталогу автоматично.</p>
 
@@ -145,6 +171,13 @@
       <div class="progress" id="progressWrap"><i id="progressBar"></i></div>
       <div class="status-line" id="statusLine"></div>
     </div>
+  </div>
+
+  <div id="ordersTab" style="display:none;">
+    <h1>Замовлення</h1>
+    <p class="sub">ТТН створюється автоматично через API Нової пошти — з вашого відправника, за містом і відділенням клієнта.</p>
+    <div id="ordersList"></div>
+  </div>
 
   </div>
 </div>
@@ -452,6 +485,142 @@ async function unpublish() {
   showToast('Товар прибрано з сайту', 'success');
   document.getElementById('unpublishBtn').style.display = 'none';
   document.getElementById('existingNote').textContent = '';
+}
+
+// ---------- вкладки ----------
+const tabPhotosBtn = document.getElementById('tabPhotosBtn');
+const tabOrdersBtn = document.getElementById('tabOrdersBtn');
+const photosTab = document.getElementById('photosTab');
+const ordersTab = document.getElementById('ordersTab');
+let ordersLoaded = false;
+
+tabPhotosBtn.addEventListener('click', () => {
+  tabPhotosBtn.classList.add('active'); tabOrdersBtn.classList.remove('active');
+  photosTab.style.display = 'block'; ordersTab.style.display = 'none';
+});
+tabOrdersBtn.addEventListener('click', () => {
+  tabOrdersBtn.classList.add('active'); tabPhotosBtn.classList.remove('active');
+  photosTab.style.display = 'none'; ordersTab.style.display = 'block';
+  if (!ordersLoaded) { ordersLoaded = true; loadOrders(); }
+});
+
+// ---------- замовлення ----------
+function fmtDate(iso) {
+  try { return new Date(iso).toLocaleString('uk-UA', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+  catch { return iso; }
+}
+
+async function loadOrders() {
+  const list = document.getElementById('ordersList');
+  list.innerHTML = '<div class="order-empty">Завантаження…</div>';
+
+  const { data: orders, error } = await supabaseClient
+    .from('orders').select('*').order('created_at', { ascending: false }).limit(100);
+  if (error) { list.innerHTML = `<div class="order-empty">Помилка завантаження: ${error.message}</div>`; return; }
+  if (!orders || !orders.length) { list.innerHTML = '<div class="order-empty">Замовлень поки немає.</div>'; return; }
+
+  const { data: allItems } = await supabaseClient
+    .from('order_items').select('*').in('order_id', orders.map(o => o.id));
+  const itemsByOrder = {};
+  (allItems || []).forEach(it => { (itemsByOrder[it.order_id] = itemsByOrder[it.order_id] || []).push(it); });
+
+  list.innerHTML = '';
+  orders.forEach(o => list.appendChild(renderOrderCard(o, itemsByOrder[o.id] || [])));
+}
+
+function renderOrderCard(o, items) {
+  const card = document.createElement('div');
+  card.className = 'order-card';
+  const itemsText = items.map(i => `${i.product_name} (${i.size}) ×${i.quantity}`).join(', ');
+
+  card.innerHTML = `
+    <div class="order-head">
+      <div><span class="order-id">Замовлення №${o.id}</span> · <span class="order-date">${fmtDate(o.created_at)}</span></div>
+      <span class="ttn-status">${o.status || 'В обробці'}</span>
+    </div>
+    <div class="order-body">
+      <b>${o.customer_name}</b> · ${o.customer_phone}<br>
+      ${o.city}, ${o.nova_poshta_dept}<br>
+      Сума: <b>${o.total_price} ₴</b>
+      <div class="order-items">${itemsText}</div>
+    </div>
+    <div class="ttn-box" id="ttnBox-${o.id}"></div>
+    <div class="ttn-form" id="ttnForm-${o.id}">
+      <div class="ttn-form-row">
+        <input type="number" id="ttnWeight-${o.id}" placeholder="Вага, кг" value="1" step="0.1" min="0.1">
+        <input type="number" id="ttnCost-${o.id}" placeholder="Оціночна вартість, ₴" value="${o.total_price}">
+      </div>
+      <div class="ttn-form-row">
+        <input type="text" id="ttnDesc-${o.id}" placeholder="Опис відправлення" value="${itemsText.replace(/"/g,'&quot;').slice(0,90)}">
+      </div>
+      <button class="btn" id="ttnSubmit-${o.id}">Підтвердити і створити ТТН</button>
+    </div>
+  `;
+
+  renderTtnBox(o, card);
+  card.querySelector(`#ttnSubmit-${o.id}`).addEventListener('click', () => createTtn(o.id));
+  return card;
+}
+
+function renderTtnBox(o, scope) {
+  scope = scope || document;
+  const box = scope.querySelector(`#ttnBox-${o.id}`);
+  if (!box) return;
+  if (o.ttn) {
+    box.innerHTML = `<span class="ttn-num">ТТН: ${o.ttn}</span>` +
+      `<span class="ttn-status">${o.ttn_status || 'статус ще не оновлювався'}</span>` +
+      `<button class="btn btn-secondary" data-refresh="${o.id}" style="padding:6px 12px;">Оновити статус</button>`;
+    box.querySelector('[data-refresh]').addEventListener('click', () => refreshTtnStatus(o));
+  } else {
+    box.innerHTML = `<button class="btn btn-secondary" data-create="${o.id}" style="padding:8px 16px;">Створити ТТН</button>`;
+    box.querySelector('[data-create]').addEventListener('click', () => {
+      document.getElementById(`ttnForm-${o.id}`).classList.toggle('open');
+    });
+  }
+}
+
+async function createTtn(orderId) {
+  const btn = document.getElementById(`ttnSubmit-${orderId}`);
+  btn.disabled = true; btn.textContent = 'Створюємо…';
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const r = await fetch('/api/np-create-ttn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+      body: JSON.stringify({
+        orderId,
+        weight: document.getElementById(`ttnWeight-${orderId}`).value,
+        cost: document.getElementById(`ttnCost-${orderId}`).value,
+        description: document.getElementById(`ttnDesc-${orderId}`).value
+      })
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.message || j.error || 'Помилка створення ТТН');
+    if (j.warning) showToast(j.warning, 'error');
+    else showToast(`ТТН створено: ${j.ttn}`, 'success');
+    document.getElementById(`ttnForm-${orderId}`).classList.remove('open');
+    loadOrders();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Підтвердити і створити ТТН';
+  }
+}
+
+async function refreshTtnStatus(o) {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const r = await fetch('/api/np-track?orderId=' + o.id, {
+      headers: { Authorization: 'Bearer ' + session.access_token }
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.message || j.error || 'Помилка отримання статусу');
+    o.ttn_status = j.status;
+    renderTtnBox(o);
+    showToast('Статус оновлено', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 init();
