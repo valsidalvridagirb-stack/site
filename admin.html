@@ -62,6 +62,15 @@
   .search-row { display:flex; gap:10px; }
   .search-row input { flex:1; padding:13px 14px; border:1px solid var(--line); border-radius:var(--radius); font-size:15px; outline:none; }
 
+  .product-list { margin-top:14px; max-height:420px; overflow-y:auto; border:1px solid var(--line); border-radius:var(--radius); }
+  .product-row { display:flex; align-items:center; gap:12px; padding:10px 12px; border-bottom:1px solid var(--line); }
+  .product-row:last-child { border-bottom:none; }
+  .product-row img { width:44px; height:44px; object-fit:cover; border-radius:var(--radius); background:var(--smoke); flex-shrink:0; }
+  .product-row .pinfo { flex:1; min-width:0; }
+  .product-row .pname { font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .product-row .pmeta { font-size:12px; color:var(--mute); margin-top:2px; }
+  .product-list-empty { padding:16px; text-align:center; color:var(--mute); font-size:13px; }
+
   .match-info { margin-top:16px; font-size:14px; line-height:1.6; }
   .match-info b { font-weight:700; }
   .pill { display:inline-block; padding:2px 9px; border-radius:12px; font-size:12px; font-weight:600; margin:2px 4px 2px 0; }
@@ -150,6 +159,14 @@
   <div id="photosTab">
     <h1>Панель товарів</h1>
     <p class="sub">Введіть артикул, завантажте фото — розміри, ціни та опис підтягнуться з каталогу автоматично.</p>
+
+    <div class="card">
+      <h3>Товари на сайті</h3>
+      <div class="search-row">
+        <input type="text" id="productListFilter" placeholder="Пошук за назвою або артикулом">
+      </div>
+      <div id="productList" class="product-list"></div>
+    </div>
 
     <div class="card">
       <h3>1. Артикул</h3>
@@ -253,6 +270,56 @@ async function init() {
   deniedSection.style.display = 'none';
   panelSection.style.display = 'block';
   loadCatalog().catch(() => {});
+  loadProductList().catch(() => {});
+}
+
+// ---------- список товарів на сайті (для кнопки "Редагувати") ----------
+let allProducts = null; // [{id, articul, name, brand, price, photos, total_quantity, ...}]
+
+async function loadProductList() {
+  const listEl = document.getElementById('productList');
+  listEl.innerHTML = '<div class="product-list-empty">Завантаження…</div>';
+  const { data, error } = await supabaseClient.from('product_summary').select('*').order('id', { ascending: false }).limit(500);
+  if (error) { listEl.innerHTML = `<div class="product-list-empty">Помилка завантаження: ${error.message}</div>`; return; }
+  allProducts = data || [];
+  renderProductList();
+}
+
+function renderProductList() {
+  const listEl = document.getElementById('productList');
+  if (!allProducts) return;
+  const filter = document.getElementById('productListFilter').value.trim().toLowerCase();
+  const filtered = filter
+    ? allProducts.filter(p => (p.name || '').toLowerCase().includes(filter) || (p.articul || '').toLowerCase().includes(filter))
+    : allProducts;
+
+  if (!allProducts.length) { listEl.innerHTML = '<div class="product-list-empty">На сайті поки немає опублікованих товарів.</div>'; return; }
+  if (!filtered.length) { listEl.innerHTML = '<div class="product-list-empty">Нічого не знайдено.</div>'; return; }
+
+  listEl.innerHTML = '';
+  filtered.forEach(p => {
+    const thumb = (p.photos || '').split(/[;,]/)[0] || '';
+    const row = document.createElement('div');
+    row.className = 'product-row';
+    row.innerHTML = `
+      <img src="${thumb}" loading="lazy" onerror="this.style.visibility='hidden'">
+      <div class="pinfo">
+        <div class="pname">${p.name || p.articul}</div>
+        <div class="pmeta">${p.articul} · ${p.brand || ''} · ${p.price ? p.price + '₴' : ''} · ${p.total_quantity ?? 0} шт</div>
+      </div>
+      <button class="btn btn-secondary" style="padding:8px 14px; font-size:12px;">Редагувати</button>
+    `;
+    row.querySelector('button').addEventListener('click', () => editProductByArticul(p.articul));
+    listEl.appendChild(row);
+  });
+}
+
+document.getElementById('productListFilter').addEventListener('input', renderProductList);
+
+async function editProductByArticul(articul) {
+  document.getElementById('artInput').value = articul;
+  await doSearch();
+  document.getElementById('photoCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ---------- каталог (Excel) ----------
@@ -579,6 +646,7 @@ async function publish() {
     photoItems = finalUrls.map(url => ({ kind: 'existing', url }));
     document.getElementById('unpublishBtn').style.display = 'inline-block';
     renderPhotoGrid();
+    loadProductList().catch(() => {});
   } catch (err) {
     statusLine.className = 'status-line status-err';
     statusLine.textContent = err.message;
@@ -597,6 +665,7 @@ async function unpublish() {
   showToast('Товар прибрано з сайту', 'success');
   document.getElementById('unpublishBtn').style.display = 'none';
   document.getElementById('existingNote').textContent = '';
+  loadProductList().catch(() => {});
 }
 
 // ---------- вкладки ----------
