@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Розмірна сітка — NEXXTLEVEL STORE</title>
+<link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#111111; --paper:#ffffff; --smoke:#f8f8f6; --line:#e6e5e2; --mute:#767470; --radius:4px; --accent:#c0392b; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { overflow-x:hidden; }
+  body { font-family:'Manrope', system-ui, sans-serif; color:var(--ink); background:var(--paper); display:flex; flex-direction:column; min-height:100vh; overflow-x:hidden; width:100%; }
+  a { text-decoration:none; color:inherit; }
+
+  header.site { position:sticky; top:0; z-index:50; background:rgba(255,255,255,.95); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .header-row { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; max-width:1240px; margin:0 auto; gap:20px; }
+  .logo { display:flex; flex-direction:column; align-items:center; line-height:1; }
+  .logo b { font-size:21px; font-weight:500; }
+  .logo span { font-size:9px; letter-spacing:.32em; color:var(--mute); font-weight:600; display:block; }
+  nav.main-nav { display:flex; gap:24px; font-size:14px; font-weight:600; }
+
+  .site-search{
+    display:flex;align-items:center;flex:1;min-width:140px;max-width:300px;
+    border:1px solid var(--line);border-radius:20px;padding:7px 14px;gap:8px;
+    background:var(--smoke);
+  }
+  .site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);}
+  .site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
+
+  .page-container { max-width:860px; margin:60px auto; padding:0 24px; flex:1; width:100%; }
+  .page-container h1 { font-size:22px; font-weight:500; text-transform:uppercase; margin-bottom:8px; text-align:center; }
+  .page-hint { font-size:13px; color:var(--mute); text-align:center; margin-bottom:32px; max-width:560px; margin-left:auto; margin-right:auto; }
+
+  .tabs { display:flex; justify-content:center; gap:8px; margin-bottom:28px; }
+  .tab-btn { padding:10px 22px; border:1px solid var(--line); border-radius:20px; background:var(--paper); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; cursor:pointer; color:var(--mute); transition:.15s; }
+  .tab-btn.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .tab-btn:hover:not(.active) { border-color:var(--ink); color:var(--ink); }
+
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
+  .chart-section { margin-bottom:36px; }
+  .chart-section h2 { font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:4px; }
+  .chart-note { font-size:12.5px; color:var(--mute); margin-bottom:14px; line-height:1.5; }
+
+  .table-scroll { overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius); }
+  table.size-table { width:100%; border-collapse:collapse; font-size:13px; min-width:480px; }
+  table.size-table th, table.size-table td { padding:10px 14px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.size-table th { background:var(--smoke); font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--mute); font-weight:700; }
+  table.size-table tbody tr:last-child td { border-bottom:none; }
+  table.size-table tbody tr:hover { background:var(--smoke); }
+  table.size-table td:first-child, table.size-table th:first-child { font-weight:700; color:var(--ink); }
+
+  .howto { background:var(--smoke); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; margin-top:8px; }
+  .howto h3 { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:12px; }
+  .howto ol { margin:0; padding-left:20px; font-size:13.5px; line-height:1.9; color:var(--ink); }
+  .howto ol + h3 { margin-top:20px; }
+
+  footer.site-footer { background-color: var(--ink); color: #ffffff; padding: 60px 32px 30px; margin-top: auto; }
+  .footer-container { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
+  .footer-col h4 { font-size: 13px; font-weight: 700; letter-spacing: 1px; color: #888888; margin-bottom: 20px; text-transform: uppercase; }
+  .footer-col ul { list-style: none; padding: 0; margin: 0; }
+  .footer-col ul li { margin-bottom: 12px; }
+  .footer-col ul li a { color: #cccccc; text-decoration: none; font-size: 14px; transition: color 0.2s; }
+  .footer-col ul li a:hover { color: #ffffff; }
+  .footer-logo img { max-width: 100px; background: #ffffff; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
+  .footer-socials { display: flex; gap: 12px; margin-bottom: 20px; }
+  .social-icon { width: 36px; height: 36px; border-radius: 50%; background: #222222; display: flex; align-items: center; justify-content: center; color: #ffffff; text-decoration: none; transition: background 0.2s; }
+  .social-icon:hover { background: #333333; }
+  .footer-desc { font-size: 13px; color: #888888; line-height: 1.6; margin: 0; }
+  .footer-bottom { max-width: 1240px; margin: 40px auto 0; padding-top: 30px; border-top: 1px solid #222222; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #666666; }
+  .footer-bottom-links a { color: #888888; text-decoration: none; margin-right: 20px; }
+  .footer-bottom-links a:hover { color: #ffffff; }
+
+  @media (max-width:768px) {
+    .header-row { padding: 16px 20px; flex-wrap: wrap; gap: 10px; }
+    .footer-container { grid-template-columns: 1fr; gap: 30px; }
+    .footer-bottom { flex-direction: column; gap: 15px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="header-row">
+    <a href="index.html" class="logo"><b>NEXXTLEVEL</b><span>S T O R E</span></a>
+
+    <form class="site-search" id="siteSearchForm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="siteSearchInput" placeholder="Пошук за назвою або артикулом">
+    </form>
+
+    <nav class="main-nav">
+      <a href="catalog.html">Каталог</a>
+      <a href="wishlist.html">Обране</a>
+      <a href="checkout.html">Кошик / Оформлення</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page-container">
+  <h1>Розмірна сітка</h1>
+  <p class="page-hint">Орієнтовні таблиці відповідності розмірів. Фактичні виміри можуть трохи відрізнятись залежно від бренду та крою моделі — за наявності на сторінці товару керуйтесь виробником, вказаним в описі.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="shoes">Взуття</button>
+    <button class="tab-btn" data-tab="clothes">Одяг</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-shoes">
+    <div class="chart-section">
+      <h2>Чоловіче та жіноче взуття</h2>
+      <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US Ч / US Ж — чоловіча та жіноча розмірні сітки США. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
+      <div class="table-scroll">
+        <table class="size-table" id="shoeTable">
+          <thead>
+            <tr><th>EU</th><th>US Ч</th><th>US Ж</th><th>UK</th><th>CM</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="chart-note" style="margin-top:12px;">Деякі бренди (наприклад Adidas) позначають розмір у форматі «42 2/3» — це проміжний розмір, приблизно між 42 та 42.5 EU.</p>
+    </div>
+
+    <div class="howto">
+      <h3>Як виміряти розмір ноги</h3>
+      <ol>
+        <li>Ввечері (нога трохи більша, ніж зранку) поставте стопу на аркуш паперу, притиснутий до стіни п'ятою.</li>
+        <li>Олівцем, тримаючи його вертикально, відмітьте крайню точку найдовшого пальця.</li>
+        <li>Виміряйте відстань від краю паперу (п'яти) до відмітки в сантиметрах.</li>
+        <li>За таблицею вище знайдіть найближче значення CM у більшу сторону — це і буде ваш розмір.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-clothes">
+    <div class="chart-section">
+      <h2>Одяг: футболки, худі, штани, куртки</h2>
+      <p class="chart-note">Виміри тіла в сантиметрах. Обхват грудей — по найширшій частині грудної клітини; обхват талії — по найвужчій частині; обхват стегон — по найширшій частині стегон.</p>
+      <div class="table-scroll">
+        <table class="size-table" id="clothTable">
+          <thead>
+            <tr><th>Розмір</th><th>Грудна клітина, см</th><th>Талія, см</th><th>Стегна, см</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="howto">
+      <h3>Як виміряти</h3>
+      <ol>
+        <li><b>Груди:</b> виміряйте обхват по найвиступаючих точках грудей, тримаючи сантиметр горизонтально.</li>
+        <li><b>Талія:</b> виміряйте обхват по найвужчій частині тулуба, зазвичай на 2-3 см вище пупка.</li>
+        <li><b>Стегна:</b> виміряйте обхват по найширшій частині стегон і сідниць.</li>
+        <li>Якщо ваші виміри потрапляють між двома розмірами — обирайте більший для вільнішої посадки.</li>
+      </ol>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-col brand-col">
+      <div class="footer-logo">
+        <img src="assets/logo.jpg" alt="NEXXTLEVEL STORE">
+      </div>
+      <div class="footer-socials">
+        <a href="https://www.instagram.com/nexxtlevelstore/" target="_blank" class="social-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+        </a>
+        <a href="https://t.me/nexxtlevelstore" target="_blank" class="social-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </a>
+      </div>
+      <p class="footer-desc">
+        Оригінальні товари з США та Європи
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>КЛІЄНТАМ</h4>
+      <ul>
+        <li><a href="track-order.html">Перевірити замовлення</a></li>
+        <li><a href="#">Доставка</a></li>
+        <li><a href="#">Оплата</a></li>
+        <li><a href="#">Повернення</a></li>
+        <li><a href="size-chart.html">Розмірна сітка</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>КАТАЛОГ</h4>
+      <ul>
+        <li><a href="catalog.html?cat=Чоловічі кросівки">Чоловічі кросівки</a></li>
+        <li><a href="catalog.html?cat=Жіночі кросівки">Жіночі кросівки</a></li>
+        <li><a href="catalog.html">Усі товари</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>КОНТАКТИ</h4>
+      <ul class="contacts-list">
+        <li><a href="tel:+380934382093">+38 093 438 20 93</a></li>
+        <li><a href="https://instagram.com" target="_blank">Instagram</a></li>
+        <li><a href="https://t.me" target="_blank">Telegram</a></li>
+        <li><a href="mailto:nexxtlevelstore@ukr.net">nexxtlevelstore@ukr.net</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="footer-bottom-links">
+      <a href="#">Умови використання</a>
+      <a href="#">Політика конфіденційності</a>
+    </div>
+    <div class="footer-copyright">
+      © 2026 NexxtLevelStore. Всі права захищені.
+    </div>
+  </div>
+</footer>
+
+<script>
+document.getElementById('siteSearchForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const term = document.getElementById('siteSearchInput').value.trim();
+  const url = term ? `catalog.html?search=${encodeURIComponent(term)}` : 'catalog.html';
+  window.location.href = url;
+});
+
+// ---------- дані таблиць ----------
+const SHOE_SIZES = [
+  ['35',   '3',    '5',    '2.5',  '22'],
+  ['35.5', '3.5',  '5.5',  '3',    '22.5'],
+  ['36',   '4',    '6',    '3.5',  '23'],
+  ['36.5', '4.5',  '6.5',  '4',    '23.5'],
+  ['37',   '5',    '7',    '4.5',  '23.5'],
+  ['37.5', '5.5',  '7.5',  '5',    '24'],
+  ['38',   '6',    '8',    '5.5',  '24'],
+  ['38.5', '6.5',  '8.5',  '6',    '24.5'],
+  ['39',   '7',    '9',    '6',    '25'],
+  ['40',   '7.5',  '9.5',  '6.5',  '25.5'],
+  ['40.5', '8',    '10',   '7',    '26'],
+  ['41',   '8.5',  '10.5', '7.5',  '26.5'],
+  ['42',   '9',    '11',   '8',    '27'],
+  ['42.5', '9.5',  '11.5', '8.5',  '27.5'],
+  ['43',   '10',   '12',   '9',    '28'],
+  ['44',   '10.5', '12.5', '9.5',  '28.5'],
+  ['44.5', '11',   '13',   '10',   '29'],
+  ['45',   '11.5', '13.5', '10.5', '29.5'],
+  ['45.5', '12',   '14',   '11',   '30'],
+  ['46',   '12.5', '14.5', '11.5', '30.5'],
+  ['47',   '13',   '15',   '12',   '31'],
+  ['47.5', '13.5', '15.5', '12.5', '31.5'],
+  ['48',   '14',   '16',   '13',   '32'],
+  ['48.5', '14.5', '16.5', '13.5', '32.5']
+];
+
+const CLOTH_SIZES = [
+  ['XS',   '84-88',   '66-70',  '90-94'],
+  ['S',    '88-92',   '70-74',  '94-98'],
+  ['M',    '92-96',   '74-80',  '98-102'],
+  ['L',    '96-102',  '80-86',  '102-108'],
+  ['XL',   '102-108', '86-92',  '108-114'],
+  ['XXL',  '108-114', '92-98',  '114-120'],
+  ['XXXL', '114-120', '98-104', '120-126']
+];
+
+function fillTable(id, rows) {
+  const tbody = document.querySelector('#' + id + ' tbody');
+  tbody.innerHTML = rows.map(r => '<tr>' + r.map(v => `<td>${v}</td>`).join('') + '</tr>').join('');
+}
+fillTable('shoeTable', SHOE_SIZES);
+fillTable('clothTable', CLOTH_SIZES);
+
+// ---------- перемикання вкладок ----------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
