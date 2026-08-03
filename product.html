@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="size-chart-data.js"></script>
 <style>
   /* Стили для иконок в шапке */
 .header-icons {
@@ -186,9 +187,48 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .size-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
 .size-title{font-size:14px;font-weight:700;text-transform:uppercase;}
 .size-title-row .size-title{margin-bottom:0;}
-.size-chart-link{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--mute);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;}
+.size-chart-link{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--mute);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;background:none;border:none;padding:0;font-family:inherit;cursor:pointer;}
 .size-chart-link:hover{color:var(--ink);}
 .size-chart-link svg{width:14px;height:14px;stroke:currentColor;flex-shrink:0;}
+
+/* ===== Модальне вікно розмірної сітки ===== */
+.size-modal-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(10,10,10,.55);
+  display:none;align-items:center;justify-content:center;
+  padding:24px;
+}
+.size-modal-overlay.open{display:flex;}
+.size-modal{
+  background:var(--paper);border-radius:6px;
+  width:100%;max-width:600px;max-height:85vh;
+  overflow-y:auto;position:relative;
+  padding:28px 28px 32px;
+}
+.size-modal-close{
+  position:absolute;top:16px;right:16px;
+  width:32px;height:32px;border-radius:50%;background:var(--smoke);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:background .2s;
+}
+.size-modal-close:hover{background:var(--line);}
+.size-modal-close svg{width:16px;height:16px;stroke:var(--ink);}
+.size-modal h2{font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;padding-right:36px;}
+.size-modal .chart-note{font-size:12.5px;color:var(--mute);margin-bottom:16px;line-height:1.5;}
+.size-modal .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:4px;margin-bottom:20px;}
+.size-modal table.size-table{width:100%;border-collapse:collapse;font-size:13px;min-width:400px;}
+.size-modal table.size-table th, .size-modal table.size-table td{padding:9px 12px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap;}
+.size-modal table.size-table th{background:var(--smoke);font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--mute);font-weight:700;}
+.size-modal table.size-table tbody tr:last-child td{border-bottom:none;}
+.size-modal table.size-table td:first-child, .size-modal table.size-table th:first-child{font-weight:700;color:var(--ink);}
+.size-modal .howto{background:var(--smoke);border:1px solid var(--line);border-radius:4px;padding:18px 20px;}
+.size-modal .howto h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:10px;}
+.size-modal .howto ol{margin:0;padding-left:18px;font-size:13px;line-height:1.8;color:var(--ink);}
+.size-modal-full-link{display:inline-block;margin-top:16px;font-size:12px;font-weight:600;color:var(--mute);text-decoration:underline;text-underline-offset:2px;}
+.size-modal-full-link:hover{color:var(--ink);}
+@media (max-width:640px){
+  .size-modal{padding:22px 18px 26px;}
+}
 .size-grid{display:flex;flex-wrap:wrap;gap:8px;}
 .size-btn{
   padding:12px 20px;border:1px solid var(--line);background:none;
@@ -416,6 +456,15 @@ footer.site-footer {
   <div class="lightbox-thumbs" id="lightboxThumbs"></div>
 </div>
 
+<div class="size-modal-overlay" id="sizeModalOverlay">
+  <div class="size-modal">
+    <div class="size-modal-close" onclick="closeSizeModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </div>
+    <div id="sizeModalBody"></div>
+  </div>
+</div>
+
 <footer class="site-footer">
   <div class="footer-container">
     <div class="footer-col brand-col">
@@ -561,34 +610,84 @@ function sizeSortKey(sz) {
   return m ? parseFloat(m[0]) : 9999;
 }
 
-// ---------- посилання на відповідну розмірну сітку (бренд + стать + категорія) ----------
+// ---------- дані для модального вікна «Розмірна сітка» (бренд + стать + категорія) ----------
 const SIZE_CHART_BRAND_SLUGS = {
   'nike': 'nike',
   'adidas': 'adidas',
   'puma': 'puma',
   'new balance': 'nb'
 };
-function buildSizeChartLink(product) {
+function buildSizeChartData(product) {
   const cat1 = String(product.category_1 || '').trim();
-  let tab = null;
-  if (cat1 === 'Взуття') tab = 'shoes';
-  else if (cat1 === 'Одяг') tab = 'clothes';
-  if (!tab) return null;
+  const genderRaw = String(product.gender || '').trim();
+  const genderKey = genderRaw === 'Чоловіки' ? 'men' : (genderRaw === 'Жінки' ? 'women' : null);
 
-  const params = new URLSearchParams();
-  params.set('tab', tab);
-
-  if (tab === 'shoes') {
-    const brandSlug = SIZE_CHART_BRAND_SLUGS[String(product.brand || '').trim().toLowerCase()];
-    if (brandSlug) params.set('brand', brandSlug);
+  if (cat1 === 'Одяг') {
+    const c = SIZE_CHART_META.clothes;
+    return {
+      kind: 'clothes',
+      title: c.title, note: c.note, columns: c.columns, rows: c.rows,
+      howto: SIZE_CHART_META.howtoClothes,
+      howtoTitle: 'Як виміряти',
+      deepLink: 'size-chart.html?tab=clothes'
+    };
   }
 
-  const gender = String(product.gender || '').trim();
-  if (gender === 'Чоловіки') params.set('gender', 'male');
-  else if (gender === 'Жінки') params.set('gender', 'female');
+  if (cat1 === 'Взуття') {
+    const brandSlug = SIZE_CHART_BRAND_SLUGS[String(product.brand || '').trim().toLowerCase()];
+    if (!brandSlug || !genderKey) return null;
+    const entry = SIZE_CHART_META.shoes[brandSlug] && SIZE_CHART_META.shoes[brandSlug][genderKey];
+    if (!entry) return null;
+    const linkGender = genderKey === 'men' ? 'male' : 'female';
+    return {
+      kind: 'shoes',
+      title: entry.title, note: entry.note, columns: entry.columns, rows: entry.rows,
+      howto: SIZE_CHART_META.howtoShoes,
+      howtoTitle: 'Як виміряти розмір ноги',
+      deepLink: `size-chart.html?tab=shoes&brand=${brandSlug}&gender=${linkGender}`
+    };
+  }
 
-  return 'size-chart.html?' + params.toString();
+  return null;
 }
+
+let currentSizeChartData = null;
+
+function openSizeModal() {
+  if (!currentSizeChartData) return;
+  const d = currentSizeChartData;
+  document.getElementById('sizeModalBody').innerHTML = `
+    <h2>${d.title}</h2>
+    <p class="chart-note">${d.note}</p>
+    <div class="table-scroll">
+      <table class="size-table">
+        <thead><tr>${d.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${d.rows.map(r => '<tr>' + r.map(v => `<td>${v}</td>`).join('') + '</tr>').join('')}</tbody>
+      </table>
+    </div>
+    <div class="howto">
+      <h3>${d.howtoTitle}</h3>
+      <ol>${d.howto.map(step => `<li>${step}</li>`).join('')}</ol>
+    </div>
+    <a href="${d.deepLink}" target="_blank" class="size-modal-full-link">Переглянути повну розмірну сітку →</a>
+  `;
+  document.getElementById('sizeModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSizeModal() {
+  document.getElementById('sizeModalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('sizeModalOverlay').addEventListener('click', e => {
+  if (e.target.id === 'sizeModalOverlay') closeSizeModal();
+});
+
+document.addEventListener('keydown', e => {
+  const overlay = document.getElementById('sizeModalOverlay');
+  if (overlay.classList.contains('open') && e.key === 'Escape') closeSizeModal();
+});
 
 function placeholderSVG(){
   return `<svg viewBox="0 0 260 170" fill="none" style="width:40%;height:40%;">
@@ -628,7 +727,7 @@ function renderProduct(product, sizeMap) {
 
   const sortedSizes = Object.keys(sizeMap).sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
   const initialPrice = sortedSizes.length ? sizeMap[sortedSizes[0]].price : Number(product.price);
-  const sizeChartLink = buildSizeChartLink(product);
+  currentSizeChartData = buildSizeChartData(product);
 
   lightboxPhotos = photos;
   currentPhotoIndex = 0;
@@ -673,11 +772,11 @@ function renderProduct(product, sizeMap) {
           <div class="size-section">
             <div class="size-title-row">
               <div class="size-title">Оберіть розмір (US)</div>
-              ${sizeChartLink ? `
-                <a href="${sizeChartLink}" target="_blank" class="size-chart-link">
+              ${currentSizeChartData ? `
+                <button type="button" class="size-chart-link" onclick="openSizeModal()">
                   <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="1"/><path d="M7 7v3M11 7v5M15 7v3M19 7v5"/></svg>
                   Розмірна сітка
-                </a>
+                </button>
               ` : ''}
             </div>
             <div class="size-grid">
