@@ -120,7 +120,6 @@
       <button class="brand-btn active" data-brand="nike">Nike</button>
       <button class="brand-btn" data-brand="puma">Puma</button>
       <button class="brand-btn" data-brand="nb">New Balance</button>
-      <button class="brand-btn" data-brand="generic">Інші бренди</button>
     </div>
 
     <div id="brand-nike">
@@ -217,22 +216,6 @@
             <tbody></tbody>
           </table>
         </div>
-      </div>
-    </div>
-
-    <div id="brand-generic" style="display:none;">
-      <div class="chart-section">
-        <h2>Чоловіче та жіноче взуття — орієнтовна сітка</h2>
-        <p class="chart-note">Для брендів, за якими ще немає окремої таблиці. EU — розмір, вказаний на сайті та на етикетці взуття. US Ч / US Ж — чоловіча та жіноча розмірні сітки США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
-        <div class="table-scroll">
-          <table class="size-table" id="shoeTable">
-            <thead>
-              <tr><th>EU</th><th>US Ч</th><th>US Ж</th><th>UK</th><th>CM</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <p class="chart-note" style="margin-top:12px;">Деякі бренди (наприклад Adidas) позначають розмір у форматі «42 2/3» — це проміжний розмір, приблизно між 42 та 42.5 EU.</p>
       </div>
     </div>
 
@@ -469,33 +452,6 @@ const NB_TEEN = [
   ['39.5', '7',   '6.5', '25']
 ];
 
-const SHOE_SIZES = [
-  ['35',   '3',    '5',    '2.5',  '22'],
-  ['35.5', '3.5',  '5.5',  '3',    '22.5'],
-  ['36',   '4',    '6',    '3.5',  '23'],
-  ['36.5', '4.5',  '6.5',  '4',    '23.5'],
-  ['37',   '5',    '7',    '4.5',  '23.5'],
-  ['37.5', '5.5',  '7.5',  '5',    '24'],
-  ['38',   '6',    '8',    '5.5',  '24'],
-  ['38.5', '6.5',  '8.5',  '6',    '24.5'],
-  ['39',   '7',    '9',    '6',    '25'],
-  ['40',   '7.5',  '9.5',  '6.5',  '25.5'],
-  ['40.5', '8',    '10',   '7',    '26'],
-  ['41',   '8.5',  '10.5', '7.5',  '26.5'],
-  ['42',   '9',    '11',   '8',    '27'],
-  ['42.5', '9.5',  '11.5', '8.5',  '27.5'],
-  ['43',   '10',   '12',   '9',    '28'],
-  ['44',   '10.5', '12.5', '9.5',  '28.5'],
-  ['44.5', '11',   '13',   '10',   '29'],
-  ['45',   '11.5', '13.5', '10.5', '29.5'],
-  ['45.5', '12',   '14',   '11',   '30'],
-  ['46',   '12.5', '14.5', '11.5', '30.5'],
-  ['47',   '13',   '15',   '12',   '31'],
-  ['47.5', '13.5', '15.5', '12.5', '31.5'],
-  ['48',   '14',   '16',   '13',   '32'],
-  ['48.5', '14.5', '16.5', '13.5', '32.5']
-];
-
 const CLOTH_SIZES = [
   ['XS',   '84-88',   '66-70',  '90-94'],
   ['S',    '88-92',   '70-74',  '94-98'],
@@ -517,7 +473,6 @@ fillTable('pumaWomenTable', PUMA_WOMEN);
 fillTable('nbMenTable', NB_MEN);
 fillTable('nbWomenTable', NB_WOMEN);
 fillTable('nbTeenTable', NB_TEEN);
-fillTable('shoeTable', SHOE_SIZES);
 fillTable('clothTable', CLOTH_SIZES);
 
 // ---------- перемикання вкладок (Взуття / Одяг) ----------
@@ -531,7 +486,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ---------- перемикання бренду (в межах вкладки "Взуття") ----------
-const BRAND_IDS = ['nike', 'puma', 'nb', 'generic'];
+const BRAND_IDS = ['nike', 'puma', 'nb'];
 document.querySelectorAll('.brand-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.brand-btn').forEach(b => b.classList.remove('active'));
