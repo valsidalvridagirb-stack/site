@@ -315,6 +315,12 @@ let currentMatches = [];
 // (new, ще File-об'єкти) в одному масиві, порядок елементів = порядок на сайті.
 // { kind: 'existing', url } | { kind: 'new', file }
 let photoItems = [];
+// Рядки товару, що вже опубліковані на сайті (з Supabase), незалежно від того,
+// чи є він досі в Excel-каталозі постачальників.
+let existingRows = [];
+// true, якщо товару вже немає в актуальному Excel-каталозі (постачальник прибрав
+// з прайсу) — тоді редагуємо лише опис і фото, ціну/кількість/розміри не чіпаємо.
+let editOnlyMode = false;
 
 document.getElementById('artSearchBtn').addEventListener('click', doSearch);
 document.getElementById('artInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
@@ -335,34 +341,57 @@ async function doSearch() {
   currentArticul = art;
   currentMatches = groupBySize(findByArticul(art));
   photoItems = [];
+  editOnlyMode = false;
 
   const info = document.getElementById('matchInfo');
-  if (!currentMatches.length) {
+  const descInput = document.getElementById('descInput');
+
+  // Тягнемо всі рядки товару з Supabase (по кожному розміру) — незалежно від того,
+  // чи він досі є в Excel-каталозі постачальників. Це дозволяє редагувати опис/фото
+  // вже опублікованого товару, навіть якщо постачальник прибрав його з прайсу.
+  const { data: existing } = await supabaseClient.from('products')
+    .select('name, brand, gender, category_1, category_2, category_3, price, quantity, size, description, photos')
+    .eq('articul', art);
+  existingRows = existing || [];
+
+  if (!currentMatches.length && !existingRows.length) {
     info.innerHTML = `<span class="pill" style="background:var(--errbg); color:var(--err);">Не знайдено в Excel-каталозі</span>`;
     document.getElementById('photoCard').style.display = 'none';
     document.getElementById('descCard').style.display = 'none';
     document.getElementById('publishCard').style.display = 'none';
     return;
   }
-  const first = currentMatches[0];
-  const totalQty = currentMatches.reduce((s, m) => s + (Number(m.qty) || 0), 0);
-  info.innerHTML = `<div><b>${first.name}</b></div>` +
-    `<div style="margin-top:4px;">${first.brand} · ${first.gender} · ${first.cat1}/${first.cat2}${first.cat3 ? '/' + first.cat3 : ''}</div>` +
-    `<div class="sizes-list">${currentMatches.map(m => `<span class="pill pill-mute">${m.size} · ${m.price}₴ · ${m.qty}шт</span>`).join('')}</div>` +
-    `<div style="margin-top:8px; font-size:12px; color:var(--mute);">Разом на складі: ${totalQty} шт · ${currentMatches.length} розмір(ів)</div>`;
 
-  const autoDescription = buildDescription(first.name, first.brand, first.cat1, first.gender);
+  let first, autoDescription;
+  if (currentMatches.length) {
+    first = currentMatches[0];
+    const totalQty = currentMatches.reduce((s, m) => s + (Number(m.qty) || 0), 0);
+    info.innerHTML = `<div><b>${first.name}</b></div>` +
+      `<div style="margin-top:4px;">${first.brand} · ${first.gender} · ${first.cat1}/${first.cat2}${first.cat3 ? '/' + first.cat3 : ''}</div>` +
+      `<div class="sizes-list">${currentMatches.map(m => `<span class="pill pill-mute">${m.size} · ${m.price}₴ · ${m.qty}шт</span>`).join('')}</div>` +
+      `<div style="margin-top:8px; font-size:12px; color:var(--mute);">Разом на складі: ${totalQty} шт · ${currentMatches.length} розмір(ів)</div>`;
+    autoDescription = buildDescription(first.name, first.brand, first.cat1, first.gender);
+  } else {
+    // товару більше немає в актуальному прайсі постачальників — редагуємо лише
+    // опис і фото, ціну/кількість/розміри залишаємо такими, які вже збережені
+    editOnlyMode = true;
+    first = existingRows[0];
+    const totalQty = existingRows.reduce((s, m) => s + (Number(m.quantity) || 0), 0);
+    info.innerHTML = `<div><b>${first.name}</b></div>` +
+      `<div style="margin-top:4px;">${first.brand} · ${first.gender} · ${first.category_1}/${first.category_2}${first.category_3 ? '/' + first.category_3 : ''}</div>` +
+      `<div class="sizes-list">${existingRows.map(m => `<span class="pill pill-mute">${m.size} · ${m.price}₴ · ${m.quantity}шт</span>`).join('')}</div>` +
+      `<div style="margin-top:8px; font-size:12px; color:var(--mute);">Разом на складі: ${totalQty} шт · ${existingRows.length} розмір(ів)</div>` +
+      `<div style="margin-top:8px;"><span class="pill" style="background:var(--errbg); color:var(--err);">Товару більше немає в каталозі постачальників — можна редагувати опис і фото, ціна/кількість/розміри залишаться без змін</span></div>`;
+    autoDescription = buildDescription(first.name, first.brand, first.category_1, first.gender);
+  }
 
-  // чи вже опубліковано на сайті
-  const { data: existing } = await supabaseClient.from('products').select('photos, description').eq('articul', art).limit(1);
   photoItems = [];
-  const descInput = document.getElementById('descInput');
-  if (existing && existing.length && existing[0].photos) {
-    const existingPhotos = existing[0].photos.split(/[;,]/).map(s => s.trim()).filter(Boolean);
+  if (existingRows.length && existingRows[0].photos) {
+    const existingPhotos = existingRows[0].photos.split(/[;,]/).map(s => s.trim()).filter(Boolean);
     photoItems = existingPhotos.map(url => ({ kind: 'existing', url }));
     document.getElementById('unpublishBtn').style.display = 'inline-block';
     document.getElementById('existingNote').textContent = 'Товар вже опубліковано на сайті — нижче поточні фото, їх можна видалити, додати нові або перетягнути, щоб змінити порядок.';
-    descInput.value = existing[0].description || autoDescription;
+    descInput.value = existingRows[0].description || autoDescription;
   } else {
     document.getElementById('unpublishBtn').style.display = 'none';
     document.getElementById('existingNote').textContent = '';
@@ -465,7 +494,8 @@ function extOf(name) {
 }
 
 async function publish() {
-  if (!currentArticul || !currentMatches.length) return;
+  if (!currentArticul) return;
+  if (!editOnlyMode && !currentMatches.length) return;
   if (!photoItems.length) { showToast('Додайте хоча б одне фото', 'error'); return; }
 
   const statusLine = document.getElementById('statusLine');
@@ -504,33 +534,47 @@ async function publish() {
     statusLine.textContent = 'Оновлення бази…';
     progressBar.style.width = '85%';
 
-    const first = currentMatches[0];
     const descInput = document.getElementById('descInput');
-    const description = descInput.value.trim() || buildDescription(first.name, first.brand, first.cat1, first.gender);
+    let rowsCount;
 
-    await supabaseClient.from('products').delete().eq('articul', currentArticul);
+    if (editOnlyMode) {
+      // товару немає в актуальному Excel-каталозі — оновлюємо лише опис і фото,
+      // ціну/кількість/розміри в базі не чіпаємо
+      const description = descInput.value.trim() || existingRows[0]?.description || '';
+      const { error: updErr } = await supabaseClient.from('products')
+        .update({ description, photos: finalPhotos })
+        .eq('articul', currentArticul);
+      if (updErr) throw new Error('Не вдалось зберегти товар: ' + updErr.message);
+      rowsCount = existingRows.length;
+    } else {
+      const first = currentMatches[0];
+      const description = descInput.value.trim() || buildDescription(first.name, first.brand, first.cat1, first.gender);
 
-    const rows = currentMatches.map(m => ({
-      articul: currentArticul,
-      name: m.name,
-      size: m.size,
-      price: m.price,
-      quantity: m.qty,
-      brand: m.brand,
-      gender: m.gender,
-      category_1: m.cat1,
-      category_2: m.cat2,
-      category_3: m.cat3,
-      description,
-      photos: finalPhotos,
-      supplier: [...m.suppliers].join(', ')
-    }));
-    const { error: insErr } = await supabaseClient.from('products').insert(rows);
-    if (insErr) throw new Error('Не вдалось зберегти товар: ' + insErr.message);
+      await supabaseClient.from('products').delete().eq('articul', currentArticul);
+
+      const rows = currentMatches.map(m => ({
+        articul: currentArticul,
+        name: m.name,
+        size: m.size,
+        price: m.price,
+        quantity: m.qty,
+        brand: m.brand,
+        gender: m.gender,
+        category_1: m.cat1,
+        category_2: m.cat2,
+        category_3: m.cat3,
+        description,
+        photos: finalPhotos,
+        supplier: [...m.suppliers].join(', ')
+      }));
+      const { error: insErr } = await supabaseClient.from('products').insert(rows);
+      if (insErr) throw new Error('Не вдалось зберегти товар: ' + insErr.message);
+      rowsCount = rows.length;
+    }
 
     progressBar.style.width = '100%';
     statusLine.className = 'status-line status-ok';
-    statusLine.textContent = `Опубліковано: ${currentArticul} · ${rows.length} розмір(ів) · ${finalUrls.length} фото`;
+    statusLine.textContent = `Опубліковано: ${currentArticul} · ${rowsCount} розмір(ів) · ${finalUrls.length} фото`;
     showToast('Товар опубліковано на сайті', 'success');
     photoItems = finalUrls.map(url => ({ kind: 'existing', url }));
     document.getElementById('unpublishBtn').style.display = 'inline-block';
