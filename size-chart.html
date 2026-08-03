@@ -119,6 +119,7 @@
     <div class="brand-tabs" id="brandTabs">
       <button class="brand-btn active" data-brand="nike">Nike</button>
       <button class="brand-btn" data-brand="puma">Puma</button>
+      <button class="brand-btn" data-brand="nb">New Balance</button>
       <button class="brand-btn" data-brand="generic">Інші бренди</button>
     </div>
 
@@ -175,6 +176,22 @@
             <tbody></tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <div id="brand-nb" style="display:none;">
+      <div class="chart-section">
+        <h2>New Balance — підліткові кросівки</h2>
+        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття (в Україні співпадає з європейським). US — американська розмірна сітка. UK — британська сітка. CM — довжина стопи в сантиметрах (на відміну від Nike і Puma, тут вказана саме довжина стопи, а не устілки).</p>
+        <div class="table-scroll">
+          <table class="size-table" id="nbTeenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="chart-note" style="margin-top:12px;">Чоловічі та жіночі розміри New Balance додамо окремо.</p>
       </div>
     </div>
 
@@ -381,6 +398,18 @@ const PUMA_WOMEN = [
   ['42.5', '11',   '8.5', '27.5']
 ];
 
+// New Balance — підліткові (телефонований — довжина СТОПИ, не устілки), джерело: newbalance.ua
+const NB_TEEN = [
+  ['35.5', '3.5', '3',   '21.5'],
+  ['36',   '4',   '3.5', '22'],
+  ['37',   '4.5', '4',   '22.5'],
+  ['37.5', '5',   '4.5', '23'],
+  ['38',   '5.5', '5',   '23.5'],
+  ['38.5', '6',   '5.5', '24'],
+  ['39',   '6.5', '6',   '24.5'],
+  ['39.5', '7',   '6.5', '25']
+];
+
 const SHOE_SIZES = [
   ['35',   '3',    '5',    '2.5',  '22'],
   ['35.5', '3.5',  '5.5',  '3',    '22.5'],
@@ -426,6 +455,7 @@ fillTable('nikeMenTable', NIKE_MEN);
 fillTable('nikeWomenTable', NIKE_WOMEN);
 fillTable('pumaMenTable', PUMA_MEN);
 fillTable('pumaWomenTable', PUMA_WOMEN);
+fillTable('nbTeenTable', NB_TEEN);
 fillTable('shoeTable', SHOE_SIZES);
 fillTable('clothTable', CLOTH_SIZES);
 
@@ -440,7 +470,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ---------- перемикання бренду (в межах вкладки "Взуття") ----------
-const BRAND_IDS = ['nike', 'puma', 'generic'];
+const BRAND_IDS = ['nike', 'puma', 'nb', 'generic'];
 document.querySelectorAll('.brand-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.brand-btn').forEach(b => b.classList.remove('active'));
