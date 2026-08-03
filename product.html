@@ -183,7 +183,12 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .p-articul{font-size:12px;color:var(--mute);}
 .p-price{font-size:24px;font-weight:500;color:var(--ink);}
 .size-section{margin-top:16px;}
-.size-title{font-size:14px;font-weight:700;margin-bottom:12px;text-transform:uppercase;}
+.size-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.size-title{font-size:14px;font-weight:700;text-transform:uppercase;}
+.size-title-row .size-title{margin-bottom:0;}
+.size-chart-link{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--mute);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;}
+.size-chart-link:hover{color:var(--ink);}
+.size-chart-link svg{width:14px;height:14px;stroke:currentColor;flex-shrink:0;}
 .size-grid{display:flex;flex-wrap:wrap;gap:8px;}
 .size-btn{
   padding:12px 20px;border:1px solid var(--line);background:none;
@@ -556,6 +561,35 @@ function sizeSortKey(sz) {
   return m ? parseFloat(m[0]) : 9999;
 }
 
+// ---------- посилання на відповідну розмірну сітку (бренд + стать + категорія) ----------
+const SIZE_CHART_BRAND_SLUGS = {
+  'nike': 'nike',
+  'adidas': 'adidas',
+  'puma': 'puma',
+  'new balance': 'nb'
+};
+function buildSizeChartLink(product) {
+  const cat1 = String(product.category_1 || '').trim();
+  let tab = null;
+  if (cat1 === 'Взуття') tab = 'shoes';
+  else if (cat1 === 'Одяг') tab = 'clothes';
+  if (!tab) return null;
+
+  const params = new URLSearchParams();
+  params.set('tab', tab);
+
+  if (tab === 'shoes') {
+    const brandSlug = SIZE_CHART_BRAND_SLUGS[String(product.brand || '').trim().toLowerCase()];
+    if (brandSlug) params.set('brand', brandSlug);
+  }
+
+  const gender = String(product.gender || '').trim();
+  if (gender === 'Чоловіки') params.set('gender', 'male');
+  else if (gender === 'Жінки') params.set('gender', 'female');
+
+  return 'size-chart.html?' + params.toString();
+}
+
 function placeholderSVG(){
   return `<svg viewBox="0 0 260 170" fill="none" style="width:40%;height:40%;">
     <path d="M15 140c0-18 14-30 36-35l64-16c11-3 17-11 20-22l5-16c2-6 8-10 15-9l22 6c8 2 11 9 9 17l-6 26c-3 14-1 25 6 34 6 8 8 17 3 25-6 11-20 15-36 15H45c-18 0-30-11-30-25z" fill="#e6e5e2" stroke="#767470" stroke-width="2"/>
@@ -594,6 +628,7 @@ function renderProduct(product, sizeMap) {
 
   const sortedSizes = Object.keys(sizeMap).sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
   const initialPrice = sortedSizes.length ? sizeMap[sortedSizes[0]].price : Number(product.price);
+  const sizeChartLink = buildSizeChartLink(product);
 
   lightboxPhotos = photos;
   currentPhotoIndex = 0;
@@ -636,7 +671,15 @@ function renderProduct(product, sizeMap) {
 
         ${sortedSizes.length ? `
           <div class="size-section">
-            <div class="size-title">Оберіть розмір (US)</div>
+            <div class="size-title-row">
+              <div class="size-title">Оберіть розмір (US)</div>
+              ${sizeChartLink ? `
+                <a href="${sizeChartLink}" target="_blank" class="size-chart-link">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="1"/><path d="M7 7v3M11 7v5M15 7v3M19 7v5"/></svg>
+                  Розмірна сітка
+                </a>
+              ` : ''}
+            </div>
             <div class="size-grid">
               ${sortedSizes.map(size => `
                 <button class="size-btn" ${sizeMap[size].available ? '' : 'disabled'}

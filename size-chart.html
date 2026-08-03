@@ -564,26 +564,64 @@ fillTable('adidasWomenTable', ADIDAS_WOMEN);
 fillTable('clothTable', CLOTH_SIZES);
 
 // ---------- перемикання вкладок (Взуття / Одяг) ----------
+function selectTab(tabId) {
+  const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+  if (!btn) return;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tabId).classList.add('active');
+}
 document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-  });
+  btn.addEventListener('click', () => selectTab(btn.dataset.tab));
 });
 
 // ---------- перемикання бренду (в межах вкладки "Взуття") ----------
 const BRAND_IDS = ['nike', 'puma', 'nb', 'adidas'];
-document.querySelectorAll('.brand-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.brand-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    BRAND_IDS.forEach(id => {
-      document.getElementById('brand-' + id).style.display = (btn.dataset.brand === id) ? 'block' : 'none';
-    });
+function selectBrand(brandId) {
+  const btn = document.querySelector(`.brand-btn[data-brand="${brandId}"]`);
+  if (!btn) return;
+  document.querySelectorAll('.brand-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  BRAND_IDS.forEach(id => {
+    document.getElementById('brand-' + id).style.display = (brandId === id) ? 'block' : 'none';
   });
+}
+document.querySelectorAll('.brand-btn').forEach(btn => {
+  btn.addEventListener('click', () => selectBrand(btn.dataset.brand));
 });
+
+// ---------- глибоке посилання з картки товару: ?tab=shoes&brand=nike&gender=male ----------
+(function applyDeepLinkParams() {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab');
+  const brand = params.get('brand');
+  const gender = params.get('gender');
+
+  if (tab === 'clothes') selectTab('clothes');
+  else if (tab === 'shoes' || brand) selectTab('shoes');
+
+  let scopeEl = null;
+  if (brand && BRAND_IDS.includes(brand)) {
+    selectBrand(brand);
+    scopeEl = document.getElementById('brand-' + brand);
+  }
+
+  if (scopeEl && (gender === 'male' || gender === 'female')) {
+    const wantWord = gender === 'male' ? 'чоловіч' : 'жіноч';
+    setTimeout(() => {
+      const heading = [...scopeEl.querySelectorAll('.chart-section h2')]
+        .find(h2 => h2.textContent.toLowerCase().includes(wantWord));
+      if (!heading) return;
+      const section = heading.closest('.chart-section');
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      section.style.transition = 'box-shadow .3s';
+      section.style.boxShadow = '0 0 0 3px var(--ink)';
+      section.style.borderRadius = '6px';
+      setTimeout(() => { section.style.boxShadow = 'none'; }, 1800);
+    }, 100);
+  }
+})();
 </script>
 </body>
 </html>
