@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Сканування розмірів фото — NEXXTLEVEL STORE</title>
+<style>
+  :root { --ink:#111111; --paper:#ffffff; --smoke:#f8f8f6; --line:#e6e5e2; --mute:#767470; --radius:4px; --ok:#385723; --okbg:#e2f0d9; }
+  * { box-sizing:border-box; }
+  body { font-family:system-ui, sans-serif; color:var(--ink); background:var(--paper); max-width:1000px; margin:40px auto; padding:0 24px; }
+  h1 { font-size:20px; margin-bottom:6px; }
+  p.sub { color:var(--mute); font-size:13px; margin-bottom:20px; }
+  .targets { font-size:13px; color:var(--mute); margin-bottom:20px; }
+  .targets code { background:var(--smoke); padding:2px 6px; border-radius:3px; margin-right:6px; }
+  button { padding:12px 20px; background:var(--ink); color:#fff; border:none; border-radius:var(--radius); font-size:14px; cursor:pointer; }
+  button:disabled { opacity:0.5; cursor:default; }
+  #progress { margin-top:20px; font-size:14px; }
+  #bar { height:8px; background:var(--smoke); border-radius:4px; overflow:hidden; margin-top:8px; }
+  #barFill { height:100%; background:var(--ink); width:0%; transition:width .2s; }
+  #results { margin-top:30px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  th { color:var(--mute); font-weight:600; text-transform:uppercase; font-size:11px; }
+  .pill { background:var(--okbg); color:var(--ok); padding:2px 8px; border-radius:10px; font-size:12px; }
+  a.imglink { color:var(--ink); text-decoration:underline; }
+  #summary { margin-top:16px; font-weight:600; }
+  #exportBtn { margin-top:16px; background:none; border:1px solid var(--ink); color:var(--ink); }
+</style>
+</head>
+<body>
+
+<h1>Сканування бакету product-images за розміром</h1>
+<p class="sub">Одноразовий діагностичний інструмент. Читає перші 256KB кожного файлу (без завантаження всього зображення) і визначає піксельні розміри.</p>
+<div class="targets">Шукаємо: <span id="targetsList"></span></div>
+
+<button id="startBtn">Почати сканування</button>
+
+<div id="progress" style="display:none;">
+  <div id="progressText">Скановано 0 / 0</div>
+  <div id="bar"><div id="barFill"></div></div>
+</div>
+
+<div id="results"></div>
+
+<script>
+const TARGETS = ['1872x2340','2000x2000','1280x1600','1728x2160','2000x2500','1400x1750','1638x2048','1070x1338'];
+document.getElementById('targetsList').innerHTML = TARGETS.map(t => `<code>${t}</code>`).join('');
+
+const BATCH = 1000;
+const PUBLIC_BASE = 'https://jkwppbriklmxbivndxeq.supabase.co/storage/v1/object/public/product-images/';
+
+function encodePath(p) {
+  return p.split('/').map(encodeURIComponent).join('/');
+}
+
+async function getTotalCount() {
+  // пробний виклик з великим offset, щоб визначити, коли список закінчується — просто йдемо батчами, поки hasMore=false
+  return null;
+}
+
+document.getElementById('startBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('startBtn');
+  btn.disabled = true;
+  btn.textContent = 'Сканування…';
+  document.getElementById('progress').style.display = 'block';
+
+  const allMatches = [];
+  let scanned = 0;
+  let offset = 0;
+  let batchNum = 0;
+
+  // Спочатку запускаємо кілька батчів паралельно "наосліп" (з запасом), потім
+  // добираємо решту — так швидше, ніж чекати кожен батч по черзі.
+  const MAX_OFFSET_GUESS = 20000; // з запасом, реальних файлів ~16000
+  const offsets = [];
+  for (let o = 0; o < MAX_OFFSET_GUESS; o += BATCH) offsets.push(o);
+
+  const CONCURRENT_BATCHES = 6;
+  let idx = 0;
+  let stop = false;
+
+  async function worker() {
+    while (idx < offsets.length && !stop) {
+      const myOffset = offsets[idx++];
+      if (stop) return;
+      try {
+        const url = `/api/scan-dimensions?offset=${myOffset}&limit=${BATCH}&targets=${TARGETS.join(',')}`;
+        const r = await fetch(url);
+        const j = await r.json();
+        if (j.matches) allMatches.push(...j.matches);
+        scanned += (j.scanned || 0);
+        batchNum++;
+        document.getElementById('progressText').textContent = `Скановано ${scanned} файлів (батчів оброблено: ${batchNum})`;
+        document.getElementById('barFill').style.width = Math.min(100, (scanned / 16008) * 100) + '%';
+        if (!j.hasMore) {
+          stop = true;
+        }
+      } catch (err) {
+        console.error('batch error at offset', myOffset, err);
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: CONCURRENT_BATCHES }, worker));
+
+  btn.textContent = 'Готово';
+  document.getElementById('progressText').textContent = `Завершено. Скановано ${scanned} файлів, знайдено збігів: ${allMatches.length}`;
+
+  renderResults(allMatches);
+  window.__scanResults = allMatches;
+});
+
+function renderResults(matches) {
+  const container = document.getElementById('results');
+  if (!matches.length) {
+    container.innerHTML = '<p>Файлів з такими розмірами не знайдено.</p>';
+    return;
+  }
+
+  const byArticul = {};
+  matches.forEach(m => {
+    const art = m.path.split('/')[0];
+    (byArticul[art] = byArticul[art] || []).push(m);
+  });
+
+  container.innerHTML = `
+    <div id="summary">Знайдено ${matches.length} фото у ${Object.keys(byArticul).length} артикулах</div>
+    <button id="exportBtn">Завантажити список (CSV)</button>
+    <table>
+      <thead><tr><th>Артикул</th><th>Файл</th><th>Розмір</th><th>Перегляд</th></tr></thead>
+      <tbody>
+        ${matches.map(m => `
+          <tr>
+            <td>${m.path.split('/')[0]}</td>
+            <td>${m.path.split('/').slice(1).join('/')}</td>
+            <td><span class="pill">${m.width}×${m.height}</span></td>
+            <td><a class="imglink" href="${PUBLIC_BASE}${encodePath(m.path)}" target="_blank">відкрити</a></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const rows = [['articul','file','width','height','url']];
+    matches.forEach(m => rows.push([
+      m.path.split('/')[0],
+      m.path.split('/').slice(1).join('/'),
+      m.width, m.height,
+      PUBLIC_BASE + encodePath(m.path)
+    ]));
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'scan-dimensions-results.csv';
+    link.click();
+  });
+}
+</script>
+</body>
+</html>
