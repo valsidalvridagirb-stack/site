@@ -118,6 +118,7 @@
   <div class="tab-panel active" id="tab-shoes">
     <div class="brand-tabs" id="brandTabs">
       <button class="brand-btn active" data-brand="nike">Nike</button>
+      <button class="brand-btn" data-brand="puma">Puma</button>
       <button class="brand-btn" data-brand="generic">Інші бренди</button>
     </div>
 
@@ -140,6 +141,34 @@
         <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
         <div class="table-scroll">
           <table class="size-table" id="nikeWomenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="brand-puma" style="display:none;">
+      <div class="chart-section">
+        <h2>Puma — чоловіче взуття</h2>
+        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="pumaMenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Puma — жіноче взуття</h2>
+        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="pumaWomenTable">
             <thead>
               <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
             </thead>
@@ -313,6 +342,45 @@ const NIKE_WOMEN = [
   ['44',   '11.5', '9',   '28.5']
 ];
 
+// Puma — точна сітка виробника (EU, US, UK, CM), джерело: ua.puma.com/uk/size-guide.html
+const PUMA_MEN = [
+  ['38',   '6',    '5',    '24'],
+  ['38.5', '6.5',  '5.5',  '24.5'],
+  ['39',   '7',    '6',    '25'],
+  ['40',   '7.5',  '6.5',  '25.5'],
+  ['40.5', '8',    '7',    '26'],
+  ['41',   '8.5',  '7.5',  '26.5'],
+  ['42',   '9',    '8',    '27'],
+  ['42.5', '9.5',  '8.5',  '27.5'],
+  ['43',   '10',   '9',    '28'],
+  ['44',   '10.5', '9.5',  '28.5'],
+  ['44.5', '11',   '10',   '29'],
+  ['45',   '11.5', '10.5', '29.5'],
+  ['46',   '12',   '11',   '30'],
+  ['46.5', '12.5', '11.5', '30.5'],
+  ['47',   '13',   '12',   '31'],
+  ['48.5', '14',   '13',   '32'],
+  ['49.5', '15',   '14',   '33'],
+  ['51',   '16',   '15',   '34']
+];
+const PUMA_WOMEN = [
+  ['34',   '4',    '1.5', '20.5'],
+  ['34.5', '4.5',  '2',   '21'],
+  ['35',   '5',    '2.5', '21.5'],
+  ['35.5', '5.5',  '3',   '22'],
+  ['36',   '6',    '3.5', '22.5'],
+  ['37',   '6.5',  '4',   '23'],
+  ['37.5', '7',    '4.5', '23.5'],
+  ['38',   '7.5',  '5',   '24'],
+  ['38.5', '8',    '5.5', '24.5'],
+  ['39',   '8.5',  '6',   '25'],
+  ['40',   '9',    '6.5', '25.5'],
+  ['40.5', '9.5',  '7',   '26'],
+  ['41',   '10',   '7.5', '26.5'],
+  ['42',   '10.5', '8',   '27'],
+  ['42.5', '11',   '8.5', '27.5']
+];
+
 const SHOE_SIZES = [
   ['35',   '3',    '5',    '2.5',  '22'],
   ['35.5', '3.5',  '5.5',  '3',    '22.5'],
@@ -356,6 +424,8 @@ function fillTable(id, rows) {
 }
 fillTable('nikeMenTable', NIKE_MEN);
 fillTable('nikeWomenTable', NIKE_WOMEN);
+fillTable('pumaMenTable', PUMA_MEN);
+fillTable('pumaWomenTable', PUMA_WOMEN);
 fillTable('shoeTable', SHOE_SIZES);
 fillTable('clothTable', CLOTH_SIZES);
 
@@ -370,12 +440,14 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ---------- перемикання бренду (в межах вкладки "Взуття") ----------
+const BRAND_IDS = ['nike', 'puma', 'generic'];
 document.querySelectorAll('.brand-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.brand-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('brand-nike').style.display = btn.dataset.brand === 'nike' ? 'block' : 'none';
-    document.getElementById('brand-generic').style.display = btn.dataset.brand === 'generic' ? 'block' : 'none';
+    BRAND_IDS.forEach(id => {
+      document.getElementById('brand-' + id).style.display = (btn.dataset.brand === id) ? 'block' : 'none';
+    });
   });
 });
 </script>
