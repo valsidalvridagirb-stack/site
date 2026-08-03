@@ -42,6 +42,11 @@
   .tab-panel { display:none; }
   .tab-panel.active { display:block; }
 
+  .brand-tabs { display:flex; gap:8px; margin-bottom:24px; }
+  .brand-btn { padding:7px 16px; border:1px solid var(--line); border-radius:16px; background:var(--paper); font-size:12.5px; font-weight:600; cursor:pointer; color:var(--mute); transition:.15s; }
+  .brand-btn.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .brand-btn:hover:not(.active) { border-color:var(--ink); color:var(--ink); }
+
   .chart-section { margin-bottom:36px; }
   .chart-section h2 { font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:4px; }
   .chart-note { font-size:12.5px; color:var(--mute); margin-bottom:14px; line-height:1.5; }
@@ -111,18 +116,53 @@
   </div>
 
   <div class="tab-panel active" id="tab-shoes">
-    <div class="chart-section">
-      <h2>Чоловіче та жіноче взуття</h2>
-      <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US Ч / US Ж — чоловіча та жіноча розмірні сітки США. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
-      <div class="table-scroll">
-        <table class="size-table" id="shoeTable">
-          <thead>
-            <tr><th>EU</th><th>US Ч</th><th>US Ж</th><th>UK</th><th>CM</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+    <div class="brand-tabs" id="brandTabs">
+      <button class="brand-btn active" data-brand="nike">Nike</button>
+      <button class="brand-btn" data-brand="generic">Інші бренди</button>
+    </div>
+
+    <div id="brand-nike">
+      <div class="chart-section">
+        <h2>Nike — чоловіче взуття</h2>
+        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="nikeMenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
-      <p class="chart-note" style="margin-top:12px;">Деякі бренди (наприклад Adidas) позначають розмір у форматі «42 2/3» — це проміжний розмір, приблизно між 42 та 42.5 EU.</p>
+
+      <div class="chart-section">
+        <h2>Nike — жіноче взуття</h2>
+        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="nikeWomenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="brand-generic" style="display:none;">
+      <div class="chart-section">
+        <h2>Чоловіче та жіноче взуття — орієнтовна сітка</h2>
+        <p class="chart-note">Для брендів, за якими ще немає окремої таблиці. EU — розмір, вказаний на сайті та на етикетці взуття. US Ч / US Ж — чоловіча та жіноча розмірні сітки США. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="shoeTable">
+            <thead>
+              <tr><th>EU</th><th>US Ч</th><th>US Ж</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="chart-note" style="margin-top:12px;">Деякі бренди (наприклад Adidas) позначають розмір у форматі «42 2/3» — це проміжний розмір, приблизно між 42 та 42.5 EU.</p>
+      </div>
     </div>
 
     <div class="howto">
@@ -232,6 +272,47 @@ document.getElementById('siteSearchForm').addEventListener('submit', function(e)
 });
 
 // ---------- дані таблиць ----------
+// Nike — точна сітка виробника (EU, US, UK, CM)
+const NIKE_MEN = [
+  ['38',   '5.5',  '5',    '24'],
+  ['38.5', '6',    '5.5',  '24'],
+  ['39',   '6.5',  '6',    '24.5'],
+  ['40',   '7',    '6',    '25'],
+  ['40.5', '7.5',  '6.5',  '25.5'],
+  ['41',   '8',    '7',    '26'],
+  ['42',   '8.5',  '7.5',  '26.5'],
+  ['42.5', '9',    '8',    '27'],
+  ['43',   '9.5',  '8.5',  '27.5'],
+  ['44',   '10',   '9',    '28'],
+  ['44.5', '10.5', '9.5',  '28.5'],
+  ['45',   '11',   '10',   '29'],
+  ['45.5', '11.5', '10.5', '29.5'],
+  ['46',   '12',   '11',   '30'],
+  ['47',   '12.5', '11.5', '30.5'],
+  ['47.5', '13',   '12',   '31'],
+  ['48.5', '14',   '13',   '32'],
+  ['49.5', '15',   '13.5', '33'],
+  ['50.5', '16',   '14',   '34'],
+  ['51.5', '17',   '14.5', '35'],
+  ['52.5', '18',   '15',   '36']
+];
+const NIKE_WOMEN = [
+  ['35.5', '5',    '2.5', '22'],
+  ['36',   '5.5',  '3',   '22.5'],
+  ['36.5', '6',    '3.5', '23'],
+  ['37.5', '6.5',  '4',   '23.5'],
+  ['38',   '7',    '4.5', '24'],
+  ['38.5', '7.5',  '5',   '24.5'],
+  ['39',   '8',    '5.5', '25'],
+  ['40',   '8.5',  '6',   '25.5'],
+  ['40.5', '9',    '6.5', '26'],
+  ['41',   '9.5',  '7',   '26.5'],
+  ['42',   '10',   '7.5', '27'],
+  ['42.5', '10.5', '8',   '27.5'],
+  ['43',   '11',   '8.5', '28'],
+  ['44',   '11.5', '9',   '28.5']
+];
+
 const SHOE_SIZES = [
   ['35',   '3',    '5',    '2.5',  '22'],
   ['35.5', '3.5',  '5.5',  '3',    '22.5'],
@@ -273,16 +354,28 @@ function fillTable(id, rows) {
   const tbody = document.querySelector('#' + id + ' tbody');
   tbody.innerHTML = rows.map(r => '<tr>' + r.map(v => `<td>${v}</td>`).join('') + '</tr>').join('');
 }
+fillTable('nikeMenTable', NIKE_MEN);
+fillTable('nikeWomenTable', NIKE_WOMEN);
 fillTable('shoeTable', SHOE_SIZES);
 fillTable('clothTable', CLOTH_SIZES);
 
-// ---------- перемикання вкладок ----------
+// ---------- перемикання вкладок (Взуття / Одяг) ----------
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ---------- перемикання бренду (в межах вкладки "Взуття") ----------
+document.querySelectorAll('.brand-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.brand-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('brand-nike').style.display = btn.dataset.brand === 'nike' ? 'block' : 'none';
+    document.getElementById('brand-generic').style.display = btn.dataset.brand === 'generic' ? 'block' : 'none';
   });
 });
 </script>
