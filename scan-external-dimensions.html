@@ -50,6 +50,20 @@
 const TARGETS = ['1872x2340','2000x2000','1280x1600','1728x2160','2000x2500','1400x1750','1638x2048','1070x1338'];
 document.getElementById('targetsList').innerHTML = TARGETS.map(t => `<code>${t}</code>`).join('');
 
+// Бажаний порядок фото на картці товару. Ракурс визначається НЕ розміром,
+// а позицією файлу в межах артикула (постачальник нумерує послідовно:
+// ..._1.jpg, ..._2.jpg, ...) — цю позицію рахує сервер по повному набору
+// фото артикула (до фільтрації за розміром) і повертає в полі `position`.
+const ANGLE_LABELS = [
+  'Вид справа', 'Вид зліва', 'Пара спереду', 'Вид зверху',
+  'Задник', 'Підошва', 'Макро 1', 'Макро 2'
+];
+function angleLabel(m) {
+  if (!m.position) return '—';
+  if (m.position > ANGLE_LABELS.length) return `поза схемою (#${m.position})`;
+  return ANGLE_LABELS[m.position - 1];
+}
+
 const BATCH = 300;
 const CONCURRENT_BATCHES = 4;
 
@@ -179,15 +193,26 @@ function renderResults(matches) {
   const byArticul = {};
   matches.forEach(m => { (byArticul[m.articul] = byArticul[m.articul] || []).push(m); });
 
+  const completeArticuls = Object.keys(byArticul).filter(art => {
+    const positions = new Set(byArticul[art].map(m => m.position));
+    return ANGLE_LABELS.every((_, i) => positions.has(i + 1));
+  });
+
+  const sortedMatches = matches.slice().sort((a, b) => {
+    if (a.articul !== b.articul) return a.articul.localeCompare(b.articul);
+    return (a.position || 999) - (b.position || 999);
+  });
+
   container.innerHTML = `
-    <div id="summary">Знайдено ${matches.length} фото у ${Object.keys(byArticul).length} артикулах</div>
+    <div id="summary">Знайдено ${matches.length} фото у ${Object.keys(byArticul).length} артикулах, з них повний комплект (усі 8 ракурсів) — у ${completeArticuls.length} артикулах</div>
     <button id="exportBtn">Завантажити список (CSV)</button>
     <table>
-      <thead><tr><th>Артикул</th><th>Розмір</th><th>Посилання</th></tr></thead>
+      <thead><tr><th>Артикул</th><th>Ракурс</th><th>Розмір</th><th>Посилання</th></tr></thead>
       <tbody>
-        ${matches.map(m => `
+        ${sortedMatches.map(m => `
           <tr>
             <td>${m.articul}</td>
+            <td>${angleLabel(m)}</td>
             <td><span class="pill">${m.width}×${m.height}</span></td>
             <td><a class="imglink" href="${m.url}" target="_blank">${m.url}</a></td>
           </tr>
@@ -197,8 +222,8 @@ function renderResults(matches) {
   `;
 
   document.getElementById('exportBtn').addEventListener('click', () => {
-    const rows = [['articul','width','height','url']];
-    matches.forEach(m => rows.push([m.articul, m.width, m.height, m.url]));
+    const rows = [['articul','angle','position','width','height','url']];
+    sortedMatches.forEach(m => rows.push([m.articul, angleLabel(m), m.position || '', m.width, m.height, m.url]));
     const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');

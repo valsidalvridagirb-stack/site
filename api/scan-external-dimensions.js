@@ -11,6 +11,33 @@ const RANGE_BYTES = 262144; // 256KB
 const CONCURRENCY = 40;
 const FETCH_TIMEOUT_MS = 8000;
 
+// Позиція фото в межах артикула — постачальник нумерує файли послідовно
+// (..._1.jpg, ..._2.jpg, ...), і ця позиція (а не роздільна здатність)
+// визначає ракурс: 1=справа, 2=зліва, 3=пара спереду, 4=зверху, 5=задник,
+// 6=підошва, 7-8=макро. Рахуємо по ПОВНОМУ набору фото артикула (до
+// фільтрації за розміром), інакше позиції "поїдуть" якщо якесь фото
+// випаде з відбору за roздільною здатністю.
+const POSITION_BY_URL = new Map();
+{
+  const byArticul = new Map();
+  for (const [articul, url] of ALL_PAIRS) {
+    if (!byArticul.has(articul)) byArticul.set(articul, []);
+    byArticul.get(articul).push(url);
+  }
+  const suffixRe = /(\d+)(?=\.[a-zA-Z0-9]+(?:\?.*)?$)/;
+  for (const [articul, urls] of byArticul) {
+    const sorted = urls.slice().sort((a, b) => {
+      const na = Number((a.match(suffixRe) || [])[1]);
+      const nb = Number((b.match(suffixRe) || [])[1]);
+      if (Number.isNaN(na) || Number.isNaN(nb)) return a.localeCompare(b);
+      return na - nb;
+    });
+    sorted.forEach((url, i) => {
+      POSITION_BY_URL.set(url, { position: i + 1, totalForArticul: sorted.length });
+    });
+  }
+}
+
 async function fetchDims(pair) {
   const [articul, url] = pair;
   try {
@@ -86,7 +113,8 @@ module.exports = async (req, res) => {
       if (r.error) { errors.push(r); continue; }
       const key = `${r.width}x${r.height}`;
       if (targets.size === 0 || targets.has(key)) {
-        matches.push(r);
+        const pos = POSITION_BY_URL.get(r.url);
+        matches.push(Object.assign({}, r, pos ? { position: pos.position, totalForArticul: pos.totalForArticul } : {}));
       }
     }
 
