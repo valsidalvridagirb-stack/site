@@ -69,6 +69,10 @@
   .pill-mute { background:var(--smoke); color:var(--mute); border:1px solid var(--line); }
   .sizes-list { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
 
+  .desc-textarea { width:100%; min-height:110px; padding:12px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; font-family:inherit; line-height:1.5; outline:none; resize:vertical; }
+  .desc-hint { font-size:12px; color:var(--mute); margin-top:8px; }
+  .desc-hint a, .desc-reset { color:var(--ink); font-weight:600; cursor:pointer; text-decoration:underline; }
+
   .drop { border:2px dashed var(--line); border-radius:var(--radius); padding:34px 16px; text-align:center; cursor:pointer; color:var(--mute); font-size:14px; transition:.15s; }
   .drop.drag { border-color:var(--ink); color:var(--ink); background:var(--smoke); }
   .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; margin-top:16px; }
@@ -164,8 +168,14 @@
       <div class="existing-note" id="existingNote"></div>
     </div>
 
+    <div class="card" id="descCard" style="display:none;">
+      <h3>3. Опис товару</h3>
+      <textarea class="desc-textarea" id="descInput" placeholder="Опис товару"></textarea>
+      <div class="desc-hint">Можна редагувати як завгодно — цей текст збережеться і не перезапишеться автоматично. <span class="desc-reset" id="descResetBtn">Повернути автоматичний опис</span></div>
+    </div>
+
     <div class="card" id="publishCard" style="display:none;">
-      <h3>3. Публікація</h3>
+      <h3>4. Публікація</h3>
       <div class="actions-row">
         <button class="btn" id="publishBtn">Опублікувати на сайті</button>
         <button class="btn btn-danger" id="unpublishBtn" style="display:none;">Прибрати з сайту</button>
@@ -308,6 +318,10 @@ let photoItems = [];
 
 document.getElementById('artSearchBtn').addEventListener('click', doSearch);
 document.getElementById('artInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+document.getElementById('descResetBtn').addEventListener('click', () => {
+  const descInput = document.getElementById('descInput');
+  descInput.value = descInput.dataset.auto || '';
+});
 
 async function doSearch() {
   const art = document.getElementById('artInput').value.trim();
@@ -326,6 +340,7 @@ async function doSearch() {
   if (!currentMatches.length) {
     info.innerHTML = `<span class="pill" style="background:var(--errbg); color:var(--err);">Не знайдено в Excel-каталозі</span>`;
     document.getElementById('photoCard').style.display = 'none';
+    document.getElementById('descCard').style.display = 'none';
     document.getElementById('publishCard').style.display = 'none';
     return;
   }
@@ -336,19 +351,26 @@ async function doSearch() {
     `<div class="sizes-list">${currentMatches.map(m => `<span class="pill pill-mute">${m.size} · ${m.price}₴ · ${m.qty}шт</span>`).join('')}</div>` +
     `<div style="margin-top:8px; font-size:12px; color:var(--mute);">Разом на складі: ${totalQty} шт · ${currentMatches.length} розмір(ів)</div>`;
 
+  const autoDescription = buildDescription(first.name, first.brand, first.cat1, first.gender);
+
   // чи вже опубліковано на сайті
-  const { data: existing } = await supabaseClient.from('products').select('photos').eq('articul', art).limit(1);
+  const { data: existing } = await supabaseClient.from('products').select('photos, description').eq('articul', art).limit(1);
   photoItems = [];
+  const descInput = document.getElementById('descInput');
   if (existing && existing.length && existing[0].photos) {
     const existingPhotos = existing[0].photos.split(/[;,]/).map(s => s.trim()).filter(Boolean);
     photoItems = existingPhotos.map(url => ({ kind: 'existing', url }));
     document.getElementById('unpublishBtn').style.display = 'inline-block';
     document.getElementById('existingNote').textContent = 'Товар вже опубліковано на сайті — нижче поточні фото, їх можна видалити, додати нові або перетягнути, щоб змінити порядок.';
+    descInput.value = existing[0].description || autoDescription;
   } else {
     document.getElementById('unpublishBtn').style.display = 'none';
     document.getElementById('existingNote').textContent = '';
+    descInput.value = autoDescription;
   }
+  descInput.dataset.auto = autoDescription;
 
+  document.getElementById('descCard').style.display = 'block';
   document.getElementById('photoCard').style.display = 'block';
   document.getElementById('publishCard').style.display = 'block';
   document.getElementById('statusLine').textContent = '';
@@ -483,7 +505,8 @@ async function publish() {
     progressBar.style.width = '85%';
 
     const first = currentMatches[0];
-    const description = buildDescription(first.name, first.brand, first.cat1, first.gender);
+    const descInput = document.getElementById('descInput');
+    const description = descInput.value.trim() || buildDescription(first.name, first.brand, first.cat1, first.gender);
 
     await supabaseClient.from('products').delete().eq('articul', currentArticul);
 
