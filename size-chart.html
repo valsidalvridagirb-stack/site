@@ -120,6 +120,7 @@
   <div class="tab-panel active" id="tab-shoes">
     <div class="brand-tabs" id="brandTabs">
       <button class="brand-btn active" data-brand="nike">Nike</button>
+      <button class="brand-btn" data-brand="jordan">Jordan</button>
       <button class="brand-btn" data-brand="puma">Puma</button>
       <button class="brand-btn" data-brand="nb">New Balance</button>
       <button class="brand-btn" data-brand="adidas">Adidas</button>
@@ -144,6 +145,34 @@
         <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
         <div class="table-scroll">
           <table class="size-table" id="nikeWomenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="brand-jordan" style="display:none;">
+      <div class="chart-section">
+        <h2>Jordan — чоловіче взуття</h2>
+        <p class="chart-note">Jordan належить Nike Inc. і офіційно використовує ідентичну сітку розмірів. EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="jordanMenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Jordan — жіноче взуття</h2>
+        <p class="chart-note">Jordan належить Nike Inc. і офіційно використовує ідентичну сітку розмірів. EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="jordanWomenTable">
             <thead>
               <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
             </thead>
@@ -364,6 +393,8 @@ function fillTable(id, rows) {
 }
 fillTable('nikeMenTable', NIKE_MEN);
 fillTable('nikeWomenTable', NIKE_WOMEN);
+fillTable('jordanMenTable', JORDAN_MEN);
+fillTable('jordanWomenTable', JORDAN_WOMEN);
 fillTable('pumaMenTable', PUMA_MEN);
 fillTable('pumaWomenTable', PUMA_WOMEN);
 fillTable('nbMenTable', NB_MEN);
@@ -387,7 +418,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ---------- перемикання бренду (в межах вкладки "Взуття") ----------
-const BRAND_IDS = ['nike', 'puma', 'nb', 'adidas'];
+const BRAND_IDS = ['nike', 'jordan', 'puma', 'nb', 'adidas'];
 function selectBrand(brandId) {
   const btn = document.querySelector(`.brand-btn[data-brand="${brandId}"]`);
   if (!btn) return;
