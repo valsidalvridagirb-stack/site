@@ -197,22 +197,19 @@
     margin-bottom: 16px;
     border-radius: 14px;
     overflow: hidden;
-    border: 1px solid rgba(17,17,17,.06);
-    box-shadow: 0 1px 3px rgba(17,17,17,.04);
-    transition: box-shadow .35s ease, border-color .35s ease;
+    box-shadow: none;
+    transition: box-shadow .35s ease;
   }
 
   .product-card:hover .product-media {
     box-shadow: 0 22px 34px -16px rgba(17,17,17,.24);
-    border-color: rgba(17,17,17,.1);
   }
 
   .product-media img, .product-media svg {
-    width: 82%;
-    height: 82%;
+    width: 90%;
+    height: 90%;
     object-fit: contain;
     transition: transform .55s cubic-bezier(.2,.7,.2,1);
-    filter: drop-shadow(0 12px 14px rgba(17,17,17,.1));
   }
 
   .product-card:hover .product-media img {
