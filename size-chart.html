@@ -181,6 +181,19 @@
 
     <div id="brand-nb" style="display:none;">
       <div class="chart-section">
+        <h2>New Balance — чоловіче взуття</h2>
+        <p class="chart-note">EU — європейський розмір. UA — розмір, як його зазвичай позначають в Україні (у New Balance він на пів-1 розмір менший за EU, на відміну від Nike/Puma де вони співпадають). US — американська сітка. UK — британська сітка. CM — довжина стопи в сантиметрах (не устілки).</p>
+        <div class="table-scroll">
+          <table class="size-table" id="nbMenTable">
+            <thead>
+              <tr><th>EU</th><th>UA</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
         <h2>New Balance — підліткові кросівки</h2>
         <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття (в Україні співпадає з європейським). US — американська розмірна сітка. UK — британська сітка. CM — довжина стопи в сантиметрах (на відміну від Nike і Puma, тут вказана саме довжина стопи, а не устілки).</p>
         <div class="table-scroll">
@@ -191,7 +204,7 @@
             <tbody></tbody>
           </table>
         </div>
-        <p class="chart-note" style="margin-top:12px;">Чоловічі та жіночі розміри New Balance додамо окремо.</p>
+        <p class="chart-note" style="margin-top:12px;">Жіночі розміри New Balance додамо окремо.</p>
       </div>
     </div>
 
@@ -398,6 +411,27 @@ const PUMA_WOMEN = [
   ['42.5', '11',   '8.5', '27.5']
 ];
 
+// New Balance — чоловіче взуття (EU, UA, US, UK, CM — довжина СТОПИ, не устілки), джерело: newbalance.ua
+const NB_MEN = [
+  ['37',   '36',   '4.5',  '4',    '22.5'],
+  ['37.5', '36.5', '5',    '4.5',  '23'],
+  ['38',   '37',   '5.5',  '5',    '23.5'],
+  ['38.5', '37.5', '6',    '5.5',  '24'],
+  ['39.5', '38.5', '6.5',  '6',    '24.5'],
+  ['40',   '39',   '7',    '6.5',  '25'],
+  ['40.5', '40',   '7.5',  '7',    '25.5'],
+  ['41.5', '40.5', '8',    '7.5',  '26'],
+  ['42',   '41',   '8.5',  '8',    '26.5'],
+  ['42.5', '41.5', '9',    '8.5',  '27'],
+  ['43',   '42',   '9.5',  '9',    '27.5'],
+  ['44',   '43',   '10',   '9.5',  '28'],
+  ['44.5', '43.5', '10.5', '10',   '28.5'],
+  ['45',   '44',   '11',   '10.5', '29'],
+  ['45.5', '44.5', '11.5', '11',   '29.5'],
+  ['46.5', '45.5', '12',   '11.5', '30'],
+  ['49',   '48',   '14',   '13.5', '32']
+];
+
 // New Balance — підліткові (телефонований — довжина СТОПИ, не устілки), джерело: newbalance.ua
 const NB_TEEN = [
   ['35.5', '3.5', '3',   '21.5'],
@@ -455,6 +489,7 @@ fillTable('nikeMenTable', NIKE_MEN);
 fillTable('nikeWomenTable', NIKE_WOMEN);
 fillTable('pumaMenTable', PUMA_MEN);
 fillTable('pumaWomenTable', PUMA_WOMEN);
+fillTable('nbMenTable', NB_MEN);
 fillTable('nbTeenTable', NB_TEEN);
 fillTable('shoeTable', SHOE_SIZES);
 fillTable('clothTable', CLOTH_SIZES);
