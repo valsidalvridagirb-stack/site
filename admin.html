@@ -72,12 +72,18 @@
   .drop { border:2px dashed var(--line); border-radius:var(--radius); padding:34px 16px; text-align:center; cursor:pointer; color:var(--mute); font-size:14px; transition:.15s; }
   .drop.drag { border-color:var(--ink); color:var(--ink); background:var(--smoke); }
   .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; margin-top:16px; }
-  .photo-cell { position:relative; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; aspect-ratio:1; background:var(--smoke); }
-  .photo-cell img { width:100%; height:100%; object-fit:cover; display:block; }
+  .photo-cell { position:relative; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; aspect-ratio:1; background:var(--smoke); cursor:grab; }
+  .photo-cell img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
   .photo-cell .num { position:absolute; top:4px; left:4px; background:rgba(17,17,17,.75); color:#fff; font-size:11px; font-weight:700; padding:1px 6px; border-radius:3px; }
   .photo-cell .rm { position:absolute; top:4px; right:4px; background:rgba(17,17,17,.75); color:#fff; width:20px; height:20px; border-radius:50%; border:none; cursor:pointer; font-size:13px; line-height:1; }
   .photo-cell .rm:hover { background:var(--err); }
   .photo-cell.new .num { background:var(--ok); }
+  .photo-cell.dragging { opacity:.35; }
+  .photo-cell.drag-over { outline:2px solid var(--ink); outline-offset:-2px; }
+  .photo-cell .move-controls { position:absolute; bottom:4px; left:4px; right:4px; display:flex; justify-content:space-between; }
+  .photo-cell .move-btn { background:rgba(17,17,17,.75); color:#fff; width:22px; height:22px; border-radius:50%; border:none; cursor:pointer; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center; }
+  .photo-cell .move-btn:hover:not(:disabled) { background:var(--ink); }
+  .photo-cell .move-btn:disabled { opacity:.3; cursor:default; }
   .existing-note { font-size:12px; color:var(--mute); margin-top:6px; }
 
   .actions-row { display:flex; gap:10px; margin-top:20px; align-items:center; }
@@ -153,7 +159,7 @@
     <div class="card" id="photoCard" style="display:none;">
       <h3>2. Фото</h3>
       <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
-      <div class="drop" id="dropZone">Перетягніть фото сюди або натисніть, щоб обрати файли<br><span style="font-size:12px;">Порядок файлів = порядок на сайті</span></div>
+      <div class="drop" id="dropZone">Перетягніть фото сюди або натисніть, щоб обрати файли<br><span style="font-size:12px;">Порядок фото нижче = порядок на сайті. Перетягніть картку або скористайтесь стрілками ‹ ›, щоб змінити порядок</span></div>
       <div class="photo-grid" id="photoGrid"></div>
       <div class="existing-note" id="existingNote"></div>
     </div>
@@ -295,9 +301,10 @@ function groupBySize(matches) {
 // ---------- пошук артикула ----------
 let currentArticul = null;
 let currentMatches = [];
-let existingPhotos = []; // фото, які вже є в базі для цього артикула
-let newFiles = []; // File[] нових фото для завантаження
-let existingKept = []; // URL-и існуючих фото, які лишаємо (можна видаляти)
+// Єдиний впорядкований список фото картки — і вже завантажені (existing), і нові
+// (new, ще File-об'єкти) в одному масиві, порядок елементів = порядок на сайті.
+// { kind: 'existing', url } | { kind: 'new', file }
+let photoItems = [];
 
 document.getElementById('artSearchBtn').addEventListener('click', doSearch);
 document.getElementById('artInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
@@ -313,7 +320,7 @@ async function doSearch() {
   }
   currentArticul = art;
   currentMatches = groupBySize(findByArticul(art));
-  newFiles = [];
+  photoItems = [];
 
   const info = document.getElementById('matchInfo');
   if (!currentMatches.length) {
@@ -331,13 +338,12 @@ async function doSearch() {
 
   // чи вже опубліковано на сайті
   const { data: existing } = await supabaseClient.from('products').select('photos').eq('articul', art).limit(1);
-  existingPhotos = [];
-  existingKept = [];
+  photoItems = [];
   if (existing && existing.length && existing[0].photos) {
-    existingPhotos = existing[0].photos.split(/[;,]/).map(s => s.trim()).filter(Boolean);
-    existingKept = [...existingPhotos];
+    const existingPhotos = existing[0].photos.split(/[;,]/).map(s => s.trim()).filter(Boolean);
+    photoItems = existingPhotos.map(url => ({ kind: 'existing', url }));
     document.getElementById('unpublishBtn').style.display = 'inline-block';
-    document.getElementById('existingNote').textContent = 'Товар вже опубліковано на сайті — нижче поточні фото, їх можна видалити або додати нові.';
+    document.getElementById('existingNote').textContent = 'Товар вже опубліковано на сайті — нижче поточні фото, їх можна видалити, додати нові або перетягнути, щоб змінити порядок.';
   } else {
     document.getElementById('unpublishBtn').style.display = 'none';
     document.getElementById('existingNote').textContent = '';
@@ -362,34 +368,68 @@ dropZone.addEventListener('drop', e => {
 fileInput.addEventListener('change', e => { addFiles([...e.target.files]); fileInput.value = ''; });
 
 function addFiles(files) {
-  newFiles.push(...files);
+  files.forEach(file => photoItems.push({ kind: 'new', file }));
+  renderPhotoGrid();
+}
+
+// ---------- порядок фото: стрілки + перетягування ----------
+let dragFromIndex = null;
+
+function movePhoto(from, to) {
+  if (from === to || to < 0 || to >= photoItems.length) return;
+  const [item] = photoItems.splice(from, 1);
+  photoItems.splice(to, 0, item);
   renderPhotoGrid();
 }
 
 function renderPhotoGrid() {
   const grid = document.getElementById('photoGrid');
   grid.innerHTML = '';
-  let n = 1;
-  existingKept.forEach((url, i) => {
+  photoItems.forEach((item, i) => {
+    const url = item.kind === 'existing' ? item.url : URL.createObjectURL(item.file);
     const cell = document.createElement('div');
-    cell.className = 'photo-cell';
-    cell.innerHTML = `<span class="num">${n++}</span><img src="${url}"><button class="rm" data-kind="existing" data-i="${i}">×</button>`;
-    grid.appendChild(cell);
-  });
-  newFiles.forEach((file, i) => {
-    const url = URL.createObjectURL(file);
-    const cell = document.createElement('div');
-    cell.className = 'photo-cell new';
-    cell.innerHTML = `<span class="num">${n++}</span><img src="${url}"><button class="rm" data-kind="new" data-i="${i}">×</button>`;
-    grid.appendChild(cell);
-  });
-  grid.querySelectorAll('.rm').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const i = Number(btn.dataset.i);
-      if (btn.dataset.kind === 'existing') existingKept.splice(i, 1);
-      else newFiles.splice(i, 1);
+    cell.className = 'photo-cell' + (item.kind === 'new' ? ' new' : '');
+    cell.draggable = true;
+    cell.innerHTML = `
+      <span class="num">${i + 1}</span>
+      <img src="${url}">
+      <button class="rm" title="Видалити">×</button>
+      <div class="move-controls">
+        <button class="move-btn" data-dir="-1" title="Перемістити раніше" ${i === 0 ? 'disabled' : ''}>‹</button>
+        <button class="move-btn" data-dir="1" title="Перемістити пізніше" ${i === photoItems.length - 1 ? 'disabled' : ''}>›</button>
+      </div>`;
+
+    cell.querySelector('.rm').addEventListener('click', () => {
+      photoItems.splice(i, 1);
       renderPhotoGrid();
     });
+    cell.querySelectorAll('.move-btn').forEach(btn => {
+      btn.addEventListener('click', () => movePhoto(i, i + Number(btn.dataset.dir)));
+    });
+
+    cell.addEventListener('dragstart', e => {
+      dragFromIndex = i;
+      cell.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(i));
+    });
+    cell.addEventListener('dragend', () => {
+      dragFromIndex = null;
+      cell.classList.remove('dragging');
+    });
+    cell.addEventListener('dragover', e => {
+      e.preventDefault();
+      cell.classList.add('drag-over');
+    });
+    cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
+    cell.addEventListener('drop', e => {
+      e.preventDefault();
+      cell.classList.remove('drag-over');
+      const from = dragFromIndex !== null ? dragFromIndex : Number(e.dataTransfer.getData('text/plain'));
+      movePhoto(from, i);
+    });
+
+    grid.appendChild(cell);
   });
 }
 
@@ -404,7 +444,7 @@ function extOf(name) {
 
 async function publish() {
   if (!currentArticul || !currentMatches.length) return;
-  if (!existingKept.length && !newFiles.length) { showToast('Додайте хоча б одне фото', 'error'); return; }
+  if (!photoItems.length) { showToast('Додайте хоча б одне фото', 'error'); return; }
 
   const statusLine = document.getElementById('statusLine');
   const progressWrap = document.getElementById('progressWrap');
@@ -416,18 +456,28 @@ async function publish() {
   statusLine.textContent = 'Завантаження фото…';
 
   try {
-    const uploadedUrls = [];
-    for (let i = 0; i < newFiles.length; i++) {
-      const file = newFiles[i];
+    // Завантажуємо нові фото по черзі, зберігаючи порядок, у якому адмін
+    // розташував картки (перемішані existing/new) — фінальний масив URL
+    // відповідає саме цьому порядку.
+    const newCount = photoItems.filter(p => p.kind === 'new').length;
+    let uploadedCount = 0;
+    const finalUrls = [];
+    for (const item of photoItems) {
+      if (item.kind === 'existing') {
+        finalUrls.push(item.url);
+        continue;
+      }
+      const file = item.file;
       const path = `${currentArticul}/${crypto.randomUUID()}.${extOf(file.name)}`;
       const { error: upErr } = await supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: false });
       if (upErr) throw new Error('Не вдалось завантажити ' + file.name + ': ' + upErr.message);
       const { data: pub } = supabaseClient.storage.from(BUCKET).getPublicUrl(path);
-      uploadedUrls.push(pub.publicUrl);
-      progressBar.style.width = Math.round(((i + 1) / Math.max(newFiles.length, 1)) * 70) + '%';
+      finalUrls.push(pub.publicUrl);
+      uploadedCount++;
+      progressBar.style.width = Math.round((uploadedCount / Math.max(newCount, 1)) * 70) + '%';
     }
 
-    const finalPhotos = [...existingKept, ...uploadedUrls].join(';');
+    const finalPhotos = finalUrls.join(';');
 
     statusLine.textContent = 'Оновлення бази…';
     progressBar.style.width = '85%';
@@ -457,10 +507,9 @@ async function publish() {
 
     progressBar.style.width = '100%';
     statusLine.className = 'status-line status-ok';
-    statusLine.textContent = `Опубліковано: ${currentArticul} · ${rows.length} розмір(ів) · ${finalPhotos.split(';').length} фото`;
+    statusLine.textContent = `Опубліковано: ${currentArticul} · ${rows.length} розмір(ів) · ${finalUrls.length} фото`;
     showToast('Товар опубліковано на сайті', 'success');
-    newFiles = [];
-    existingKept = finalPhotos.split(';');
+    photoItems = finalUrls.map(url => ({ kind: 'existing', url }));
     document.getElementById('unpublishBtn').style.display = 'inline-block';
     renderPhotoGrid();
   } catch (err) {
