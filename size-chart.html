@@ -194,6 +194,19 @@
       </div>
 
       <div class="chart-section">
+        <h2>New Balance — жіноче взуття</h2>
+        <p class="chart-note">EU — європейський розмір. UA — розмір, як його зазвичай позначають в Україні (у New Balance він на пів розміру менший за EU). US — американська сітка. UK — британська сітка. CM — довжина стопи в сантиметрах (не устілки).</p>
+        <div class="table-scroll">
+          <table class="size-table" id="nbWomenTable">
+            <thead>
+              <tr><th>EU</th><th>UA</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
         <h2>New Balance — підліткові кросівки</h2>
         <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття (в Україні співпадає з європейським). US — американська розмірна сітка. UK — британська сітка. CM — довжина стопи в сантиметрах (на відміну від Nike і Puma, тут вказана саме довжина стопи, а не устілки).</p>
         <div class="table-scroll">
@@ -204,7 +217,6 @@
             <tbody></tbody>
           </table>
         </div>
-        <p class="chart-note" style="margin-top:12px;">Жіночі розміри New Balance додамо окремо.</p>
       </div>
     </div>
 
@@ -432,6 +444,19 @@ const NB_MEN = [
   ['49',   '48',   '14',   '13.5', '32']
 ];
 
+// New Balance — жіноче взуття (EU, UA, US, UK, CM — довжина СТОПИ, не устілки), джерело: newbalance.ua
+const NB_WOMEN = [
+  ['36.5', '35.5', '6',   '4',   '23'],
+  ['37',   '36',   '6.5', '4.5', '23.5'],
+  ['37.5', '36.5', '7',   '5',   '24'],
+  ['38',   '37',   '7.5', '5.5', '24.5'],
+  ['39',   '38',   '8',   '6',   '25'],
+  ['40',   '39',   '8.5', '6.5', '25.5'],
+  ['40.5', '39.5', '9',   '7',   '26'],
+  ['41',   '40',   '9.5', '7.5', '26.5'],
+  ['41.5', '40.5', '10',  '8',   '27']
+];
+
 // New Balance — підліткові (телефонований — довжина СТОПИ, не устілки), джерело: newbalance.ua
 const NB_TEEN = [
   ['35.5', '3.5', '3',   '21.5'],
@@ -490,6 +515,7 @@ fillTable('nikeWomenTable', NIKE_WOMEN);
 fillTable('pumaMenTable', PUMA_MEN);
 fillTable('pumaWomenTable', PUMA_WOMEN);
 fillTable('nbMenTable', NB_MEN);
+fillTable('nbWomenTable', NB_WOMEN);
 fillTable('nbTeenTable', NB_TEEN);
 fillTable('shoeTable', SHOE_SIZES);
 fillTable('clothTable', CLOTH_SIZES);
