@@ -53,6 +53,45 @@ document.getElementById('targetsList').innerHTML = TARGETS.map(t => `<code>${t}<
 const BATCH = 300;
 const CONCURRENT_BATCHES = 4;
 
+const RETRY_BATCH = 300;
+const RETRY_ROUNDS = 2;
+
+async function retryFailedPairs(failedPairs, onProgress) {
+  // Кілька раундів повтору для тих посилань, які впали з помилкою
+  // (таймаут / тимчасова недоступність постачальника) — щоб отримати точну
+  // фінальну цифру, а не занижену через одноразові збої мережі.
+  let remaining = failedPairs;
+  const recovered = [];
+  for (let round = 1; round <= RETRY_ROUNDS && remaining.length; round++) {
+    const chunks = [];
+    for (let i = 0; i < remaining.length; i += RETRY_BATCH) chunks.push(remaining.slice(i, i + RETRY_BATCH));
+
+    const stillFailed = [];
+    let idx = 0;
+    async function worker() {
+      while (idx < chunks.length) {
+        const myChunk = chunks[idx++];
+        try {
+          const r = await fetch('/api/scan-external-dimensions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pairs: myChunk, targets: TARGETS })
+          });
+          const j = await r.json();
+          if (j.matches) recovered.push(...j.matches);
+          if (j.errors) stillFailed.push(...j.errors.map(e => [e.articul, e.url]));
+          onProgress(round, remaining.length - stillFailed.length, remaining.length);
+        } catch (err) {
+          stillFailed.push(...myChunk);
+        }
+      }
+    }
+    await Promise.all(Array.from({ length: CONCURRENT_BATCHES }, worker));
+    remaining = stillFailed;
+  }
+  return { recovered, stillFailed: remaining };
+}
+
 document.getElementById('startBtn').addEventListener('click', async () => {
   const btn = document.getElementById('startBtn');
   btn.disabled = true;
@@ -60,9 +99,14 @@ document.getElementById('startBtn').addEventListener('click', async () => {
   document.getElementById('progress').style.display = 'block';
 
   const allMatches = [];
+  const failedPairs = [];
   let scanned = 0;
   let total = null;
   let totalErrors = 0;
+
+  function collectErrors(j) {
+    if (j.errors) failedPairs.push(...j.errors.map(e => [e.articul, e.url]));
+  }
 
   // Спочатку дізнаємось точний total з першого батчу, потім розганяємо решту офсетів.
   const first = await fetch(`/api/scan-external-dimensions?offset=0&limit=${BATCH}&targets=${TARGETS.join(',')}`).then(r => r.json());
@@ -70,6 +114,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
   scanned += first.scanned;
   totalErrors += first.errorCount || 0;
   allMatches.push(...first.matches);
+  collectErrors(first);
   updateProgress();
 
   const offsets = [];
@@ -86,6 +131,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
         if (j.matches) allMatches.push(...j.matches);
         scanned += (j.scanned || 0);
         totalErrors += j.errorCount || 0;
+        collectErrors(j);
         updateProgress();
       } catch (err) {
         console.error('batch error at offset', myOffset, err);
@@ -93,16 +139,31 @@ document.getElementById('startBtn').addEventListener('click', async () => {
     }
   }
 
-  function updateProgress() {
-    document.getElementById('progressText').textContent = `Скановано ${scanned} / ${total}`;
+  function updateProgress(retryInfo) {
+    const retryText = retryInfo ? ` · повтор ${retryInfo}` : '';
+    document.getElementById('progressText').textContent = `Скановано ${scanned} / ${total}${retryText}`;
     document.getElementById('barFill').style.width = Math.min(100, (scanned / total) * 100) + '%';
     document.getElementById('errInfo').textContent = totalErrors ? `Помилок/недоступних: ${totalErrors}` : '';
   }
 
   await Promise.all(Array.from({ length: CONCURRENT_BATCHES }, worker));
 
+  // Повторюємо ті посилання, які впали з помилкою — до 2 раундів
+  if (failedPairs.length) {
+    btn.textContent = `Повтор ${failedPairs.length} посилань…`;
+    const { recovered, stillFailed } = await retryFailedPairs(failedPairs, (round, done, of) => {
+      document.getElementById('progressText').textContent = `Повторна перевірка (раунд ${round}): ${done} / ${of}`;
+    });
+    allMatches.push(...recovered);
+    totalErrors = stillFailed.length;
+    document.getElementById('errInfo').textContent = totalErrors
+      ? `Остаточно недоступних (після повторів): ${totalErrors}`
+      : 'Усі посилання успішно перевірено після повторів.';
+  }
+
   btn.textContent = 'Готово';
-  document.getElementById('progressText').textContent = `Завершено. Скановано ${scanned} з ${total}, знайдено збігів: ${allMatches.length}`;
+  document.getElementById('progressText').textContent = `Завершено. Скановано ${scanned} з ${total}, знайдено збігів: ${allMatches.length}${totalErrors ? ` (остаточно недоступних: ${totalErrors})` : ''}`;
+  document.getElementById('barFill').style.width = '100%';
 
   renderResults(allMatches);
   window.__scanResults = allMatches;

@@ -36,19 +36,45 @@ async function fetchDims(pair) {
   }
 }
 
+async function readJsonBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') {
+    try { return JSON.parse(req.body); } catch (e) { return {}; }
+  }
+  return {};
+}
+
 module.exports = async (req, res) => {
   try {
-    const url = new URL(req.url, 'http://internal');
-    const offset = Number(url.searchParams.get('offset') || '0');
-    const limit = Math.min(Number(url.searchParams.get('limit') || '300'), 1000);
-    const targetsParam = url.searchParams.get('targets') || '';
+    let pairs, total, offset, limit;
+
+    let targetsParam;
+    if (req.method === 'POST') {
+      // Режим повторної перевірки: клієнт сам присилає конкретні пари
+      // [articul, url], які раніше впали з помилкою (таймаут, тимчасова
+      // недоступність постачальника тощо) — без прив'язки до offset/limit
+      // у загальному списку.
+      const body = await readJsonBody(req);
+      pairs = Array.isArray(body.pairs) ? body.pairs : [];
+      total = pairs.length;
+      offset = 0;
+      limit = pairs.length;
+      targetsParam = (body.targets || []).join(',');
+    } else {
+      const url = new URL(req.url, 'http://internal');
+      offset = Number(url.searchParams.get('offset') || '0');
+      limit = Math.min(Number(url.searchParams.get('limit') || '300'), 1000);
+      pairs = ALL_PAIRS.slice(offset, offset + limit);
+      total = ALL_PAIRS.length;
+      targetsParam = url.searchParams.get('targets') || '';
+    }
+
     const targets = new Set(
       targetsParam.split(',').map(s => s.trim()).filter(Boolean)
     );
 
-    const pairs = ALL_PAIRS.slice(offset, offset + limit);
     if (!pairs.length) {
-      res.status(200).json({ scanned: 0, total: ALL_PAIRS.length, hasMore: false, matches: [], errors: [] });
+      res.status(200).json({ scanned: 0, total, hasMore: false, matches: [], errors: [] });
       return;
     }
 
@@ -66,14 +92,14 @@ module.exports = async (req, res) => {
 
     res.status(200).json({
       scanned: pairs.length,
-      total: ALL_PAIRS.length,
+      total,
       offset,
       limit,
-      hasMore: offset + pairs.length < ALL_PAIRS.length,
+      hasMore: req.method === 'POST' ? false : offset + pairs.length < total,
       nextOffset: offset + pairs.length,
       matches,
       errorCount: errors.length,
-      errors: errors.slice(0, 20)
+      errors
     });
   } catch (err) {
     res.status(500).json({ error: 'server_error', message: String((err && err.message) || err) });
