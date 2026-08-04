@@ -549,5 +549,38 @@ async function refreshTtnStatus(orderId) {
 
 initAccount();
 </script>
+
+<!-- Social FAB: Instagram / Telegram -->
+<style>
+.social-fab{
+  position:fixed;right:20px;bottom:20px;z-index:999;
+  display:flex;flex-direction:column;gap:12px;
+}
+.social-fab-btn{
+  width:52px;height:52px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);
+  transition:transform .2s ease, box-shadow .2s ease;
+  color:#fff;text-decoration:none;
+}
+.social-fab-btn:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(0,0,0,.25);}
+.social-fab-btn svg{width:26px;height:26px;}
+.social-fab-btn.instagram{background:radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);}
+.social-fab-btn.telegram{background:#26A5E4;}
+@media (max-width:640px){
+  .social-fab{right:14px;bottom:14px;gap:10px;}
+  .social-fab-btn{width:46px;height:46px;}
+  .social-fab-btn svg{width:22px;height:22px;}
+}
+</style>
+<div class="social-fab">
+  <a href="https://ig.me/m/nexxtlevelstore" target="_blank" rel="noopener" class="social-fab-btn instagram" aria-label="Написати в Instagram" title="Написати в Instagram">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+  </a>
+  <a href="https://t.me/nexxtlevelstore" target="_blank" rel="noopener" class="social-fab-btn telegram" aria-label="Написати в Telegram" title="Написати в Telegram">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+  </a>
+</div>
+<!-- End Social FAB -->
 </body>
 </html>

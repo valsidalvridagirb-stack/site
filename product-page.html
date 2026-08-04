@@ -265,12 +265,45 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 }
 .size-grid{display:flex;flex-wrap:wrap;gap:8px;}
 .size-btn{
+  position:relative;
   padding:12px 20px;border:1px solid var(--line);background:none;
   font-weight:700;cursor:pointer;border-radius:var(--radius);transition:all .2s;
 }
 .size-btn:hover{border-color:var(--ink);}
 .size-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
 .size-btn:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through;}
+.size-low-badge{
+  position:absolute;top:-7px;right:-7px;
+  background:var(--accent);color:#fff;
+  font-size:9px;font-weight:800;line-height:1;
+  min-width:16px;height:16px;padding:0 3px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+.size-stock-hint{
+  display:none;margin-top:10px;font-size:12px;font-weight:600;
+  color:var(--accent);
+}
+
+.recently-viewed-section{padding:56px 0;border-top:1px solid var(--line);margin-top:40px;}
+.rv-container{max-width:1200px;margin:0 auto;padding:0 24px;}
+.rv-title{font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:24px;}
+.rv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:20px;}
+.rv-card{display:block;text-decoration:none;color:inherit;}
+.rv-media{
+  position:relative;background:var(--smoke);aspect-ratio:4/5;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:10px;border-radius:6px;overflow:hidden;
+}
+.rv-media img{width:100%;height:100%;object-fit:contain;transition:transform .4s ease;}
+.rv-card:hover .rv-media img{transform:scale(1.04);}
+.rv-info{padding:0 2px;}
+.rv-brand{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin-bottom:2px;}
+.rv-name{font-size:13px;font-weight:400;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rv-price{font-size:14px;font-weight:600;color:var(--ink);margin-top:2px;}
+@media (max-width:640px){
+  .rv-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px;}
+}
 
 .add-btn{
   width:100%;padding:18px;background:var(--ink);color:var(--paper);
@@ -469,6 +502,13 @@ footer.site-footer {
   <div style="text-align:center;padding:48px;">Завантаження товару...</div>
 </main>
 
+<section class="recently-viewed-section" id="recentlyViewedSection" style="display:none;">
+  <div class="rv-container">
+    <h2 class="rv-title">Ви нещодавно переглядали</h2>
+    <div class="rv-grid" id="recentlyViewedGrid"></div>
+  </div>
+</section>
+
 <div class="lightbox-overlay" id="lightboxOverlay">
   <div class="lightbox-top">
     <span class="lightbox-counter" id="lightboxCounter"></span>
@@ -591,6 +631,8 @@ let selectedSize = null;
 let currentPrice = null;
 let currentProductLabel = '';
 let currentProductArticul = '';
+let currentSizeMap = null;
+let currentProductId = null;
 
 async function fetchProduct() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -631,9 +673,11 @@ async function fetchProduct() {
   variants.forEach(variant => {
     const sz = variant.size !== null && variant.size !== undefined ? String(variant.size).trim() : '';
     if (sz && !(sz in sizeMap)) {
+      const qty = (variant.quantity === undefined || variant.quantity === null) ? null : Number(variant.quantity);
       sizeMap[sz] = {
         price: Number(variant.price),
-        available: (variant.quantity === undefined || variant.quantity === null) ? true : Number(variant.quantity) > 0
+        qty,
+        available: qty === null ? true : qty > 0
       };
     }
   });
@@ -811,6 +855,18 @@ function renderProduct(product, sizeMap) {
   const modelName = cleanModelName(product);
   currentProductLabel = [product.brand, modelName].filter(Boolean).join(' ') || (product.name || product.title || '');
   currentProductArticul = String(product.articul || '').trim();
+  currentSizeMap = sizeMap;
+  currentProductId = product.id;
+
+  recordRecentlyViewed({
+    id: product.id,
+    articul: currentProductArticul,
+    name: currentProductLabel,
+    brand: product.brand || '',
+    price: initialPrice,
+    photo: photos[0] || ''
+  });
+  renderRecentlyViewed();
 
   trackViewContent({ name: product.name || product.title, articul: product.articul, id: product.id, price: initialPrice });
   currentSizeChartData = buildSizeChartData(product);
@@ -869,13 +925,19 @@ function renderProduct(product, sizeMap) {
               ` : ''}
             </div>
             <div class="size-grid">
-              ${sortedSizes.map(size => `
-                <button class="size-btn" ${sizeMap[size].available ? '' : 'disabled'}
-                  onclick="selectSize('${size}', ${sizeMap[size].price}, this)">
+              ${sortedSizes.map(size => {
+                const s = sizeMap[size];
+                const showLowBadge = s.available && s.qty !== null && s.qty <= 2;
+                return `
+                <button class="size-btn" ${s.available ? '' : 'disabled'}
+                  onclick="selectSize('${size}', ${s.price}, this)">
                   ${size}
+                  ${showLowBadge ? `<span class="size-low-badge" title="Залишилось ${s.qty} шт">${s.qty}</span>` : ''}
                 </button>
-              `).join('')}
+              `;
+              }).join('')}
             </div>
+            <div class="size-stock-hint" id="sizeStockHint"></div>
           </div>
         ` : ''}
 
@@ -918,6 +980,71 @@ function selectSize(size, price, btn) {
   document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('productPrice').textContent = `${price.toLocaleString('uk-UA')} грн`;
+
+  const hintEl = document.getElementById('sizeStockHint');
+  if (hintEl) {
+    const s = currentSizeMap && currentSizeMap[size];
+    if (s && s.qty !== null && s.qty <= 2) {
+      hintEl.textContent = s.qty === 1 ? 'Залишився останній розмір!' : `Залишилось всього ${s.qty} шт цього розміру`;
+      hintEl.style.display = 'block';
+    } else {
+      hintEl.style.display = 'none';
+    }
+  }
+}
+
+const RECENTLY_VIEWED_KEY = 'recentlyViewed';
+const RECENTLY_VIEWED_MAX = 8;
+
+function recordRecentlyViewed(item) {
+  try {
+    if (!item || !item.id) return;
+    let list = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || '[]');
+    if (!Array.isArray(list)) list = [];
+    list = list.filter(p => String(p.id) !== String(item.id));
+    list.unshift(item);
+    if (list.length > RECENTLY_VIEWED_MAX) list = list.slice(0, RECENTLY_VIEWED_MAX);
+    localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.warn('recordRecentlyViewed failed', e);
+  }
+}
+
+function renderRecentlyViewed() {
+  const section = document.getElementById('recentlyViewedSection');
+  const grid = document.getElementById('recentlyViewedGrid');
+  if (!section || !grid) return;
+
+  let list = [];
+  try {
+    list = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || '[]');
+    if (!Array.isArray(list)) list = [];
+  } catch (e) {
+    list = [];
+  }
+
+  const filtered = list.filter(p => String(p.id) !== String(currentProductId || ''));
+
+  if (!filtered.length) {
+    section.style.display = 'none';
+    grid.innerHTML = '';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(p => `
+    <a href="product?articul=${encodeURIComponent(p.articul || '')}" class="rv-card">
+      <div class="rv-media">
+        ${p.photo ? `<img src="${p.photo}" alt="${p.name || ''}" loading="lazy">` : placeholderSVG()}
+      </div>
+      <div class="rv-info">
+        ${p.brand ? `<div class="rv-brand">${p.brand}</div>` : ''}
+        <div class="rv-name" title="${p.name || ''}">${p.name || ''}</div>
+        <div class="rv-price">${Number(p.price || 0).toLocaleString('uk-UA')} грн</div>
+      </div>
+    </a>
+  `).join('');
+
+  section.style.display = 'block';
 }
 
 function addToCart() {
@@ -1011,5 +1138,38 @@ document.getElementById('siteSearchForm').addEventListener('submit', e => {
 
 fetchProduct();
 </script>
+
+<!-- Social FAB: Instagram / Telegram -->
+<style>
+.social-fab{
+  position:fixed;right:20px;bottom:20px;z-index:999;
+  display:flex;flex-direction:column;gap:12px;
+}
+.social-fab-btn{
+  width:52px;height:52px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);
+  transition:transform .2s ease, box-shadow .2s ease;
+  color:#fff;text-decoration:none;
+}
+.social-fab-btn:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(0,0,0,.25);}
+.social-fab-btn svg{width:26px;height:26px;}
+.social-fab-btn.instagram{background:radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);}
+.social-fab-btn.telegram{background:#26A5E4;}
+@media (max-width:640px){
+  .social-fab{right:14px;bottom:14px;gap:10px;}
+  .social-fab-btn{width:46px;height:46px;}
+  .social-fab-btn svg{width:22px;height:22px;}
+}
+</style>
+<div class="social-fab">
+  <a href="https://ig.me/m/nexxtlevelstore" target="_blank" rel="noopener" class="social-fab-btn instagram" aria-label="Написати в Instagram" title="Написати в Instagram">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+  </a>
+  <a href="https://t.me/nexxtlevelstore" target="_blank" rel="noopener" class="social-fab-btn telegram" aria-label="Написати в Telegram" title="Написати в Telegram">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+  </a>
+</div>
+<!-- End Social FAB -->
 </body>
 </html>
