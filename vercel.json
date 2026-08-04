@@ -14,6 +14,17 @@
       "destination": "/api/product"
     }
   ],
+  "headers": [
+    {
+      "source": "/product",
+      "headers": [
+        {
+          "key": "x-vercel-enable-rewrite-caching",
+          "value": "0"
+        }
+      ]
+    }
+  ],
   "functions": {
     "api/scan-dimensions.js": {
       "maxDuration": 60

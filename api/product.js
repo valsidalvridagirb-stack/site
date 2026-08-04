@@ -176,6 +176,8 @@ module.exports = async (req, res) => {
       return;
     }
 
+    await logDebugUa(url.pathname + url.search, ua, req.headers, isBot);
+
     // Звичайний відвідувач — віддаємо ту саму сторінку товару, що й раніше
     // лежала прямо на диску як product.html, без жодних змін.
     const filePath = path.join(__dirname, '..', 'product-page.html');
