@@ -82,6 +82,9 @@
   .desc-hint { font-size:12px; color:var(--mute); margin-top:8px; }
   .desc-hint a, .desc-reset { color:var(--ink); font-weight:600; cursor:pointer; text-decoration:underline; }
 
+  .name-input-label { display:block; font-size:12px; font-weight:600; color:var(--mute); margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em; }
+  .name-input { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius); font-size:15px; font-family:inherit; outline:none; }
+
   .drop { border:2px dashed var(--line); border-radius:var(--radius); padding:34px 16px; text-align:center; cursor:pointer; color:var(--mute); font-size:14px; transition:.15s; }
   .drop.drag { border-color:var(--ink); color:var(--ink); background:var(--smoke); }
   .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; margin-top:16px; }
@@ -175,6 +178,11 @@
         <button class="btn" id="artSearchBtn">Знайти</button>
       </div>
       <div id="matchInfo" class="match-info"></div>
+      <div id="nameEditWrap" style="display:none; margin-top:16px;">
+        <label class="name-input-label" for="nameInput">Назва товару (як показується на сайті)</label>
+        <input type="text" id="nameInput" class="name-input" placeholder="напр. Кросівки Nike Metcon 10">
+        <div class="desc-hint">За замовчуванням підтягується з прайсу постачальника — можна відредагувати, зміна збережеться і не перезапишеться автоматично при наступних синхронізаціях. <span class="desc-reset" id="nameResetBtn">Повернути назву з прайсу</span></div>
+      </div>
     </div>
 
     <div class="card" id="photoCard" style="display:none;">
@@ -395,6 +403,10 @@ document.getElementById('descResetBtn').addEventListener('click', () => {
   const descInput = document.getElementById('descInput');
   descInput.value = descInput.dataset.auto || '';
 });
+document.getElementById('nameResetBtn').addEventListener('click', () => {
+  const nameInput = document.getElementById('nameInput');
+  nameInput.value = nameInput.dataset.auto || '';
+});
 
 async function doSearch() {
   const art = document.getElementById('artInput').value.trim();
@@ -423,6 +435,7 @@ async function doSearch() {
 
   if (!currentMatches.length && !existingRows.length) {
     info.innerHTML = `<span class="pill" style="background:var(--errbg); color:var(--err);">Не знайдено в Excel-каталозі</span>`;
+    document.getElementById('nameEditWrap').style.display = 'none';
     document.getElementById('photoCard').style.display = 'none';
     document.getElementById('descCard').style.display = 'none';
     document.getElementById('publishCard').style.display = 'none';
@@ -451,6 +464,12 @@ async function doSearch() {
       `<div style="margin-top:8px;"><span class="pill" style="background:var(--errbg); color:var(--err);">Товару більше немає в каталозі постачальників — можна редагувати опис і фото, ціна/кількість/розміри залишаться без змін</span></div>`;
     autoDescription = buildDescription(first.name, first.brand, first.category_1, first.gender);
   }
+
+  const nameInput = document.getElementById('nameInput');
+  const autoName = first.name || '';
+  nameInput.value = (existingRows.length && existingRows[0].name) ? existingRows[0].name : autoName;
+  nameInput.dataset.auto = autoName;
+  document.getElementById('nameEditWrap').style.display = 'block';
 
   photoItems = [];
   if (existingRows.length && existingRows[0].photos) {
@@ -602,26 +621,29 @@ async function publish() {
     progressBar.style.width = '85%';
 
     const descInput = document.getElementById('descInput');
+    const nameInput = document.getElementById('nameInput');
     let rowsCount;
 
     if (editOnlyMode) {
-      // товару немає в актуальному Excel-каталозі — оновлюємо лише опис і фото,
-      // ціну/кількість/розміри в базі не чіпаємо
+      // товару немає в актуальному Excel-каталозі — оновлюємо лише назву, опис
+      // і фото, ціну/кількість/розміри в базі не чіпаємо
       const description = descInput.value.trim() || existingRows[0]?.description || '';
+      const name = nameInput.value.trim() || existingRows[0]?.name || '';
       const { error: updErr } = await supabaseClient.from('products')
-        .update({ description, photos: finalPhotos })
+        .update({ name, description, photos: finalPhotos })
         .eq('articul', currentArticul);
       if (updErr) throw new Error('Не вдалось зберегти товар: ' + updErr.message);
       rowsCount = existingRows.length;
     } else {
       const first = currentMatches[0];
       const description = descInput.value.trim() || buildDescription(first.name, first.brand, first.cat1, first.gender);
+      const name = nameInput.value.trim() || first.name;
 
       await supabaseClient.from('products').delete().eq('articul', currentArticul);
 
       const rows = currentMatches.map(m => ({
         articul: currentArticul,
-        name: m.name,
+        name,
         size: m.size,
         price: m.price,
         quantity: m.qty,
