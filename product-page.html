@@ -209,9 +209,10 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 
 /* Details */
 .product-details{display:flex;flex-direction:column;gap:24px;}
-.p-meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:-12px;}
-.p-category{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);border:1px solid var(--line);border-radius:20px;padding:4px 12px;}
-.p-brand{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);}
+.p-category-row{margin-bottom:-12px;}
+.p-category{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);border:1px solid var(--line);border-radius:20px;padding:4px 12px;}
+.p-title-block{display:flex;flex-direction:column;gap:4px;}
+.p-brand{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);}
 .p-title{font-size:32px;font-weight:600;text-transform:uppercase;line-height:1.1;}
 .p-articul{font-size:12px;color:var(--mute);letter-spacing:.03em;text-transform:uppercase;}
 .p-articul b{color:var(--ink);font-weight:600;letter-spacing:0;text-transform:none;margin-left:5px;}
@@ -848,11 +849,11 @@ function renderProduct(product, sizeMap) {
       </div>
 
       <div class="product-details">
-        <div class="p-meta-row">
-          ${category2 ? `<span class="p-category">${category2}</span>` : ''}
-          ${product.brand ? `<span class="p-brand">${product.brand}</span>` : ''}
+        ${category2 ? `<div class="p-category-row"><span class="p-category">${category2}</span></div>` : ''}
+        <div class="p-title-block">
+          ${product.brand ? `<div class="p-brand">${product.brand}</div>` : ''}
+          <h1 class="p-title">${modelName}</h1>
         </div>
-        <h1 class="p-title">${modelName}</h1>
         ${currentProductArticul ? `<div class="p-articul">Артикул<b>${currentProductArticul}</b></div>` : ''}
         <div class="p-price" id="productPrice">${initialPrice.toLocaleString('uk-UA')} грн</div>
 
