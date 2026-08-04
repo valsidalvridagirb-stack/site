@@ -12,6 +12,10 @@
     {
       "source": "/product",
       "destination": "/api/product"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
     }
   ],
   "headers": [
