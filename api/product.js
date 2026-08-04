@@ -121,11 +121,35 @@ ${priceNum ? `<meta property="product:price:amount" content="${priceNum}">
 </html>`;
 }
 
+// ТИМЧАСОВЕ діагностичне логування: щоб з'ясувати, чому реальний краулер
+// Telegram (@WebpageBot) продовжує бачити загальну заглушку — записуємо в
+// окрему таблицю debug_ua_log, який саме User-Agent і заголовки приходять на
+// кожен запит /product, і як ми його класифікували. Можна прибрати пізніше.
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+async function logDebugUa(pathname, ua, headers, isBot) {
+  if (!SERVICE_KEY) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/debug_ua_log`, {
+      method: 'POST',
+      headers: {
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({ path: pathname, ua, headers, is_bot: isBot })
+    });
+  } catch (e) {
+    // діагностика не повинна ламати реальний запит
+  }
+}
+
 module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://internal');
     const ua = req.headers['user-agent'] || '';
     const isBot = BOT_UA_RE.test(ua);
+    await logDebugUa(url.pathname + url.search, ua, req.headers, isBot);
 
     if (isBot) {
       const html = await renderBotPreview(url);
