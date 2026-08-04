@@ -7,18 +7,19 @@
 // завантаження, тому такий бот бачить порожню сторінку і показує голе
 // посилання без фото й ціни.
 //
-// Раніше бот-детект жив у vercel.json через умову "has" на заголовок
-// user-agent — але на практиці Telegram (перевірено через @WebpageBot,
-// примусове оновлення прев'ю) продовжував бачити старий/загальний варіант,
-// тобто ця умова ненадійно спрацьовує на рівні Vercel routing. Тому детект
-// бота перенесено сюди, у звичайний JS-код, де все прозоро й тестовано:
+// Детект бота — прямо тут, у звичайному JS-коді (не через "has"-умову в
+// vercel.json, яка на практиці ненадійна для same-app rewrite):
 //   - якщо User-Agent належить відомому боту соцмережі — віддаємо HTML з
 //     og-тегами конкретного товару (фото/назва/ціна з бази);
 //   - інакше — віддаємо звичайну SPA-сторінку товару (product-page.html,
 //     вшита у функцію через "includeFiles" в vercel.json) без жодних змін,
 //     так само, як якби Vercel віддав статичний файл напряму.
 //
-// vercel.json робить ОДИН безумовний rewrite: /product -> /api/product.
+// vercel.json робить ОДИН безумовний rewrite: /product -> /api/product, і
+// явно вимикає edge-кешування rewrite-відповідей (x-vercel-enable-rewrite-
+// caching: 0) — без цього Vercel кешував першу віддану відповідь на URL і
+// роздавав ЇЇ ЖЕ всім наступним відвідувачам того самого товару, незалежно
+// від їхнього User-Agent.
 const fs = require('fs');
 const path = require('path');
 
@@ -47,7 +48,7 @@ function cleanImageUrl(raw) {
   return clean;
 }
 
-async function renderBotPreview(url, debug) {
+async function renderBotPreview(url) {
   const articul = url.searchParams.get('articul');
   const name = url.searchParams.get('name');
 
@@ -55,30 +56,23 @@ async function renderBotPreview(url, debug) {
   if (articul || name) {
     const filterField = articul ? 'articul' : 'name';
     const filterVal = articul || name;
-    const fetchUrl = `${SUPABASE_URL}/rest/v1/products?select=name,price,photos,description,articul&${filterField}=eq.${encodeURIComponent(filterVal)}&order=price.asc&limit=1`;
     try {
-      const r = await fetch(fetchUrl, {
-        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
-      });
-      const bodyText = await r.text();
-      if (debug) {
-        debug.supabaseStatus = r.status;
-        debug.supabaseBody = bodyText.slice(0, 500);
-        debug.fetchUrl = fetchUrl;
-      }
+      const r = await fetch(
+        `${SUPABASE_URL}/rest/v1/products?select=name,price,photos,description,articul&${filterField}=eq.${encodeURIComponent(filterVal)}&order=price.asc&limit=1`,
+        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+      );
       if (r.ok) {
-        const rows = JSON.parse(bodyText);
+        const rows = await r.json();
         if (Array.isArray(rows) && rows.length) product = rows[0];
       }
     } catch (e) {
-      if (debug) debug.supabaseError = String(e && e.message || e);
+      // якщо база недоступна — просто покажемо загальний варіант нижче
     }
   }
 
   const pageUrl = `${SITE_URL}/product${url.search}`;
-  // ВАЖЛИВО: посилання/редирект у самій прев'ю-сторінці веде НЕ на /product
-  // (той самий "розумний" ендпоінт, що міг би знову класифікувати запит як
-  // бота і зациклити), а напряму на статичний файл сторінки товару в обхід
+  // Посилання/редирект у самій прев'ю-сторінці веде НЕ на /product (той самий
+  // "розумний" ендпоінт), а напряму на статичний файл сторінки товару в обхід
   // будь-якої бот-детекції — так реальний відвідувач гарантовано не застрягне
   // на цій голій прев'ю-сторінці, навіть якщо його випадково визнали ботом.
   const humanUrl = `${SITE_URL}/product-page${url.search}`;
@@ -127,55 +121,19 @@ ${priceNum ? `<meta property="product:price:amount" content="${priceNum}">
 </html>`;
 }
 
-// ТИМЧАСОВЕ діагностичне логування: щоб з'ясувати, чому реальний краулер
-// Telegram (@WebpageBot) продовжує бачити загальну заглушку — записуємо в
-// окрему таблицю debug_ua_log, який саме User-Agent і заголовки приходять на
-// кожен запит /product, і як ми його класифікували. Можна прибрати пізніше.
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-async function logDebugUa(pathname, ua, headers, isBot, extra) {
-  if (!SERVICE_KEY) return;
-  try {
-    await fetch(`${SUPABASE_URL}/rest/v1/debug_ua_log`, {
-      method: 'POST',
-      headers: {
-        apikey: SERVICE_KEY,
-        Authorization: `Bearer ${SERVICE_KEY}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=minimal'
-      },
-      body: JSON.stringify({ path: pathname, ua, headers: Object.assign({}, headers, extra ? { __debug: extra } : {}), is_bot: isBot })
-    });
-  } catch (e) {
-    // діагностика не повинна ламати реальний запит
-  }
-}
-
 module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://internal');
     const ua = req.headers['user-agent'] || '';
-    // debugforcebot=1 — тимчасовий параметр лише для діагностики (без
-    // подвійного підкреслення на початку: з'ясувалось, що Vercel вирізає
-    // параметри виду __xxx ще до того, як запит долітає до функції).
-    const isBot = BOT_UA_RE.test(ua) || url.searchParams.get('debugforcebot') === '1';
+    const isBot = BOT_UA_RE.test(ua);
 
     if (isBot) {
-      const debug = {};
-      const html = await renderBotPreview(url, debug);
-      await logDebugUa(url.pathname + url.search, ua, req.headers, isBot, debug);
+      const html = await renderBotPreview(url);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      // НІКОЛИ не кешувати публічно (на CDN/shared-кеші): один URL віддає РІЗНИЙ
-      // HTML залежно від User-Agent, а публічний кеш (Cache-Control: public/
-      // s-maxage) не розрізняє, хто питав, і роздав би цю "заглушку для бота"
-      // усім наступним відвідувачам того самого товару протягом TTL. Саме це
-      // й трапилось: після одного запиту від @WebpageBot цю сторінку якийсь
-      // час бачив і звичайний браузер.
       res.setHeader('Cache-Control', 'private, no-store');
       res.status(200).send(html);
       return;
     }
-
-    await logDebugUa(url.pathname + url.search, ua, req.headers, isBot);
 
     // Звичайний відвідувач — віддаємо ту саму сторінку товару, що й раніше
     // лежала прямо на диску як product.html, без жодних змін.
