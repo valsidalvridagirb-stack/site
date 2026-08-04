@@ -11,18 +11,7 @@
   "rewrites": [
     {
       "source": "/product",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*(facebookexternalhit|Facebot|Twitterbot|TelegramBot|WhatsApp|LinkedInBot|Slackbot|Discordbot|Pinterest|vkShare|Viber|SkypeUriPreview).*"
-        }
-      ],
-      "destination": "/api/product-og"
-    },
-    {
-      "source": "/product",
-      "destination": "/product-page"
+      "destination": "/api/product"
     }
   ],
   "functions": {
@@ -34,6 +23,9 @@
     },
     "api/cron-sync-ttn.js": {
       "maxDuration": 60
+    },
+    "api/product.js": {
+      "includeFiles": "product-page.html"
     }
   }
 }
