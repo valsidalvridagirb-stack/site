@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Оплата — NEXXTLEVEL STORE</title>
+<title>Доставка — NEXXTLEVEL STORE</title>
 <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,16 +32,14 @@
 
   .page-container { max-width:760px; margin:60px auto; padding:0 24px; flex:1; width:100%; }
   .page-container h1 { font-size:24px; font-weight:500; text-transform:uppercase; margin-bottom:10px; letter-spacing:.5px; }
-  .page-intro { font-size:14.5px; line-height:1.7; color:var(--mute); margin-bottom:40px; }
+  .page-intro { font-size:14.5px; line-height:1.7; color:var(--mute); margin-bottom:32px; }
 
   h2.section-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--mute); margin-bottom:18px; }
 
-  .methods { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:44px; }
-  .method-card { border:1px solid var(--line); border-radius:8px; padding:22px 20px; }
-  .method-card .tag { display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:var(--ink); padding:3px 10px; border-radius:20px; margin-bottom:12px; }
-  .method-card .tag.alt { background:var(--smoke); color:var(--ink); border:1px solid var(--line); }
-  .method-card h3 { font-size:15px; font-weight:600; margin-bottom:8px; }
-  .method-card p { font-size:13.5px; line-height:1.6; color:var(--mute); }
+  .stat-row { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:44px; }
+  .stat-card { border:1px solid var(--line); border-radius:8px; padding:20px 18px; text-align:center; }
+  .stat-card .val { font-size:19px; font-weight:700; margin-bottom:4px; }
+  .stat-card .lbl { font-size:12px; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; }
 
   .steps { counter-reset:step; margin-bottom:44px; }
   .step { display:flex; gap:16px; padding:16px 0; border-bottom:1px solid var(--line); }
@@ -53,9 +51,7 @@
 
   .note-box { background:var(--smoke); border:1px solid var(--line); border-radius:8px; padding:20px 22px; font-size:13.5px; line-height:1.7; color:var(--ink); margin-bottom:44px; }
   .note-box b { font-weight:700; }
-
-  .cards-accepted { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13.5px; color:var(--mute); margin-bottom:44px; }
-  .cards-accepted .badge { border:1px solid var(--line); border-radius:6px; padding:6px 12px; font-weight:600; color:var(--ink); font-size:12.5px; }
+  .note-box a { color:var(--ink); font-weight:600; text-decoration:underline; }
 
   .contact-strip { text-align:center; font-size:13.5px; color:var(--mute); padding-top:8px; border-top:1px solid var(--line); }
   .contact-strip a { color:var(--ink); font-weight:600; text-decoration:underline; }
@@ -80,7 +76,7 @@
     .header-row { padding: 16px 20px; flex-wrap: wrap; gap: 10px; }
     .footer-container { grid-template-columns: 1fr; gap: 30px; }
     .footer-bottom { flex-direction: column; gap: 15px; text-align: center; }
-    .methods { grid-template-columns: 1fr; }
+    .stat-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -104,46 +100,38 @@
 </header>
 
 <main class="page-container">
-  <h1>Оплата</h1>
-  <p class="page-intro">Ми відправляємо товар під замовлення, тому працюємо за передоплатою — це дозволяє тримати ціни нижчими та гарантує, що посилку дійсно заберуть з відділення.</p>
+  <h1>Доставка</h1>
+  <p class="page-intro">Відправляємо замовлення по всій Україні відділеннями Нової пошти. Номер ТТН надсилаємо одразу після відправки, щоб ви могли стежити за посилкою.</p>
 
-  <h2 class="section-title">Способи оплати</h2>
-  <div class="methods">
-    <div class="method-card">
-      <span class="tag">Найпопулярніше</span>
-      <h3>Часткова передоплата</h3>
-      <p>150–200 грн на картку для підтвердження замовлення. Решту суми ви сплачуєте при отриманні посилки у відділенні Нової пошти — готівкою або карткою.</p>
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="val">Нова пошта</div>
+      <div class="lbl">Відділення</div>
     </div>
-    <div class="method-card">
-      <span class="tag alt">За бажанням</span>
-      <h3>Повна оплата на картку</h3>
-      <p>Якщо вам так зручніше — можна одразу оплатити повну вартість замовлення переказом на картку, без доплати при отриманні.</p>
+    <div class="stat-card">
+      <div class="val">1–2 дні</div>
+      <div class="lbl">Термін доставки</div>
+    </div>
+    <div class="stat-card">
+      <div class="val">За тарифами НП</div>
+      <div class="lbl">Оплачує отримувач</div>
     </div>
   </div>
 
   <h2 class="section-title">Як це відбувається</h2>
   <div class="steps">
-    <div class="step"><span class="num"></span><span class="txt">Оформлюєте замовлення на сайті — обираєте розмір і залишаєте контактні дані.</span></div>
-    <div class="step"><span class="num"></span><span class="txt">Наш менеджер зв'язується з вами, щоб підтвердити деталі замовлення та надіслати номер картки для оплати.</span></div>
-    <div class="step"><span class="num"></span><span class="txt">Ви вносите <b>передоплату 150–200 грн</b> (або повну суму — за бажанням) переказом на картку.</span></div>
-    <div class="step"><span class="num"></span><span class="txt">Ми оформлюємо ваш товар у постачальника і відправляємо Новою поштою, номер ТТН надсилаємо вам одразу.</span></div>
-    <div class="step"><span class="num"></span><span class="txt">Отримуєте посилку у відділенні — за потреби доплачуєте решту суми на місці.</span></div>
+    <div class="step"><span class="num"></span><span class="txt">Оформлюєте замовлення на сайті та вказуєте місто і відділення Нової пошти, куди зручно отримати посилку.</span></div>
+    <div class="step"><span class="num"></span><span class="txt">Після підтвердження замовлення й оплати (детальніше на сторінці <b><a href="payment.html" style="text-decoration:underline;">«Оплата»</a></b>) ми одразу передаємо його в роботу.</span></div>
+    <div class="step"><span class="num"></span><span class="txt">Товар відправляється Новою поштою — зазвичай посилка в дорозі <b>1–2 дні</b> залежно від міста.</span></div>
+    <div class="step"><span class="num"></span><span class="txt">Надсилаємо вам номер ТТН, щойно посилка відправлена, — за ним можна стежити прямо на сайті Нової пошти.</span></div>
+    <div class="step"><span class="num"></span><span class="txt">Вартість доставки Новою поштою сплачується отримувачем при відправленні/отриманні за тарифами перевізника — вона не входить у вартість товару.</span></div>
   </div>
 
   <div class="note-box">
-    <b>Чому потрібна передоплата.</b> Невелика передоплата підтверджує, що замовлення реальне, і захищає нас від невикуплених посилок. Завдяки цьому ми можемо швидко оформлювати замовлення у постачальників і тримати ціни нижчими, ніж у магазинів з повною оплатою наперед.
+    <b>Де подивитись статус замовлення.</b> Номер ТТН і статус доставки можна перевірити в будь-який момент на сторінці <a href="track-order.html">«Перевірити замовлення»</a> — введіть номер замовлення й телефон, вказані при оформленні.
   </div>
 
-  <h2 class="section-title">Приймаємо оплату</h2>
-  <div class="cards-accepted">
-    <span class="badge">Visa</span>
-    <span class="badge">Mastercard</span>
-    <span class="badge">Приватбанк</span>
-    <span class="badge">monobank</span>
-    <span>— карткою будь-якого українського банку.</span>
-  </div>
-
-  <p class="contact-strip">Є питання щодо оплати? Напишіть нам у <a href="https://www.instagram.com/nexxtlevelstore/" target="_blank" rel="noopener">Instagram</a>, <a href="https://t.me/nexxtlevelstore" target="_blank" rel="noopener">Telegram</a> або зателефонуйте <a href="tel:+380934382093">+38 093 438 20 93</a>.</p>
+  <p class="contact-strip">Є питання щодо доставки? Напишіть нам у <a href="https://www.instagram.com/nexxtlevelstore/" target="_blank" rel="noopener">Instagram</a>, <a href="https://t.me/nexxtlevelstore" target="_blank" rel="noopener">Telegram</a> або зателефонуйте <a href="tel:+380934382093">+38 093 438 20 93</a>.</p>
 </main>
 
 <footer class="site-footer">
