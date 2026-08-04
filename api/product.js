@@ -148,7 +148,11 @@ module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://internal');
     const ua = req.headers['user-agent'] || '';
-    const isBot = BOT_UA_RE.test(ua);
+    // __force_bot=1 — тимчасовий параметр лише для діагностики: примусово
+    // прогнати той самий код, що бачить бот, з довільним User-Agent, щоб
+    // перевірити САМЕ генерацію прев'ю (запит у Supabase, підстановку фото/
+    // ціни), а не детект бота, який ми вже підтвердили окремо.
+    const isBot = BOT_UA_RE.test(ua) || url.searchParams.get('__force_bot') === '1';
     await logDebugUa(url.pathname + url.search, ua, req.headers, isBot);
 
     if (isBot) {
