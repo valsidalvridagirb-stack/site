@@ -304,6 +304,16 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 }
 .add-btn:hover{opacity:0.9;}
 
+.reviews-link{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:12px;padding:12px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  font-size:13px;font-weight:600;color:var(--ink);
+  transition:border-color .2s,opacity .2s;
+}
+.reviews-link:hover{border-color:var(--ink);opacity:.75;}
+.reviews-link svg{width:17px;height:17px;flex-shrink:0;}
+
 /* Footer */
 footer.site-footer {
   background-color: var(--ink);
@@ -553,6 +563,7 @@ footer.site-footer {
     <div class="footer-col">
       <h4>КЛІЄНТАМ</h4>
       <ul>
+        <li><a href="https://www.instagram.com/s/aGlnaGxpZ2h0OjE3OTAwODMwMjExNTc0MTI1?story_media_id=3025144205089761620_54154252528&amp;igsh=MWNvbTV5b3VkNDBlOA==" target="_blank" rel="noopener">Відгуки клієнтів</a></li>
         <li><a href="track-order.html">Перевірити замовлення</a></li>
         <li><a href="delivery.html">Доставка</a></li>
         <li><a href="payment.html">Оплата</a></li>
@@ -932,6 +943,11 @@ function renderProduct(product, sizeMap) {
         ` : ''}
 
         <button class="add-btn" onclick="addToCart()">Додати в кошик</button>
+
+        <a href="https://www.instagram.com/s/aGlnaGxpZ2h0OjE3OTAwODMwMjExNTc0MTI1?story_media_id=3025144205089761620_54154252528&amp;igsh=MWNvbTV5b3VkNDBlOA==" target="_blank" rel="noopener" class="reviews-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+          Відгуки клієнтів в Instagram
+        </a>
 
         ${product.description ? `
           <div style="margin-top:24px;line-height:1.6;color:var(--mute);white-space:pre-line;">
