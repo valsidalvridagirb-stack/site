@@ -22,7 +22,7 @@
     },
     {
       "source": "/product",
-      "destination": "/product-page.html"
+      "destination": "/product-page"
     }
   ],
   "functions": {
