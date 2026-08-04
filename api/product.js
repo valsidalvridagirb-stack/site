@@ -19,7 +19,9 @@
 // явно вимикає edge-кешування rewrite-відповідей (x-vercel-enable-rewrite-
 // caching: 0) — без цього Vercel кешував першу віддану відповідь на URL і
 // роздавав ЇЇ ЖЕ всім наступним відвідувачам того самого товару, незалежно
-// від їхнього User-Agent.
+// від їхнього User-Agent. Перевірено напряму на реальному запиті від
+// Telegram (User-Agent "TelegramBot (like TwitterBot)") — сервер віддає
+// правильні og-теги з фото, назвою і ціною товару.
 const fs = require('fs');
 const path = require('path');
 
@@ -48,7 +50,7 @@ function cleanImageUrl(raw) {
   return clean;
 }
 
-async function renderBotPreview(url, debug) {
+async function renderBotPreview(url) {
   const articul = url.searchParams.get('articul');
   const name = url.searchParams.get('name');
 
@@ -61,17 +63,13 @@ async function renderBotPreview(url, debug) {
         `${SUPABASE_URL}/rest/v1/products?select=name,price,photos,description,articul&${filterField}=eq.${encodeURIComponent(filterVal)}&order=price.asc&limit=1`,
         { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
       );
-      const bodyText = await r.text();
-      if (debug) { debug.supabaseStatus = r.status; debug.supabaseBody = bodyText.slice(0, 300); }
       if (r.ok) {
-        const rows = JSON.parse(bodyText);
+        const rows = await r.json();
         if (Array.isArray(rows) && rows.length) product = rows[0];
       }
     } catch (e) {
-      if (debug) debug.supabaseError = String(e && e.message || e);
+      // якщо база недоступна — просто покажемо загальний варіант нижче
     }
-  } else if (debug) {
-    debug.noArticulOrName = true;
   }
 
   const pageUrl = `${SITE_URL}/product${url.search}`;
@@ -125,25 +123,6 @@ ${priceNum ? `<meta property="product:price:amount" content="${priceNum}">
 </html>`;
 }
 
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-async function logDebugUa(pathname, ua, isBot, extra) {
-  if (!SERVICE_KEY) return;
-  try {
-    await fetch(`${SUPABASE_URL}/rest/v1/debug_ua_log`, {
-      method: 'POST',
-      headers: {
-        apikey: SERVICE_KEY,
-        Authorization: `Bearer ${SERVICE_KEY}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=minimal'
-      },
-      body: JSON.stringify({ path: pathname, ua, headers: extra || {}, is_bot: isBot })
-    });
-  } catch (e) {
-    // діагностика не повинна ламати реальний запит
-  }
-}
-
 module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://internal');
@@ -151,11 +130,7 @@ module.exports = async (req, res) => {
     const isBot = BOT_UA_RE.test(ua);
 
     if (isBot) {
-      const debug = {};
-      const html = await renderBotPreview(url, debug);
-      debug.responseLength = html.length;
-      debug.responseSnippet = html.slice(0, 600);
-      await logDebugUa(url.pathname + url.search, ua, isBot, debug);
+      const html = await renderBotPreview(url);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'private, no-store');
       res.status(200).send(html);
