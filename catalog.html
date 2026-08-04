@@ -240,92 +240,46 @@ gtag('config', 'G-Y0CS5VFCYH');
 
   .product-media {
     position: relative;
-    background: transparent;
+    background: var(--smoke);
     aspect-ratio: 4/5;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 16px;
-    border-radius: 14px;
+    margin-bottom: 14px;
+    border-radius: 6px;
     overflow: hidden;
-    box-shadow: none;
-    transition: box-shadow .35s ease;
-  }
-
-  .product-card:hover .product-media {
-    box-shadow: 0 22px 34px -16px rgba(17,17,17,.24);
   }
 
   .product-media img, .product-media svg {
-    width: 90%;
-    height: 90%;
+    width: 78%;
+    height: 78%;
     object-fit: contain;
-    transition: transform .55s cubic-bezier(.2,.7,.2,1);
+    transition: transform .5s cubic-bezier(.2,.7,.2,1);
   }
 
   .product-card:hover .product-media img {
-    transform: scale(1.06);
-  }
-
-  .product-media::after {
-    content: 'Переглянути';
-    position: absolute;
-    left: 50%;
-    bottom: 14px;
-    transform: translate(-50%, 10px);
-    padding: 9px 20px;
-    border-radius: 999px;
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    color: #fff;
-    background: rgba(17,17,17,.88);
-    opacity: 0;
-    transition: opacity .3s ease, transform .3s ease;
-    pointer-events: none;
-  }
-
-  .product-card:hover .product-media::after {
-    opacity: 1;
-    transform: translate(-50%, 0);
+    transform: scale(1.04);
   }
 
   .wish-btn {
     position: absolute;
-    top: 14px;
-    right: 14px;
-    width: 34px;
-    height: 34px;
-    background: rgba(255,255,255,.92);
-    backdrop-filter: blur(4px);
-    border-radius: 50%;
+    top: 12px;
+    right: 12px;
+    width: 26px;
+    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transform: translateY(-4px) scale(.92);
-    transition: opacity .25s ease, transform .25s ease, box-shadow .25s ease;
-    box-shadow: 0 3px 10px rgba(17,17,17,.12);
     z-index: 3;
   }
 
-  .product-card:hover .wish-btn,
-  .wish-btn.active {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  .wish-btn:hover {
-    box-shadow: 0 5px 14px rgba(17,17,17,.18);
-  }
-
   .wish-btn svg {
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
     stroke: var(--ink);
+    stroke-width: 1.6;
     fill: none;
+    transition: fill .15s, stroke .15s;
   }
 
   .wish-btn.active svg {
@@ -333,7 +287,7 @@ gtag('config', 'G-Y0CS5VFCYH');
     stroke: var(--accent);
   }
 
-  .product-info{padding:0 3px;}
+  .product-info{padding:0 2px;}
 
   .product-brand {
     font-size: 11px;
@@ -345,12 +299,12 @@ gtag('config', 'G-Y0CS5VFCYH');
   }
 
   .product-name {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 400;
     color: var(--ink);
-    margin-bottom: 7px;
+    margin-bottom: 6px;
     line-height: 1.4;
-    height: 39px;
+    height: 37px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -358,8 +312,8 @@ gtag('config', 'G-Y0CS5VFCYH');
   }
 
   .product-price {
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--ink);
   }
 
