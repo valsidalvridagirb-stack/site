@@ -47,7 +47,7 @@ function cleanImageUrl(raw) {
   return clean;
 }
 
-async function renderBotPreview(url) {
+async function renderBotPreview(url, debug) {
   const articul = url.searchParams.get('articul');
   const name = url.searchParams.get('name');
 
@@ -55,17 +55,23 @@ async function renderBotPreview(url) {
   if (articul || name) {
     const filterField = articul ? 'articul' : 'name';
     const filterVal = articul || name;
+    const fetchUrl = `${SUPABASE_URL}/rest/v1/products?select=name,price,photos,description,articul&${filterField}=eq.${encodeURIComponent(filterVal)}&order=price.asc&limit=1`;
     try {
-      const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/products?select=name,price,photos,description,articul&${filterField}=eq.${encodeURIComponent(filterVal)}&order=price.asc&limit=1`,
-        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
-      );
+      const r = await fetch(fetchUrl, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      const bodyText = await r.text();
+      if (debug) {
+        debug.supabaseStatus = r.status;
+        debug.supabaseBody = bodyText.slice(0, 500);
+        debug.fetchUrl = fetchUrl;
+      }
       if (r.ok) {
-        const rows = await r.json();
+        const rows = JSON.parse(bodyText);
         if (Array.isArray(rows) && rows.length) product = rows[0];
       }
     } catch (e) {
-      // якщо база недоступна — просто покажемо загальний варіант нижче
+      if (debug) debug.supabaseError = String(e && e.message || e);
     }
   }
 
@@ -126,7 +132,7 @@ ${priceNum ? `<meta property="product:price:amount" content="${priceNum}">
 // окрему таблицю debug_ua_log, який саме User-Agent і заголовки приходять на
 // кожен запит /product, і як ми його класифікували. Можна прибрати пізніше.
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-async function logDebugUa(pathname, ua, headers, isBot) {
+async function logDebugUa(pathname, ua, headers, isBot, extra) {
   if (!SERVICE_KEY) return;
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/debug_ua_log`, {
@@ -137,7 +143,7 @@ async function logDebugUa(pathname, ua, headers, isBot) {
         'Content-Type': 'application/json',
         Prefer: 'return=minimal'
       },
-      body: JSON.stringify({ path: pathname, ua, headers, is_bot: isBot })
+      body: JSON.stringify({ path: pathname, ua, headers: Object.assign({}, headers, extra ? { __debug: extra } : {}), is_bot: isBot })
     });
   } catch (e) {
     // діагностика не повинна ламати реальний запит
@@ -153,10 +159,11 @@ module.exports = async (req, res) => {
     // перевірити САМЕ генерацію прев'ю (запит у Supabase, підстановку фото/
     // ціни), а не детект бота, який ми вже підтвердили окремо.
     const isBot = BOT_UA_RE.test(ua) || url.searchParams.get('__force_bot') === '1';
-    await logDebugUa(url.pathname + url.search, ua, req.headers, isBot);
 
     if (isBot) {
-      const html = await renderBotPreview(url);
+      const debug = {};
+      const html = await renderBotPreview(url, debug);
+      await logDebugUa(url.pathname + url.search, ua, req.headers, isBot, debug);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       // НІКОЛИ не кешувати публічно (на CDN/shared-кеші): один URL віддає РІЗНИЙ
       // HTML залежно від User-Agent, а публічний кеш (Cache-Control: public/
