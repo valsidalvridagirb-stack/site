@@ -3,6 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Meta Pixel + Google Analytics (GA4) -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', 'REPLACE_WITH_PIXEL_ID');
+fbq('track', 'PageView');
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=REPLACE_WITH_GA4_ID"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'REPLACE_WITH_GA4_ID');
+</script>
+<!-- End Meta Pixel + GA4 -->
+<script src="assets/analytics.js"></script>
+
 <title>Товар — NEXXTLEVEL STORE</title>
 <meta name="description" content="Оригінальні кросівки та одяг з США та Європи. Дивіться фото, ціну та наявні розміри.">
 <meta property="og:type" content="product">
@@ -735,6 +758,8 @@ function renderProduct(product, sizeMap) {
 
   const sortedSizes = Object.keys(sizeMap).sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
   const initialPrice = sortedSizes.length ? sizeMap[sortedSizes[0]].price : Number(product.price);
+
+  trackViewContent({ name: product.name || product.title, articul: product.articul, id: product.id, price: initialPrice });
   currentSizeChartData = buildSizeChartData(product);
 
   lightboxPhotos = photos;
@@ -849,16 +874,19 @@ function addToCart() {
   let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 
   // Добавляем новый товар
-  cart.push({
+  const newItem = {
     name: document.querySelector('.p-title').textContent,
     articul: document.querySelector('.p-articul') ? document.querySelector('.p-articul').textContent.replace('Артикул: ', '') : '',
     size: selectedSize,
     price: currentPrice,
     quantity: 1
-  });
+  };
+  cart.push(newItem);
 
   // Сохраняем обратно
   localStorage.setItem('cart', JSON.stringify(cart));
+
+  trackAddToCart(newItem);
 
   if (confirm('Товар додано в кошик! Перейти до оформления замовлення?')) {
     window.location.href = 'checkout.html';

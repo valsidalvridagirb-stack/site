@@ -3,6 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Meta Pixel + Google Analytics (GA4) -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', 'REPLACE_WITH_PIXEL_ID');
+fbq('track', 'PageView');
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=REPLACE_WITH_GA4_ID"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'REPLACE_WITH_GA4_ID');
+</script>
+<!-- End Meta Pixel + GA4 -->
+<script src="assets/analytics.js"></script>
+
 <title>Оформлення замовлення — NEXXTLEVEL STORE</title>
 <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -339,6 +362,11 @@ async function initCheckout() {
   // Заполняем корзину
   renderCart();
 
+  if (cart.length > 0) {
+    const cartTotal = cart.reduce((sum, item) => sum + Number(item.price) * (item.quantity || 1), 0);
+    trackInitiateCheckout(cart, cartTotal);
+  }
+
   // Автоподстановка данных, если юзер залогинен
   const { data: { user } } = await supabaseClient.auth.getUser();
   if (user) {
@@ -418,6 +446,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   }
 
   showToast(`Дякуємо! Замовлення №${order.id} успішно оформлено.${currentUser ? '' : ' Запам\'ятайте номер замовлення — за ним можна перевірити статус.'}`, 'success');
+  trackPurchase(order.id, rpcItems, order.total_price);
   localStorage.removeItem('cart');
 
   // Сповіщення адміну в Telegram — не блокує оформлення, якщо не спрацює
