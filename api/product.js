@@ -70,6 +70,12 @@ async function renderBotPreview(url) {
   }
 
   const pageUrl = `${SITE_URL}/product${url.search}`;
+  // ВАЖЛИВО: посилання/редирект у самій прев'ю-сторінці веде НЕ на /product
+  // (той самий "розумний" ендпоінт, що міг би знову класифікувати запит як
+  // бота і зациклити), а напряму на статичний файл сторінки товару в обхід
+  // будь-якої бот-детекції — так реальний відвідувач гарантовано не застрягне
+  // на цій голій прев'ю-сторінці, навіть якщо його випадково визнали ботом.
+  const humanUrl = `${SITE_URL}/product-page${url.search}`;
   const title = product && product.name ? `${product.name} — NEXXTLEVEL STORE` : 'NEXXTLEVEL STORE';
   const priceNum = product && product.price != null && product.price !== '' ? Number(product.price) : null;
 
@@ -106,11 +112,11 @@ ${priceNum ? `<meta property="product:price:amount" content="${priceNum}">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <meta name="twitter:image" content="${esc(image)}">
-<meta http-equiv="refresh" content="0; url=${esc(pageUrl)}">
+<meta http-equiv="refresh" content="0; url=${esc(humanUrl)}">
 </head>
 <body>
 <p>${esc(title)}</p>
-<p><a href="${esc(pageUrl)}">Перейти до товару на NEXXTLEVEL STORE</a></p>
+<p><a href="${esc(humanUrl)}">Перейти до товару на NEXXTLEVEL STORE</a></p>
 </body>
 </html>`;
 }
@@ -124,7 +130,13 @@ module.exports = async (req, res) => {
     if (isBot) {
       const html = await renderBotPreview(url);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
+      // НІКОЛИ не кешувати публічно (на CDN/shared-кеші): один URL віддає РІЗНИЙ
+      // HTML залежно від User-Agent, а публічний кеш (Cache-Control: public/
+      // s-maxage) не розрізняє, хто питав, і роздав би цю "заглушку для бота"
+      // усім наступним відвідувачам того самого товару протягом TTL. Саме це
+      // й трапилось: після одного запиту від @WebpageBot цю сторінку якийсь
+      // час бачив і звичайний браузер.
+      res.setHeader('Cache-Control', 'private, no-store');
       res.status(200).send(html);
       return;
     }
@@ -134,7 +146,7 @@ module.exports = async (req, res) => {
     const filePath = path.join(__dirname, '..', 'product-page.html');
     const html = fs.readFileSync(filePath, 'utf8');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    res.setHeader('Cache-Control', 'private, no-store');
     res.status(200).send(html);
   } catch (err) {
     res.status(500).send('Server error: ' + String(err && err.message || err));
