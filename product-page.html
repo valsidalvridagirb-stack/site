@@ -209,9 +209,12 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 
 /* Details */
 .product-details{display:flex;flex-direction:column;gap:24px;}
-.p-brand{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);}
+.p-meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:-12px;}
+.p-category{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);border:1px solid var(--line);border-radius:20px;padding:4px 12px;}
+.p-brand{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);}
 .p-title{font-size:32px;font-weight:600;text-transform:uppercase;line-height:1.1;}
-.p-articul{font-size:12px;color:var(--mute);}
+.p-articul{font-size:12px;color:var(--mute);letter-spacing:.03em;text-transform:uppercase;}
+.p-articul b{color:var(--ink);font-weight:600;letter-spacing:0;text-transform:none;margin-left:5px;}
 .p-price{font-size:24px;font-weight:500;color:var(--ink);}
 .size-section{margin-top:16px;}
 .size-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
@@ -585,6 +588,8 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let selectedSize = null;
 let currentPrice = null;
+let currentProductLabel = '';
+let currentProductArticul = '';
 
 async function fetchProduct() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -726,6 +731,48 @@ function placeholderSVG(){
   </svg>`;
 }
 
+function escapeRegex(str) {
+  return String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function firstWord(s) {
+  return String(s || '').trim().split(/\s+/)[0] || '';
+}
+
+// Товар в базі приходить одним рядком на кшталт "Кросівки Nike Metcon 10 HJ1875-007"
+// (категорія + бренд + модель + артикул зліплені разом постачальником, і слово
+// категорії від різних постачальників не завжди збігається з нормалізованою
+// category_2 — напр. "Тапочки" в назві vs "Шльопанці та сандалі" в категорії).
+// Категорія та бренд вже показуються окремо на сторінці, артикул — окремим
+// рядком, тож для заголовка лишаємо тільки саму назву моделі.
+function cleanModelName(product) {
+  const original = String(product.name || product.title || '').trim();
+  let n = original;
+  const brand = String(product.brand || '').trim();
+  const articul = String(product.articul || '').trim();
+  const cat2Word = firstWord(product.category_2);
+  const nameFirstWord = firstWord(n);
+
+  let strippedCategory = false;
+  if (cat2Word && new RegExp('^' + escapeRegex(cat2Word) + '\\b', 'i').test(n)) {
+    n = n.replace(new RegExp('^' + escapeRegex(cat2Word) + '\\s+', 'i'), '');
+    strippedCategory = true;
+  }
+  if (!strippedCategory && nameFirstWord && nameFirstWord.toLowerCase() !== brand.toLowerCase()) {
+    n = n.replace(/^\S+\s+/, '');
+  }
+
+  if (brand) n = n.replace(new RegExp('^' + escapeRegex(brand) + '\\s+', 'i'), '');
+  n = n.replace(/^[MWKmwk]\s+/, ''); // зайва літера статі, що лишається від "Nike M ..." / "Nike W ..."
+  if (articul) n = n.replace(new RegExp('\\s*' + escapeRegex(articul) + '$', 'i'), '');
+  n = n.trim();
+
+  // Захист від виродженого результату (напр. якщо назва не мала очікуваного
+  // префіксу і залишилось саме число) — краще показати сиру назву, ніж сміття.
+  const looksValid = /[a-zA-Zа-яА-ЯіІїЇєЄёЁ]/.test(n) && n.length >= 2;
+  return looksValid ? n : original;
+}
+
 function renderProduct(product, sizeMap) {
   const rawString = product.photos || product.image_url || '';
 
@@ -758,6 +805,11 @@ function renderProduct(product, sizeMap) {
 
   const sortedSizes = Object.keys(sizeMap).sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
   const initialPrice = sortedSizes.length ? sizeMap[sortedSizes[0]].price : Number(product.price);
+
+  const category2 = String(product.category_2 || '').trim();
+  const modelName = cleanModelName(product);
+  currentProductLabel = [product.brand, modelName].filter(Boolean).join(' ') || (product.name || product.title || '');
+  currentProductArticul = String(product.articul || '').trim();
 
   trackViewContent({ name: product.name || product.title, articul: product.articul, id: product.id, price: initialPrice });
   currentSizeChartData = buildSizeChartData(product);
@@ -796,9 +848,12 @@ function renderProduct(product, sizeMap) {
       </div>
 
       <div class="product-details">
-        ${product.brand ? `<div class="p-brand">${product.brand}</div>` : ''}
-        <h1 class="p-title">${product.name || product.title}</h1>
-        ${product.articul ? `<div class="p-articul">Артикул: ${product.articul}</div>` : ''}
+        <div class="p-meta-row">
+          ${category2 ? `<span class="p-category">${category2}</span>` : ''}
+          ${product.brand ? `<span class="p-brand">${product.brand}</span>` : ''}
+        </div>
+        <h1 class="p-title">${modelName}</h1>
+        ${currentProductArticul ? `<div class="p-articul">Артикул<b>${currentProductArticul}</b></div>` : ''}
         <div class="p-price" id="productPrice">${initialPrice.toLocaleString('uk-UA')} грн</div>
 
         ${sortedSizes.length ? `
@@ -875,8 +930,8 @@ function addToCart() {
 
   // Добавляем новый товар
   const newItem = {
-    name: document.querySelector('.p-title').textContent,
-    articul: document.querySelector('.p-articul') ? document.querySelector('.p-articul').textContent.replace('Артикул: ', '') : '',
+    name: currentProductLabel || document.querySelector('.p-title').textContent,
+    articul: currentProductArticul,
     size: selectedSize,
     price: currentPrice,
     quantity: 1
