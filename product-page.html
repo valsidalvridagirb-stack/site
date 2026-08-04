@@ -272,15 +272,6 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .size-btn:hover{border-color:var(--ink);}
 .size-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
 .size-btn:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through;}
-.size-low-badge{
-  position:absolute;bottom:-6px;right:-6px;
-  background:var(--paper);color:var(--accent);
-  border:1px solid var(--accent);
-  font-size:8px;font-weight:700;line-height:1;
-  min-width:13px;height:13px;padding:0 2px;border-radius:7px;
-  display:flex;align-items:center;justify-content:center;
-  pointer-events:none;
-}
 .size-stock-hint{
   display:none;margin-top:10px;font-size:12px;font-weight:600;
   color:var(--accent);
@@ -928,12 +919,10 @@ function renderProduct(product, sizeMap) {
             <div class="size-grid">
               ${sortedSizes.map(size => {
                 const s = sizeMap[size];
-                const showLowBadge = s.available && s.qty !== null && s.qty <= 2;
                 return `
                 <button class="size-btn" ${s.available ? '' : 'disabled'}
                   onclick="selectSize('${size}', ${s.price}, this)">
                   ${size}
-                  ${showLowBadge ? `<span class="size-low-badge" title="Залишилось ${s.qty} шт">${s.qty}</span>` : ''}
                 </button>
               `;
               }).join('')}
@@ -1155,8 +1144,8 @@ fetchProduct();
 }
 .social-fab-btn:hover{transform:scale(1.08);box-shadow:0 4px 14px rgba(0,0,0,.22);}
 .social-fab-btn svg{width:18px;height:18px;}
-.social-fab-btn.instagram{background:radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);}
-.social-fab-btn.telegram{background:#26A5E4;}
+.social-fab-btn.instagram{background:var(--ink);}
+.social-fab-btn.telegram{background:var(--ink);}
 @media (max-width:640px){
   .social-fab{right:12px;bottom:12px;gap:7px;}
   .social-fab-btn{width:34px;height:34px;}
