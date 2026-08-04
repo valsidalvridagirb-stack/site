@@ -181,7 +181,7 @@
       <div id="nameEditWrap" style="display:none; margin-top:16px;">
         <label class="name-input-label" for="nameInput">Назва товару (як показується на сайті)</label>
         <input type="text" id="nameInput" class="name-input" placeholder="напр. Кросівки Nike Metcon 10">
-        <div class="desc-hint">За замовчуванням підтягується з прайсу постачальника — можна відредагувати, зміна збережеться і не перезапишеться автоматично при наступних синхронізаціях. <span class="desc-reset" id="nameResetBtn">Повернути назву з прайсу</span></div>
+        <div class="desc-hint">Для нових товарів підставляється автоматично у форматі «БРЕНД МОДЕЛЬ» (без категорії, артикулу та зайвих літер M/W з прайсу постачальника) — можна відредагувати, зміна збережеться і не перезапишеться автоматично при наступних синхронізаціях. <span class="desc-reset" id="nameResetBtn">Повернути автоматичну назву</span></div>
       </div>
     </div>
 
@@ -356,6 +356,52 @@ function findByArticul(articul) {
     .map(r => Object.fromEntries(idx.map((c, i) => [c, r[i]])));
 }
 
+function escapeRegex(str) {
+  return String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+function firstWord(s) {
+  return String(s || '').trim().split(/\s+/)[0] || '';
+}
+
+// Постачальник зліплює категорію + бренд + модель + артикул в один рядок
+// (напр. "Кросівки Nike M METCON 10 HJ1875-004"), і категорійне слово не
+// завжди збігається з нормалізованою category_2 (напр. "Тапочки" в назві
+// vs "Шльопанці та сандалі" в категорії). Прибираємо категорію, бренд,
+// зайву літеру статі (M/W, часто в Nike) і артикул, лишаючи саму модель.
+function cleanModelName(rawName, brand, cat2, articul) {
+  const original = String(rawName || '').trim();
+  let n = original;
+  brand = String(brand || '').trim();
+  articul = String(articul || '').trim();
+  const cat2Word = firstWord(cat2);
+  const nameFirstWord = firstWord(n);
+
+  let strippedCategory = false;
+  if (cat2Word && new RegExp('^' + escapeRegex(cat2Word) + '\\b', 'i').test(n)) {
+    n = n.replace(new RegExp('^' + escapeRegex(cat2Word) + '\\s+', 'i'), '');
+    strippedCategory = true;
+  }
+  if (!strippedCategory && nameFirstWord && nameFirstWord.toLowerCase() !== brand.toLowerCase()) {
+    n = n.replace(/^\S+\s+/, '');
+  }
+  if (brand) n = n.replace(new RegExp('^' + escapeRegex(brand) + '\\s+', 'i'), '');
+  n = n.replace(/^[MWKmwk]\s+/, '');
+  if (articul) n = n.replace(new RegExp('\\s*' + escapeRegex(articul) + '$', 'i'), '');
+  n = n.trim();
+
+  const looksValid = /[a-zA-Zа-яА-ЯіІїЇєЄёЁ]/.test(n) && n.length >= 2;
+  return looksValid ? n : original;
+}
+
+// Назва товару за замовчуванням для НОВИХ товарів: "БРЕНД МОДЕЛЬ" верхнім
+// регістром, без категорії/артикулу/зайвих літер M/W.
+function buildDisplayName(rawName, brand, cat2, articul) {
+  const model = cleanModelName(rawName, brand, cat2, articul);
+  const b = String(brand || '').trim();
+  const joined = [b, model].filter(Boolean).join(' ').trim() || String(rawName || '').trim();
+  return joined.toUpperCase();
+}
+
 const GENDER_PHRASE = { 'Чоловіки':'чоловіків', 'Жінки':'жінок', 'Унісекс':'чоловіків та жінок' };
 function buildDescription(name, brand, cat1, gender) {
   const gp = GENDER_PHRASE[gender] || null;
@@ -466,7 +512,7 @@ async function doSearch() {
   }
 
   const nameInput = document.getElementById('nameInput');
-  const autoName = first.name || '';
+  const autoName = buildDisplayName(first.name, first.brand, first.cat2 || first.category_2, currentArticul);
   nameInput.value = (existingRows.length && existingRows[0].name) ? existingRows[0].name : autoName;
   nameInput.dataset.auto = autoName;
   document.getElementById('nameEditWrap').style.display = 'block';
@@ -637,7 +683,7 @@ async function publish() {
     } else {
       const first = currentMatches[0];
       const description = descInput.value.trim() || buildDescription(first.name, first.brand, first.cat1, first.gender);
-      const name = nameInput.value.trim() || first.name;
+      const name = nameInput.value.trim() || nameInput.dataset.auto || first.name;
 
       await supabaseClient.from('products').delete().eq('articul', currentArticul);
 
