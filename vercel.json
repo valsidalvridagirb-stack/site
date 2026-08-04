@@ -1,6 +1,13 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/product.html",
+      "destination": "/product",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/product",
@@ -14,15 +21,8 @@
       "destination": "/api/product-og"
     },
     {
-      "source": "/product.html",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*(facebookexternalhit|Facebot|Twitterbot|TelegramBot|WhatsApp|LinkedInBot|Slackbot|Discordbot|Pinterest|vkShare|Viber|SkypeUriPreview).*"
-        }
-      ],
-      "destination": "/api/product-og"
+      "source": "/product",
+      "destination": "/product-page.html"
     }
   ],
   "functions": {

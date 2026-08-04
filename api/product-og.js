@@ -2,14 +2,19 @@
 //
 // Коли хтось кидає посилання на товар у чат чи сторіс, ці сервіси НЕ виконують
 // JavaScript — вони роблять один запит і зчитують <meta property="og:*"> з
-// відповіді. А product.html підвантажує дані про товар (фото, назву, ціну)
-// через JS вже ПІСЛЯ завантаження сторінки, тому такий краулер бачить порожню
-// сторінку без потрібних тегів і показує голе посилання.
+// відповіді. А сторінка товару (product-page.html, видима як /product)
+// підвантажує дані про товар (фото, назву, ціну) через JS вже ПІСЛЯ
+// завантаження сторінки, тому такий краулер бачить порожню сторінку без
+// потрібних тегів і показує голе посилання.
 //
-// vercel.json переписує запит сюди ТІЛЬКИ якщо User-Agent належить відомому
-// боту соцмережі (правило "has" на заголовок user-agent) — для звичайних
-// відвідувачів сайту цей файл взагалі не викликається, вони, як і раніше,
-// отримують оригінальний product.html без жодних змін і без затримки.
+// vercel.json переписує запит на /product сюди ТІЛЬКИ якщо User-Agent
+// належить відомому боту соцмережі (правило "has" на заголовок user-agent) —
+// для звичайних відвідувачів сайту цей файл взагалі не викликається, вони,
+// як і раніше, отримують продукт (product-page.html) без жодних змін і без
+// затримки. ВАЖЛИВО: source у rewrite НЕ може вказувати на реальний файл на
+// диску (тут /product.html) — filesystem завжди має пріоритет над rewrites,
+// тому файл сторінки товару навмисно перейменований на product-page.html,
+// а публічний шлях /product живе тільки як rewrite-ціль.
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
 
@@ -51,7 +56,7 @@ module.exports = async (req, res) => {
       }
     }
 
-    const pageUrl = `${SITE_URL}/product.html${url.search}`;
+    const pageUrl = `${SITE_URL}/product${url.search}`;
     const title = product && product.name ? `${product.name} — NEXXTLEVEL STORE` : 'NEXXTLEVEL STORE';
     const priceNum = product && product.price != null && product.price !== '' ? Number(product.price) : null;
 

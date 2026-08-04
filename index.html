@@ -848,7 +848,7 @@ async function loadProducts(){
     const isWished = wishlist.has(p.id);
 
     const card = document.createElement('a');
-    card.href = `product.html?articul=${encodeURIComponent(p.articul || '')}`;
+    card.href = `product?articul=${encodeURIComponent(p.articul || '')}`;
     card.className = 'product-card';
     card.innerHTML = `
       <div class="product-media">
