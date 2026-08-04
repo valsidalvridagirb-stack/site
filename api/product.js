@@ -48,7 +48,7 @@ function cleanImageUrl(raw) {
   return clean;
 }
 
-async function renderBotPreview(url) {
+async function renderBotPreview(url, debug) {
   const articul = url.searchParams.get('articul');
   const name = url.searchParams.get('name');
 
@@ -61,13 +61,17 @@ async function renderBotPreview(url) {
         `${SUPABASE_URL}/rest/v1/products?select=name,price,photos,description,articul&${filterField}=eq.${encodeURIComponent(filterVal)}&order=price.asc&limit=1`,
         { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
       );
+      const bodyText = await r.text();
+      if (debug) { debug.supabaseStatus = r.status; debug.supabaseBody = bodyText.slice(0, 300); }
       if (r.ok) {
-        const rows = await r.json();
+        const rows = JSON.parse(bodyText);
         if (Array.isArray(rows) && rows.length) product = rows[0];
       }
     } catch (e) {
-      // якщо база недоступна — просто покажемо загальний варіант нижче
+      if (debug) debug.supabaseError = String(e && e.message || e);
     }
+  } else if (debug) {
+    debug.noArticulOrName = true;
   }
 
   const pageUrl = `${SITE_URL}/product${url.search}`;
@@ -121,6 +125,25 @@ ${priceNum ? `<meta property="product:price:amount" content="${priceNum}">
 </html>`;
 }
 
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+async function logDebugUa(pathname, ua, isBot, extra) {
+  if (!SERVICE_KEY) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/debug_ua_log`, {
+      method: 'POST',
+      headers: {
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({ path: pathname, ua, headers: extra || {}, is_bot: isBot })
+    });
+  } catch (e) {
+    // діагностика не повинна ламати реальний запит
+  }
+}
+
 module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://internal');
@@ -128,7 +151,11 @@ module.exports = async (req, res) => {
     const isBot = BOT_UA_RE.test(ua);
 
     if (isBot) {
-      const html = await renderBotPreview(url);
+      const debug = {};
+      const html = await renderBotPreview(url, debug);
+      debug.responseLength = html.length;
+      debug.responseSnippet = html.slice(0, 600);
+      await logDebugUa(url.pathname + url.search, ua, isBot, debug);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'private, no-store');
       res.status(200).send(html);
