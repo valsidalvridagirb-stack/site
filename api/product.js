@@ -154,11 +154,10 @@ module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://internal');
     const ua = req.headers['user-agent'] || '';
-    // __force_bot=1 — тимчасовий параметр лише для діагностики: примусово
-    // прогнати той самий код, що бачить бот, з довільним User-Agent, щоб
-    // перевірити САМЕ генерацію прев'ю (запит у Supabase, підстановку фото/
-    // ціни), а не детект бота, який ми вже підтвердили окремо.
-    const isBot = BOT_UA_RE.test(ua) || url.searchParams.get('__force_bot') === '1';
+    // debugforcebot=1 — тимчасовий параметр лише для діагностики (без
+    // подвійного підкреслення на початку: з'ясувалось, що Vercel вирізає
+    // параметри виду __xxx ще до того, як запит долітає до функції).
+    const isBot = BOT_UA_RE.test(ua) || url.searchParams.get('debugforcebot') === '1';
 
     if (isBot) {
       const debug = {};
