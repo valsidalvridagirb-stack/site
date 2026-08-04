@@ -313,7 +313,7 @@ function renderProductList() {
       <img src="${thumb}" loading="lazy" onerror="this.style.visibility='hidden'">
       <div class="pinfo">
         <div class="pname">${p.name || p.articul}</div>
-        <div class="pmeta">${p.articul} · ${p.brand || ''} · ${p.price ? p.price + '₴' : ''} · ${p.total_quantity ?? 0} шт</div>
+        <div class="pmeta">${String(p.articul || '').toUpperCase()} · ${p.brand || ''} · ${p.price ? p.price + '₴' : ''} · ${p.total_quantity ?? 0} шт</div>
       </div>
       <button class="btn btn-secondary" style="padding:8px 14px; font-size:12px;">Редагувати</button>
     `;
