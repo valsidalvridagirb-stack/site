@@ -123,6 +123,36 @@ ${priceNum ? `<meta property="product:price:amount" content="${priceNum}">
 </html>`;
 }
 
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+async function logDebugUa(pathname, ua, isBot, headers, extra) {
+  if (!SERVICE_KEY) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/debug_ua_log`, {
+      method: 'POST',
+      headers: {
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({
+        path: pathname,
+        ua,
+        is_bot: isBot,
+        headers: {
+          host: headers['host'],
+          xForwardedHost: headers['x-forwarded-host'],
+          xVercelId: headers['x-vercel-id'],
+          rewriteCaching: headers['x-vercel-enable-rewrite-caching'],
+          debug: extra || null
+        }
+      })
+    });
+  } catch (e) {
+    // діагностика не повинна ламати реальний запит
+  }
+}
+
 module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://internal');
@@ -131,11 +161,16 @@ module.exports = async (req, res) => {
 
     if (isBot) {
       const html = await renderBotPreview(url);
+      await logDebugUa(url.pathname + url.search, ua, isBot, req.headers, {
+        responseSnippet: html.slice(0, 500)
+      });
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'private, no-store');
       res.status(200).send(html);
       return;
     }
+
+    await logDebugUa(url.pathname + url.search, ua, isBot, req.headers);
 
     // Звичайний відвідувач — віддаємо ту саму сторінку товару, що й раніше
     // лежала прямо на диску як product.html, без жодних змін.
