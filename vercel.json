@@ -3,6 +3,17 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/product",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|TelegramBot|WhatsApp|LinkedInBot|Slackbot|Discordbot|Pinterest|vkShare|Viber|SkypeUriPreview).*"
+        }
+      ],
+      "destination": "/api/product-og"
+    },
+    {
       "source": "/product.html",
       "has": [
         {
