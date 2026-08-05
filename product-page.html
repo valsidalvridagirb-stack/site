@@ -150,11 +150,17 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .main-image-wrap{
   flex:1;aspect-ratio:4/5;background:var(--smoke);border-radius:var(--radius);
   overflow:hidden;position:relative;cursor:zoom-in;min-width:0;
+  transition:aspect-ratio .15s ease;
 }
 .main-image-wrap img{
   width:100%;height:100%;object-fit:cover;display:block;
   user-select:none;-webkit-user-select:none;-webkit-user-drag:none;
 }
+/* Квадратні/горизонтальні фото (наприклад 1950x1950) не обрізаємо кадром
+   4:5 — картка сама стає квадратною, а фото показується повністю (contain).
+   Вертикальні фото лишаються як є (обрізка під 4:5, cover) — це влаштовує. */
+.main-image-wrap.is-square{aspect-ratio:1;}
+.main-image-wrap.is-square img{object-fit:contain;}
 .media-placeholder{
   width:100%;height:100%;display:flex;align-items:center;justify-content:center;
   background:var(--smoke);
@@ -986,7 +992,7 @@ function renderProduct(product, sizeMap) {
         ` : ''}
         <div class="main-image-wrap" id="mainImageWrap" onclick="${photos.length ? 'openLightbox(currentPhotoIndex)' : ''}">
           ${photos.length ? `
-            <img id="mainPhoto" src="${photos[0]}" alt="${product.name}" draggable="false" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className:'media-placeholder', innerHTML: placeholderSVG()}));">
+            <img id="mainPhoto" src="${photos[0]}" alt="${product.name}" draggable="false" onload="fitMainImage(this)" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className:'media-placeholder', innerHTML: placeholderSVG()}));">
           ` : `
             <div class="media-placeholder" id="mainPhoto">${placeholderSVG()}</div>
           `}
@@ -1059,6 +1065,18 @@ function renderProduct(product, sizeMap) {
   document.getElementById('lightboxThumbs').innerHTML = photos.map((ph, idx) => `
     <img src="${ph}" class="${idx === 0 ? 'active' : ''}" onclick="event.stopPropagation();lightboxIndex=${idx};updateLightboxImage();">
   `).join('');
+}
+
+// Квадратні/горизонтальні фото (напр. 1950x1950 з прайсу постачальника) не
+// вписуються без обрізки у портретну картку 4:5 — тому визначаємо реальні
+// пропорції завантаженого фото і, якщо воно квадратне чи ширше, робимо
+// картку теж квадратною і показуємо фото повністю (без crop). Вертикальні
+// фото лишаються як раніше.
+function fitMainImage(img) {
+  const wrap = document.getElementById('mainImageWrap');
+  if (!wrap || !img || !img.naturalWidth || !img.naturalHeight) return;
+  const ratio = img.naturalWidth / img.naturalHeight;
+  wrap.classList.toggle('is-square', ratio >= 0.92);
 }
 
 function changePhoto(src, btn, idx) {
