@@ -245,7 +245,7 @@ gtag('config', 'G-Y0CS5VFCYH');
     color: #000000;
   }
 
-  /* ===== Картки Категорій — редакційний макет ===== */
+  /* ===== Картки Категорій — світлий мінімалістичний стиль ===== */
   .cats {
     max-width: 1240px;
     margin: 50px auto 0;
@@ -258,71 +258,69 @@ gtag('config', 'G-Y0CS5VFCYH');
   .cat-card {
     position: relative;
     border-radius: var(--radius);
-    padding: 32px;
+    border: 1px solid var(--line);
+    background: var(--paper);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    min-height: 480px;
     text-decoration: none;
-    color: #ffffff;
+    color: var(--ink);
     overflow: hidden;
-    transition: box-shadow 0.35s ease;
+    transition: border-color 0.25s ease;
   }
 
-  .cat-card-bg {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-size: cover;
-    background-position: center;
-    transition: transform 0.6s ease;
-    z-index: 1;
-    filter: grayscale(100%);
+  .cat-card:hover {
+    border-color: var(--ink);
   }
 
-  .cat-card::after {
-    content: '';
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 70%;
-    background: linear-gradient(to top, rgba(0,0,0,.88), rgba(0,0,0,0));
-    z-index: 1;
-    pointer-events: none;
+  .cat-card-media {
+    aspect-ratio: 4/3;
+    background: var(--smoke);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
   }
 
-  /* Фонові фото для Чоловічої та Жіночої колекцій */
-  .cat-card-men .cat-card-bg {
-    background-image: url('https://images.unsplash.com/photo-1483721310020-03333e577078?q=80&w=900&h=750&fit=crop&crop=entropy&auto=format');
+  .cat-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.5s cubic-bezier(.2,.7,.2,1);
   }
 
-  .cat-card-women .cat-card-bg {
-    background-image: url('https://images.unsplash.com/photo-1647597421335-aca284b3cdfc?q=80&w=1400&auto=format');
-    background-position: center 68%;
-  }
-
-  .cat-card:hover .cat-card-bg {
+  .cat-card:hover .cat-card-media img {
     transform: scale(1.05);
   }
 
-  .cat-card-top {
+  .cat-card-info {
     position: relative;
-    z-index: 2;
+    padding: 26px 32px 30px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .cat-card-top {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    margin-bottom: 12px;
   }
 
   .cat-index {
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: .25em;
-    color: rgba(255,255,255,.75);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    color: var(--mute);
+    text-transform: uppercase;
   }
 
   .cat-arrow-btn {
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
-    border: 1px solid rgba(255,255,255,.55);
+    border: 1px solid var(--line);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -331,65 +329,55 @@ gtag('config', 'G-Y0CS5VFCYH');
   }
 
   .cat-arrow-btn svg {
-    width: 16px;
-    height: 16px;
-    stroke: #ffffff;
+    width: 15px;
+    height: 15px;
+    stroke: var(--ink);
     transition: stroke .25s ease;
   }
 
   .cat-card:hover .cat-arrow-btn {
-    background: #ffffff;
-    border-color: #ffffff;
+    background: var(--ink);
+    border-color: var(--ink);
     transform: rotate(45deg);
   }
 
   .cat-card:hover .cat-arrow-btn svg {
-    stroke: #111111;
+    stroke: #ffffff;
   }
 
   .cat-card-bottom {
-    position: relative;
-    z-index: 2;
+    margin-top: auto;
   }
 
   .cat-card h3 {
-    font-size: 42px;
-    font-weight: 300;
-    line-height: 1.05;
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.1;
     letter-spacing: .01em;
     text-transform: uppercase;
-    margin-bottom: 14px;
-  }
-
-  .cat-card p {
-    font-size: 13.5px;
-    font-weight: 300;
-    color: #d6d6d6;
-    max-width: 78%;
-    line-height: 1.5;
-    margin-bottom: 20px;
+    color: var(--ink);
+    margin-bottom: 16px;
   }
 
   .cat-link-text {
     font-size: 12px;
-    font-weight: 500;
-    letter-spacing: .12em;
+    font-weight: 700;
+    letter-spacing: .1em;
     text-transform: uppercase;
-    color: #ffffff;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(255,255,255,.5);
+    color: var(--ink);
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--ink);
     display: inline-block;
-    transition: border-color .25s ease, opacity .25s ease;
+    transition: opacity .25s ease;
   }
 
   .cat-card:hover .cat-link-text {
-    border-color: #ffffff;
-    opacity: .8;
+    opacity: .6;
   }
 
   @media (max-width: 640px) {
-    .cat-card h3 { font-size: 32px; }
-    .cat-card { min-height: 400px; padding: 26px; }
+    .cat-card h3 { font-size: 24px; }
+    .cat-card-info { padding: 22px 22px 26px; }
   }
 
   /* ===== Секція Новинки ===== */
@@ -726,33 +714,41 @@ gtag('config', 'G-Y0CS5VFCYH');
   </div>
 </section>
 
-<!-- Категорії з фотографіями чоловіка та жінки -->
+<!-- Категорії з реальними фото товарів -->
 <section class="cats" id="categories">
   <a href="catalog.html?cat=Чоловічі кросівки" class="cat-card cat-card-men">
-    <div class="cat-card-bg"></div>
-    <div class="cat-card-top">
-      <span class="cat-index">01 — ЧОЛОВІКАМ</span>
-      <span class="cat-arrow-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg>
-      </span>
+    <div class="cat-card-media">
+      <img src="https://jkwppbriklmxbivndxeq.supabase.co/storage/v1/object/public/product-images/HJ1875-002/763325d8-9bf1-405c-b706-391baf044b3a.jpg" alt="Чоловіча колекція" loading="lazy">
     </div>
-    <div class="cat-card-bottom">
-      <h3>Чоловіча<br>колекція</h3>
-      <span class="cat-link-text">Переглянути каталог</span>
+    <div class="cat-card-info">
+      <div class="cat-card-top">
+        <span class="cat-index">01 — ЧОЛОВІКАМ</span>
+        <span class="cat-arrow-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg>
+        </span>
+      </div>
+      <div class="cat-card-bottom">
+        <h3>Чоловіча колекція</h3>
+        <span class="cat-link-text">Переглянути каталог</span>
+      </div>
     </div>
   </a>
 
   <a href="catalog.html?cat=Жіночі кросівки" class="cat-card cat-card-women">
-    <div class="cat-card-bg"></div>
-    <div class="cat-card-top">
-      <span class="cat-index">02 — ЖІНКАМ</span>
-      <span class="cat-arrow-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg>
-      </span>
+    <div class="cat-card-media">
+      <img src="https://jkwppbriklmxbivndxeq.supabase.co/storage/v1/object/public/product-images/IB6544-100/2e0ca047-72eb-49a5-ad1f-d80a775a1043.jpg" alt="Жіноча колекція" loading="lazy">
     </div>
-    <div class="cat-card-bottom">
-      <h3>Жіноча<br>колекція</h3>
-      <span class="cat-link-text">Переглянути каталог</span>
+    <div class="cat-card-info">
+      <div class="cat-card-top">
+        <span class="cat-index">02 — ЖІНКАМ</span>
+        <span class="cat-arrow-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg>
+        </span>
+      </div>
+      <div class="cat-card-bottom">
+        <h3>Жіноча колекція</h3>
+        <span class="cat-link-text">Переглянути каталог</span>
+      </div>
     </div>
   </a>
 </section>
