@@ -148,6 +148,11 @@ gtag('config', 'G-Y0CS5VFCYH');
 
   /* ===== Каталог: сайдбар фільтрів + сітка товарів ===== */
   .catalog-body{display:grid;grid-template-columns:240px 1fr;gap:40px;align-items:start;}
+  /* Grid-елементи за замовчуванням мають min-width:auto, тобто не можуть
+     стиснутися менше за свій вміст — через це .sort-select із довгим
+     текстом опції розпирав усю колонку і зсував сторінку вправо на
+     мобільних. min-width:0 дозволяє колонці справді влізти в трек сітки. */
+  .catalog-main{min-width:0;}
 
   .filters-overlay{
     display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;
@@ -211,6 +216,8 @@ gtag('config', 'G-Y0CS5VFCYH');
     padding:9px 14px;border:1px solid var(--line);border-radius:var(--radius);
     font-size:13px;font-weight:600;color:var(--ink);background:var(--paper);cursor:pointer;
     margin-left:auto;
+    min-width:0;max-width:100%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
 
   @media (max-width: 900px) {
