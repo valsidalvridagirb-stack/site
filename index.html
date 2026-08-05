@@ -111,16 +111,26 @@ gtag('config', 'G-Y0CS5VFCYH');
   }
   nav.main-nav a:hover{opacity:.55;}
   nav.main-nav a.sale{color:var(--accent);font-weight:700;}
+  .nav-item{position:relative;}
+  .nav-dropdown{
+    position:absolute;top:100%;left:50%;transform:translate(-50%,4px);
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+    min-width:150px;padding:8px 0;box-shadow:0 10px 28px rgba(0,0,0,.1);
+    opacity:0;visibility:hidden;pointer-events:none;
+    transition:opacity .18s ease,transform .18s ease,visibility .18s;
+    z-index:60;
+  }
+  .nav-item:hover .nav-dropdown{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0);}
+  .nav-dropdown a{display:block;padding:8px 18px;font-size:13px;font-weight:500;color:var(--ink)!important;white-space:nowrap;text-align:center;}
+  .nav-dropdown a:hover{background:var(--smoke);opacity:1;}
   .header-icons{display:flex;align-items:center;gap:22px;}
   .icon-btn{position:relative;display:flex;}
   .icon-btn svg{width:19px;height:19px;stroke:var(--hdr-ink);transition:stroke .35s ease;}
   .badge-count{
-    position:absolute;top:-7px;right:-8px;background:var(--hdr-ink);color:var(--paper);
+    position:absolute;top:-7px;right:-8px;background:var(--accent);color:#fff;
     font-size:10px;font-weight:700;width:16px;height:16px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
-    transition:background .35s ease,color .35s ease;
   }
-  header.site.scrolled .badge-count{background:var(--ink);color:#fff;}
   .site-search{
     display:flex;align-items:center;flex:1;min-width:180px;max-width:320px;
     border:1px solid var(--hdr-line);border-radius:20px;padding:7px 14px;gap:8px;
@@ -698,8 +708,18 @@ gtag('config', 'G-Y0CS5VFCYH');
     </a>
     
     <nav class="main-nav">
-      <a href="catalog.html?cat=Чоловічі кросівки">Чоловіче</a>
-      <a href="catalog.html?cat=Жіночі кросівки">Жіноче</a>
+      <div class="nav-item">
+        <a href="catalog.html?cat=Чоловічі кросівки">Чоловіче</a>
+        <div class="nav-dropdown">
+          <a href="catalog.html?cat=Чоловічі тапочки">Тапочки</a>
+        </div>
+      </div>
+      <div class="nav-item">
+        <a href="catalog.html?cat=Жіночі кросівки">Жіноче</a>
+        <div class="nav-dropdown">
+          <a href="catalog.html?cat=Жіночі тапочки">Тапочки</a>
+        </div>
+      </div>
       <a href="catalog.html">Всі товари</a>
     </nav>
 
