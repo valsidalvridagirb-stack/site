@@ -216,11 +216,18 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 }
 .lightbox-arrow:hover{background:rgba(255,255,255,.22);transform:scale(1.06);}
 .lightbox-arrow svg{width:22px;height:22px;stroke:#fff;}
-.lightbox-main{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0;}
+.lightbox-main{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0;overflow:hidden;position:relative;}
 .lightbox-main img{
   max-width:100%;max-height:100%;object-fit:contain;border-radius:16px;
   box-shadow:0 24px 70px rgba(0,0,0,.55);
-  transition:opacity .2s ease;
+  transition:opacity .2s ease,transform .12s ease-out;
+  cursor:zoom-in;touch-action:none;will-change:transform;
+}
+.lightbox-main img.dragging{transition:none;}
+.lightbox-zoom-hint{
+  position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  font-size:11px;color:rgba(255,255,255,.55);letter-spacing:.02em;
+  pointer-events:none;white-space:nowrap;opacity:1;transition:opacity .2s ease;
 }
 .lightbox-thumbs{
   flex-shrink:0;
@@ -239,6 +246,7 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
   .lightbox-body{gap:10px;padding:0 10px 12px;}
   .lightbox-main img{border-radius:12px;}
   .lightbox-thumbs img{width:52px;height:52px;}
+  .lightbox-zoom-hint{white-space:normal;max-width:78vw;text-align:center;font-size:10px;bottom:8px;}
 }
 
 /* Details */
@@ -581,7 +589,15 @@ footer.site-footer {
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
     </div>
     <div class="lightbox-main">
-      <img id="lightboxImg" src="" alt="">
+      <img id="lightboxImg" src="" alt=""
+        onclick="lightboxImgClick(event)"
+        onwheel="lightboxWheel(event)"
+        onpointerdown="lightboxPointerDown(event)"
+        onpointermove="lightboxPointerMove(event)"
+        onpointerup="lightboxPointerUp(event)"
+        onpointerleave="lightboxPointerUp(event)"
+        ondragstart="return false;">
+      <span class="lightbox-zoom-hint" id="lightboxZoomHint">Клікніть або прокрутіть коліщатко, щоб наблизити</span>
     </div>
     <div class="lightbox-arrow" onclick="lightboxNext()">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
@@ -1228,6 +1244,7 @@ function openLightbox(index) {
 function closeLightbox() {
   document.getElementById('lightboxOverlay').classList.remove('open');
   document.body.style.overflow = '';
+  resetLbZoom();
 }
 
 function updateLightboxImage() {
@@ -1245,6 +1262,97 @@ function updateLightboxImage() {
   document.querySelectorAll('.thumb-img').forEach((img, i) => {
     img.classList.toggle('active', i === lightboxIndex);
   });
+  resetLbZoom();
+}
+
+// ===== Наближення фото в лайтбоксі =====
+// Клік/подвійний тап або коліщатко миші наближає (з центром у точці курсора),
+// перетягування (миша або палець) рухає наближене фото. pointerdown/move/up
+// покривають і мишу, і тач одним кодом.
+let lbZoom = 1, lbPanX = 0, lbPanY = 0;
+let lbDragging = false, lbJustDragged = false;
+let lbDragStartX = 0, lbDragStartY = 0, lbPanStartX = 0, lbPanStartY = 0;
+const LB_ZOOM_MAX = 4;
+
+function lbApplyTransform(img) {
+  img.style.transform = `translate(${lbPanX}px, ${lbPanY}px) scale(${lbZoom})`;
+  img.style.cursor = lbZoom > 1 ? 'grab' : 'zoom-in';
+  const hint = document.getElementById('lightboxZoomHint');
+  if (hint) hint.style.opacity = lbZoom > 1 ? '0' : '';
+}
+
+function resetLbZoom() {
+  lbZoom = 1; lbPanX = 0; lbPanY = 0;
+  lbDragging = false; lbJustDragged = false;
+  const img = document.getElementById('lightboxImg');
+  if (img) {
+    img.style.transform = '';
+    img.style.transformOrigin = 'center center';
+    img.style.cursor = 'zoom-in';
+    img.classList.remove('dragging');
+  }
+  const hint = document.getElementById('lightboxZoomHint');
+  if (hint) hint.style.opacity = '';
+}
+
+function lbSetOriginFromEvent(img, e) {
+  const rect = img.getBoundingClientRect();
+  const originX = ((e.clientX - rect.left) / rect.width) * 100;
+  const originY = ((e.clientY - rect.top) / rect.height) * 100;
+  img.style.transformOrigin = `${Math.min(100, Math.max(0, originX))}% ${Math.min(100, Math.max(0, originY))}%`;
+}
+
+function lightboxImgClick(e) {
+  if (lbJustDragged) { lbJustDragged = false; return; }
+  const img = e.currentTarget;
+  if (lbZoom === 1) {
+    lbSetOriginFromEvent(img, e);
+    lbZoom = 2.5;
+  } else {
+    lbZoom = 1;
+    img.style.transformOrigin = 'center center';
+  }
+  lbPanX = 0; lbPanY = 0;
+  lbApplyTransform(img);
+}
+
+function lightboxWheel(e) {
+  e.preventDefault();
+  const img = e.currentTarget;
+  if (lbZoom <= 1.01) lbSetOriginFromEvent(img, e);
+  const delta = -e.deltaY * 0.0018 * Math.max(lbZoom, 1);
+  lbZoom = Math.min(LB_ZOOM_MAX, Math.max(1, lbZoom + delta));
+  if (lbZoom <= 1.01) {
+    lbZoom = 1; lbPanX = 0; lbPanY = 0;
+    img.style.transformOrigin = 'center center';
+  }
+  lbApplyTransform(img);
+}
+
+function lightboxPointerDown(e) {
+  if (lbZoom <= 1) return;
+  lbDragging = true;
+  lbJustDragged = false;
+  lbDragStartX = e.clientX; lbDragStartY = e.clientY;
+  lbPanStartX = lbPanX; lbPanStartY = lbPanY;
+  e.currentTarget.classList.add('dragging');
+  e.currentTarget.setPointerCapture(e.pointerId);
+}
+
+function lightboxPointerMove(e) {
+  if (!lbDragging) return;
+  const dx = e.clientX - lbDragStartX;
+  const dy = e.clientY - lbDragStartY;
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) lbJustDragged = true;
+  lbPanX = lbPanStartX + dx;
+  lbPanY = lbPanStartY + dy;
+  lbApplyTransform(e.currentTarget);
+}
+
+function lightboxPointerUp(e) {
+  lbDragging = false;
+  e.currentTarget.classList.remove('dragging');
+  lbApplyTransform(e.currentTarget);
 }
 
 function lightboxPrev() {
