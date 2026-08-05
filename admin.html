@@ -77,6 +77,12 @@
   .pill-ok { background:var(--okbg); color:var(--ok); }
   .pill-mute { background:var(--smoke); color:var(--mute); border:1px solid var(--line); }
   .sizes-list { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+  .pill { align-items:center; gap:6px; }
+  .pill.pill-mute, .pill.pill-excluded { display:inline-flex; }
+  .pill-excluded { background:var(--errbg); color:var(--err); text-decoration:line-through; opacity:.75; }
+  .pill-x { background:none; border:none; cursor:pointer; font-size:13px; line-height:1; padding:0; color:inherit; font-weight:700; }
+  .pill-x:hover { opacity:.6; }
+  .sizes-hint { font-size:12px; color:var(--mute); margin-top:8px; }
 
   .desc-textarea { width:100%; min-height:110px; padding:12px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; font-family:inherit; line-height:1.5; outline:none; resize:vertical; }
   .desc-hint { font-size:12px; color:var(--mute); margin-top:8px; }
@@ -429,9 +435,49 @@ function groupBySize(matches) {
   return [...bySize.values()];
 }
 
+// ---------- інтерактивний список розмірів (видалення назавжди) ----------
+function renderSizesList() {
+  const listEl = document.getElementById('sizesList');
+  const summaryEl = document.getElementById('sizesSummary');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  let totalQty = 0, activeCount = 0;
+  currentMatches.forEach(m => {
+    const isExcluded = excludedSizes.has(String(m.size));
+    const pill = document.createElement('span');
+    pill.className = 'pill ' + (isExcluded ? 'pill-excluded' : 'pill-mute');
+    const label = document.createElement('span');
+    label.textContent = `${m.size} · ${m.price}₴ · ${m.qty}шт`;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pill-x';
+    btn.title = isExcluded ? 'Повернути розмір' : 'Прибрати розмір назавжди';
+    btn.textContent = isExcluded ? '↺' : '×';
+    btn.addEventListener('click', () => {
+      const key = String(m.size);
+      if (excludedSizes.has(key)) excludedSizes.delete(key);
+      else excludedSizes.add(key);
+      renderSizesList();
+    });
+    pill.appendChild(label);
+    pill.appendChild(btn);
+    listEl.appendChild(pill);
+    if (!isExcluded) { totalQty += Number(m.qty) || 0; activeCount++; }
+  });
+  if (summaryEl) {
+    summaryEl.textContent = `Разом на складі: ${totalQty} шт · ${activeCount} розмір(ів)` +
+      (excludedSizes.size ? ` · прибрано назавжди: ${excludedSizes.size}` : '');
+  }
+}
+
 // ---------- пошук артикула ----------
 let currentArticul = null;
 let currentMatches = [];
+// Розміри, які адмін прибрав назавжди для поточного артикулу (не влаштовує
+// ціна тощо) — зберігаються в таблиці excluded_sizes і при кожній наступній
+// публікації (навіть після оновлення каталогу постачальника) виключаються
+// з вставки, тобто більше ніколи самі не з'являться на сайті.
+let excludedSizes = new Set();
 // Єдиний впорядкований список фото картки — і вже завантажені (existing), і нові
 // (new, ще File-об'єкти) в одному масиві, порядок елементів = порядок на сайті.
 // { kind: 'existing', url } | { kind: 'new', file }
@@ -479,6 +525,9 @@ async function doSearch() {
     .eq('articul', art);
   existingRows = existing || [];
 
+  const { data: excludedRows } = await supabaseClient.from('excluded_sizes').select('size').eq('articul', art);
+  excludedSizes = new Set((excludedRows || []).map(r => String(r.size)));
+
   if (!currentMatches.length && !existingRows.length) {
     info.innerHTML = `<span class="pill" style="background:var(--errbg); color:var(--err);">Не знайдено в Excel-каталозі</span>`;
     document.getElementById('nameEditWrap').style.display = 'none';
@@ -491,11 +540,12 @@ async function doSearch() {
   let first, autoDescription;
   if (currentMatches.length) {
     first = currentMatches[0];
-    const totalQty = currentMatches.reduce((s, m) => s + (Number(m.qty) || 0), 0);
     info.innerHTML = `<div><b>${first.name}</b></div>` +
       `<div style="margin-top:4px;">${first.brand} · ${first.gender} · ${first.cat1}/${first.cat2}${first.cat3 ? '/' + first.cat3 : ''}</div>` +
-      `<div class="sizes-list">${currentMatches.map(m => `<span class="pill pill-mute">${m.size} · ${m.price}₴ · ${m.qty}шт</span>`).join('')}</div>` +
-      `<div style="margin-top:8px; font-size:12px; color:var(--mute);">Разом на складі: ${totalQty} шт · ${currentMatches.length} розмір(ів)</div>`;
+      `<div class="sizes-list" id="sizesList"></div>` +
+      `<div style="margin-top:8px; font-size:12px; color:var(--mute);" id="sizesSummary"></div>` +
+      `<div class="sizes-hint">Натисніть × на розмірі, щоб прибрати його з сайту назавжди — він більше не з'явиться, навіть якщо постачальник знову його завезе і оновиться каталог. ↺ поверне розмір назад.</div>`;
+    renderSizesList();
     autoDescription = buildDescription(first.name, first.brand, first.cat1, first.gender);
   } else {
     // товару більше немає в актуальному прайсі постачальників — редагуємо лише
@@ -685,9 +735,12 @@ async function publish() {
       const description = descInput.value.trim() || buildDescription(first.name, first.brand, first.cat1, first.gender);
       const name = nameInput.value.trim() || nameInput.dataset.auto || first.name;
 
+      const matchesToPublish = currentMatches.filter(m => !excludedSizes.has(String(m.size)));
+      if (!matchesToPublish.length) throw new Error('Усі розміри прибрано — нічого публікувати. Поверніть хоча б один розмір (↺).');
+
       await supabaseClient.from('products').delete().eq('articul', currentArticul);
 
-      const rows = currentMatches.map(m => ({
+      const rows = matchesToPublish.map(m => ({
         articul: currentArticul,
         name,
         size: m.size,
@@ -705,6 +758,16 @@ async function publish() {
       const { error: insErr } = await supabaseClient.from('products').insert(rows);
       if (insErr) throw new Error('Не вдалось зберегти товар: ' + insErr.message);
       rowsCount = rows.length;
+
+      // Зберігаємо список назавжди прибраних розмірів — щоб наступна
+      // публікація (навіть після оновлення каталогу постачальника) їх
+      // знову не додала.
+      await supabaseClient.from('excluded_sizes').delete().eq('articul', currentArticul);
+      if (excludedSizes.size) {
+        const excRows = [...excludedSizes].map(size => ({ articul: currentArticul, size }));
+        const { error: excErr } = await supabaseClient.from('excluded_sizes').insert(excRows);
+        if (excErr) throw new Error('Товар збережено, але не вдалось зберегти список прибраних розмірів: ' + excErr.message);
+      }
     }
 
     progressBar.style.width = '100%';
