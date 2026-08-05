@@ -83,7 +83,15 @@ gtag('config', 'G-Y0CS5VFCYH');
 
   /* ===== Header ===== */
   header.site{
-    position:sticky;top:0;z-index:50;
+    position:fixed;top:0;left:0;right:0;z-index:60;
+    --hdr-ink:#ffffff;--hdr-mute:#e2e2e2;--hdr-line:rgba(255,255,255,.3);
+    background:transparent;
+    backdrop-filter:none;
+    border-bottom:1px solid transparent;
+    transition:background .35s ease, backdrop-filter .35s ease, border-color .35s ease;
+  }
+  header.site.scrolled{
+    --hdr-ink:#111111;--hdr-mute:#767470;--hdr-line:#e6e5e2;
     background:rgba(255,255,255,.95);
     backdrop-filter:blur(10px);
     border-bottom:1px solid var(--line);
@@ -92,43 +100,50 @@ gtag('config', 'G-Y0CS5VFCYH');
     display:flex;align-items:center;justify-content:space-between;
     padding:20px 32px;max-width:1240px;margin:0 auto;gap:16px;flex-wrap:wrap;
   }
-  .logo{display:flex;flex-direction:column;align-items:center;line-height:1;}
+  .logo{display:flex;flex-direction:column;align-items:center;line-height:1;color:var(--hdr-ink);}
   .logo b{font-size:21px;letter-spacing:.02em;font-weight:500;}
-  .logo span{font-size:9px;letter-spacing:.32em;color:var(--mute);margin-top:4px;font-weight:600;}
+  .logo span{font-size:9px;letter-spacing:.32em;color:var(--hdr-mute);margin-top:4px;font-weight:600;}
   nav.main-nav{display:flex;gap:36px;}
   nav.main-nav a{
     font-size:14px;font-weight:500;letter-spacing:.01em;position:relative;padding:4px 0;
-    transition:opacity .2s;
+    color:var(--hdr-ink);
+    transition:opacity .2s,color .35s ease;
   }
   nav.main-nav a:hover{opacity:.55;}
   nav.main-nav a.sale{color:var(--accent);font-weight:700;}
   .header-icons{display:flex;align-items:center;gap:22px;}
   .icon-btn{position:relative;display:flex;}
-  .icon-btn svg{width:19px;height:19px;stroke:var(--ink);}
+  .icon-btn svg{width:19px;height:19px;stroke:var(--hdr-ink);transition:stroke .35s ease;}
   .badge-count{
-    position:absolute;top:-7px;right:-8px;background:var(--ink);color:#fff;
+    position:absolute;top:-7px;right:-8px;background:var(--hdr-ink);color:var(--paper);
     font-size:10px;font-weight:700;width:16px;height:16px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
+    transition:background .35s ease,color .35s ease;
   }
+  header.site.scrolled .badge-count{background:var(--ink);color:#fff;}
   .site-search{
     display:flex;align-items:center;flex:1;min-width:180px;max-width:320px;
-    border:1px solid var(--line);border-radius:20px;padding:7px 14px;gap:8px;
-    background:var(--smoke);
+    border:1px solid var(--hdr-line);border-radius:20px;padding:7px 14px;gap:8px;
+    background:rgba(255,255,255,.15);
+    backdrop-filter:blur(6px);
+    transition:background .35s ease,border-color .35s ease;
   }
-  .site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);}
-  .site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
+  header.site.scrolled .site-search{background:var(--smoke);}
+  .site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--hdr-ink);}
+  .site-search input::placeholder{color:var(--hdr-mute);}
+  .site-search svg{width:15px;height:15px;stroke:var(--hdr-mute);flex-shrink:0;}
 
   /* ===== Hero Banner у Чорно-Білому Стилі ===== */
   .hero-banner {
     position: relative;
     min-height: clamp(560px, 82vh, 800px);
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
     overflow: hidden;
     background: #0d0d0d;
     color: #ffffff;
-    padding: 60px 20px;
+    padding: 140px 20px 70px;
     text-align: center;
   }
 
@@ -654,7 +669,7 @@ gtag('config', 'G-Y0CS5VFCYH');
     .header-row { padding: 16px 20px; }
     .site-search { order: 3; min-width: 100%; max-width: 100%; }
     .wrap, .cats, .arrivals, .foot-bottom { padding-left: 20px; padding-right: 20px; }
-    .hero-banner { min-height: clamp(460px, 70vh, 620px); padding: 40px 16px; }
+    .hero-banner { min-height: clamp(460px, 70vh, 620px); padding: 100px 16px 40px; }
     .hero-brand-logo { padding: 12px 20px; }
     .hero-brand-logo b { font-size: 24px; }
     .hero-brand-logo span { font-size: 9px; letter-spacing: 6px; }
@@ -899,6 +914,21 @@ async function loadProducts(){
 
 updateWishBadge();
 loadProducts();
+
+// Прозора шапка поверх відео-банера, стає непрозорою при прокрутці
+(function(){
+  const headerEl = document.querySelector('header.site');
+  const heroEl = document.querySelector('.hero-banner');
+  if (!headerEl) return;
+  function syncHeaderState(){
+    const threshold = heroEl ? Math.max(heroEl.offsetHeight - 120, 80) : 80;
+    if (window.scrollY > threshold) headerEl.classList.add('scrolled');
+    else headerEl.classList.remove('scrolled');
+  }
+  syncHeaderState();
+  window.addEventListener('scroll', syncHeaderState, { passive: true });
+  window.addEventListener('resize', syncHeaderState);
+})();
 </script>
 
 <!-- Social FAB: Instagram / Telegram -->
