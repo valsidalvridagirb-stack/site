@@ -109,7 +109,7 @@ gtag('config', 'G-Y0CS5VFCYH');
     transition:opacity .2s ease,transform .2s ease,visibility .2s;
     z-index:60;
   }
-  .nav-item:hover .nav-dropdown{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,4px);}
+  .nav-item.open .nav-dropdown{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,4px);}
   .nav-dropdown a{display:block;padding:9px 20px;font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;text-align:center;}
   .nav-dropdown a:hover{background:var(--smoke);}
   .header-icons{display:flex;align-items:center;gap:22px;flex-shrink:0;}
@@ -460,14 +460,14 @@ gtag('config', 'G-Y0CS5VFCYH');
     </a>
     <nav class="main-nav">
       <div class="nav-item">
-        <a href="catalog.html?cat=Чоловічі кросівки">Чоловіче</a>
+        <a href="catalog.html?cat=Чоловічі кросівки" class="nav-toggle">Чоловіче</a>
         <div class="nav-dropdown">
           <a href="catalog.html?cat=Чоловічі кросівки">Кросівки</a>
           <a href="catalog.html?cat=Чоловічі капці">Капці</a>
         </div>
       </div>
       <div class="nav-item">
-        <a href="catalog.html?cat=Жіночі кросівки">Жіноче</a>
+        <a href="catalog.html?cat=Жіночі кросівки" class="nav-toggle">Жіноче</a>
         <div class="nav-dropdown">
           <a href="catalog.html?cat=Жіночі кросівки">Кросівки</a>
           <a href="catalog.html?cat=Жіночі капці">Капці</a>
@@ -475,6 +475,27 @@ gtag('config', 'G-Y0CS5VFCYH');
       </div>
       <a href="catalog.html">Всі товари</a>
     </nav>
+    <script>
+      document.querySelectorAll('.nav-item > .nav-toggle').forEach(toggle => {
+        toggle.addEventListener('click', e => {
+          e.preventDefault();
+          const item = toggle.closest('.nav-item');
+          const wasOpen = item.classList.contains('open');
+          document.querySelectorAll('.nav-item.open').forEach(el => el.classList.remove('open'));
+          if (!wasOpen) item.classList.add('open');
+        });
+      });
+      document.addEventListener('click', e => {
+        if (!e.target.closest('.nav-item')) {
+          document.querySelectorAll('.nav-item.open').forEach(el => el.classList.remove('open'));
+        }
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.nav-item.open').forEach(el => el.classList.remove('open'));
+        }
+      });
+    </script>
     <form class="site-search" id="siteSearchForm">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input type="text" id="siteSearchInput" placeholder="Пошук за назвою або артикулом">
