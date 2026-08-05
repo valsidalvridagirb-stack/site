@@ -248,6 +248,13 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .size-modal-close:hover{background:var(--line);}
 .size-modal-close svg{width:16px;height:16px;stroke:var(--ink);}
 .size-modal h2{font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;padding-right:36px;}
+.size-modal .gender-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.size-modal .gender-tab-btn{
+  padding:7px 16px;border:1px solid var(--line);background:none;border-radius:20px;
+  font-size:12px;font-weight:700;color:var(--mute);cursor:pointer;transition:all .15s;
+}
+.size-modal .gender-tab-btn:hover{border-color:var(--ink);color:var(--ink);}
+.size-modal .gender-tab-btn.active{background:var(--ink);border-color:var(--ink);color:var(--paper);}
 .size-modal .chart-note{font-size:12.5px;color:var(--mute);margin-bottom:16px;line-height:1.5;}
 .size-modal .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:4px;margin-bottom:20px;}
 .size-modal table.size-table{width:100%;border-collapse:collapse;font-size:13px;min-width:400px;}
@@ -719,16 +726,35 @@ function buildSizeChartData(product) {
 
   if (cat1 === 'Взуття') {
     const brandSlug = SIZE_CHART_BRAND_SLUGS[String(product.brand || '').trim().toLowerCase()];
-    if (!brandSlug || !genderKey) return null;
-    const entry = SIZE_CHART_META.shoes[brandSlug] && SIZE_CHART_META.shoes[brandSlug][genderKey];
-    if (!entry) return null;
-    const linkGender = genderKey === 'men' ? 'male' : 'female';
+    if (!brandSlug) return null;
+    const shoeBrand = SIZE_CHART_META.shoes[brandSlug];
+    if (!shoeBrand) return null;
+
+    if (genderKey) {
+      const entry = shoeBrand[genderKey];
+      if (!entry) return null;
+      const linkGender = genderKey === 'men' ? 'male' : 'female';
+      return {
+        kind: 'shoes',
+        title: entry.title, note: entry.note, columns: entry.columns, rows: entry.rows,
+        howto: SIZE_CHART_META.howtoShoes,
+        howtoTitle: 'Як виміряти розмір ноги',
+        deepLink: `size-chart.html?tab=shoes&brand=${brandSlug}&gender=${linkGender}`
+      };
+    }
+
+    // Стать товару — "Унісекс" (або не розпізнана) — не ховаємо сітку зовсім,
+    // а показуємо обидві (чоловічу і жіночу) з перемикачем у модалці.
+    const tabs = [];
+    if (shoeBrand.men) tabs.push({ key: 'men', label: 'Чоловіча', ...shoeBrand.men, deepLink: `size-chart.html?tab=shoes&brand=${brandSlug}&gender=male` });
+    if (shoeBrand.women) tabs.push({ key: 'women', label: 'Жіноча', ...shoeBrand.women, deepLink: `size-chart.html?tab=shoes&brand=${brandSlug}&gender=female` });
+    if (!tabs.length) return null;
+
     return {
-      kind: 'shoes',
-      title: entry.title, note: entry.note, columns: entry.columns, rows: entry.rows,
+      kind: 'shoes-both',
+      tabs,
       howto: SIZE_CHART_META.howtoShoes,
-      howtoTitle: 'Як виміряти розмір ноги',
-      deepLink: `size-chart.html?tab=shoes&brand=${brandSlug}&gender=${linkGender}`
+      howtoTitle: 'Як виміряти розмір ноги'
     };
   }
 
@@ -736,10 +762,48 @@ function buildSizeChartData(product) {
 }
 
 let currentSizeChartData = null;
+let currentSizeChartTabIdx = 0;
 
 function openSizeModal() {
   if (!currentSizeChartData) return;
+  currentSizeChartTabIdx = 0;
+  renderSizeModalBody();
+  document.getElementById('sizeModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function switchSizeModalTab(idx) {
+  currentSizeChartTabIdx = idx;
+  renderSizeModalBody();
+}
+
+function renderSizeModalBody() {
   const d = currentSizeChartData;
+  if (!d) return;
+
+  if (d.kind === 'shoes-both') {
+    const active = d.tabs[currentSizeChartTabIdx] || d.tabs[0];
+    document.getElementById('sizeModalBody').innerHTML = `
+      <h2>${active.title}</h2>
+      <div class="gender-tabs">
+        ${d.tabs.map((t, i) => `<button type="button" class="gender-tab-btn ${i === currentSizeChartTabIdx ? 'active' : ''}" onclick="switchSizeModalTab(${i})">${t.label}</button>`).join('')}
+      </div>
+      <p class="chart-note">${active.note}</p>
+      <div class="table-scroll">
+        <table class="size-table">
+          <thead><tr>${active.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+          <tbody>${active.rows.map(r => '<tr>' + r.map(v => `<td>${v}</td>`).join('') + '</tr>').join('')}</tbody>
+        </table>
+      </div>
+      <div class="howto">
+        <h3>${d.howtoTitle}</h3>
+        <ol>${d.howto.map(step => `<li>${step}</li>`).join('')}</ol>
+      </div>
+      <a href="${active.deepLink}" target="_blank" class="size-modal-full-link">Переглянути повну розмірну сітку →</a>
+    `;
+    return;
+  }
+
   document.getElementById('sizeModalBody').innerHTML = `
     <h2>${d.title}</h2>
     <p class="chart-note">${d.note}</p>
@@ -755,8 +819,6 @@ function openSizeModal() {
     </div>
     <a href="${d.deepLink}" target="_blank" class="size-modal-full-link">Переглянути повну розмірну сітку →</a>
   `;
-  document.getElementById('sizeModalOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
 }
 
 function closeSizeModal() {
