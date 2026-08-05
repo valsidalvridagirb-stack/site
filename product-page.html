@@ -323,9 +323,11 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .add-btn{
   width:100%;padding:18px;background:var(--ink);color:var(--paper);
   font-weight:500;font-size:16px;text-transform:uppercase;letter-spacing:1px;
-  border:none;cursor:pointer;margin-top:16px;
+  border:none;border-radius:12px;cursor:pointer;margin-top:16px;
+  transition:opacity .2s ease,transform .15s ease;
 }
 .add-btn:hover{opacity:0.9;}
+.add-btn:active{transform:scale(.98);}
 
 .reviews-link{
   display:flex;align-items:center;justify-content:center;gap:8px;
