@@ -155,7 +155,9 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .main-image-wrap img{
   width:100%;height:100%;object-fit:cover;display:block;
   user-select:none;-webkit-user-select:none;-webkit-user-drag:none;
+  touch-action:pan-y;will-change:transform;transition:transform .12s ease-out;
 }
+.main-image-wrap img.dragging{transition:none;}
 /* Квадратні/горизонтальні фото (наприклад 1950x1950) не обрізаємо кадром
    4:5 — картка сама стає квадратною, а фото показується повністю (contain).
    Вертикальні фото лишаються як є (обрізка під 4:5, cover) — це влаштовує. */
@@ -177,6 +179,15 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 }
 .nav-arrow-btn:hover{transform:scale(1.08);}
 .nav-arrow-btn svg{width:16px;height:16px;stroke:var(--ink);}
+.zoom-expand-btn{
+  position:absolute;top:16px;right:16px;z-index:4;
+  width:36px;height:36px;border-radius:50%;
+  background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:transform .15s;
+}
+.zoom-expand-btn:hover{transform:scale(1.08);}
+.zoom-expand-btn svg{width:16px;height:16px;stroke:var(--ink);}
 
 /* ===== Лайтбокс ===== */
 /* Колонкова розкладка на всю висоту екрана: верхня панель і смуга мініатюр
@@ -1033,12 +1044,26 @@ function renderProduct(product, sizeMap) {
             `).join('')}
           </div>
         ` : ''}
-        <div class="main-image-wrap" id="mainImageWrap" onclick="${photos.length ? 'openLightbox(currentPhotoIndex)' : ''}">
+        <div class="main-image-wrap" id="mainImageWrap">
           ${photos.length ? `
-            <img id="mainPhoto" src="${photos[0]}" alt="${product.name}" draggable="false" onload="fitMainImage(this)" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className:'media-placeholder', innerHTML: placeholderSVG()}));">
+            <img id="mainPhoto" src="${photos[0]}" alt="${product.name}" draggable="false"
+              onload="fitMainImage(this)"
+              onerror="this.replaceWith(Object.assign(document.createElement('div'), {className:'media-placeholder', innerHTML: placeholderSVG()}));"
+              onclick="mpImgClick(event)"
+              onwheel="mpWheel(event)"
+              onpointerdown="mpPointerDown(event)"
+              onpointermove="mpPointerMove(event)"
+              onpointerup="mpPointerUp(event)"
+              onpointerleave="mpPointerUp(event)"
+              ondragstart="return false;">
           ` : `
             <div class="media-placeholder" id="mainPhoto">${placeholderSVG()}</div>
           `}
+          ${photos.length ? `
+            <div class="zoom-expand-btn" onclick="event.stopPropagation();openLightbox(currentPhotoIndex)" title="Переглянути на весь екран">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
+            </div>
+          ` : ''}
           ${photos.length > 1 ? `
             <div class="main-nav-arrows">
               <div class="nav-arrow-btn" onclick="event.stopPropagation();mainPhotoStep(-1)">
@@ -1127,6 +1152,7 @@ function changePhoto(src, btn, idx) {
   document.querySelectorAll('.thumb-img').forEach(img => img.classList.remove('active'));
   btn.classList.add('active');
   currentPhotoIndex = idx;
+  resetMpZoom();
 }
 
 function mainPhotoStep(direction) {
@@ -1137,6 +1163,99 @@ function mainPhotoStep(direction) {
   document.querySelectorAll('.thumb-img').forEach((img, i) => {
     img.classList.toggle('active', i === currentPhotoIndex);
   });
+  resetMpZoom();
+}
+
+// ===== Наближення фото прямо на сторінці товару (без відкриття лайтбоксу) =====
+// Той самий підхід, що й у лайтбоксі: клік наближає (з центром у точці кліку),
+// коліщатко миші плавно наближає/віддаляє, перетягування рухає наближене фото.
+// touch-action:pan-y на фото за замовчуванням — вертикальний скрол сторінки
+// пальцем працює як завжди, і лише вимикається на час активного перетягування
+// уже наближеного фото (щоб сторінка не «їхала» під пальцем разом із фото).
+let mpZoom = 1, mpPanX = 0, mpPanY = 0;
+let mpDragging = false, mpJustDragged = false;
+let mpDragStartX = 0, mpDragStartY = 0, mpPanStartX = 0, mpPanStartY = 0;
+const MP_ZOOM_MAX = 3;
+
+function mpApplyTransform(img) {
+  img.style.transform = `translate(${mpPanX}px, ${mpPanY}px) scale(${mpZoom})`;
+  img.style.cursor = mpZoom > 1 ? 'grab' : 'zoom-in';
+}
+
+function resetMpZoom() {
+  mpZoom = 1; mpPanX = 0; mpPanY = 0;
+  mpDragging = false; mpJustDragged = false;
+  const img = document.getElementById('mainPhoto');
+  if (img && img.tagName === 'IMG') {
+    img.style.transform = '';
+    img.style.transformOrigin = 'center center';
+    img.style.cursor = 'zoom-in';
+    img.style.touchAction = 'pan-y';
+    img.classList.remove('dragging');
+  }
+}
+
+function mpSetOriginFromEvent(img, e) {
+  const rect = img.getBoundingClientRect();
+  const originX = ((e.clientX - rect.left) / rect.width) * 100;
+  const originY = ((e.clientY - rect.top) / rect.height) * 100;
+  img.style.transformOrigin = `${Math.min(100, Math.max(0, originX))}% ${Math.min(100, Math.max(0, originY))}%`;
+}
+
+function mpImgClick(e) {
+  if (mpJustDragged) { mpJustDragged = false; return; }
+  const img = e.currentTarget;
+  if (mpZoom === 1) {
+    mpSetOriginFromEvent(img, e);
+    mpZoom = 2.2;
+  } else {
+    mpZoom = 1;
+    img.style.transformOrigin = 'center center';
+  }
+  mpPanX = 0; mpPanY = 0;
+  mpApplyTransform(img);
+}
+
+function mpWheel(e) {
+  e.preventDefault();
+  const img = e.currentTarget;
+  if (mpZoom <= 1.01) mpSetOriginFromEvent(img, e);
+  const delta = -e.deltaY * 0.0018 * Math.max(mpZoom, 1);
+  mpZoom = Math.min(MP_ZOOM_MAX, Math.max(1, mpZoom + delta));
+  if (mpZoom <= 1.01) {
+    mpZoom = 1; mpPanX = 0; mpPanY = 0;
+    img.style.transformOrigin = 'center center';
+  }
+  mpApplyTransform(img);
+}
+
+function mpPointerDown(e) {
+  if (mpZoom <= 1) return;
+  mpDragging = true;
+  mpJustDragged = false;
+  mpDragStartX = e.clientX; mpDragStartY = e.clientY;
+  mpPanStartX = mpPanX; mpPanStartY = mpPanY;
+  e.currentTarget.classList.add('dragging');
+  e.currentTarget.style.touchAction = 'none';
+  e.currentTarget.setPointerCapture(e.pointerId);
+}
+
+function mpPointerMove(e) {
+  if (!mpDragging) return;
+  e.preventDefault();
+  const dx = e.clientX - mpDragStartX;
+  const dy = e.clientY - mpDragStartY;
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) mpJustDragged = true;
+  mpPanX = mpPanStartX + dx;
+  mpPanY = mpPanStartY + dy;
+  mpApplyTransform(e.currentTarget);
+}
+
+function mpPointerUp(e) {
+  mpDragging = false;
+  e.currentTarget.classList.remove('dragging');
+  e.currentTarget.style.touchAction = 'pan-y';
+  mpApplyTransform(e.currentTarget);
 }
 
 function selectSize(size, price, btn) {
@@ -1275,6 +1394,7 @@ function updateLightboxImage() {
     img.classList.toggle('active', i === lightboxIndex);
   });
   resetLbZoom();
+  resetMpZoom();
 }
 
 // ===== Наближення фото в лайтбоксі =====
