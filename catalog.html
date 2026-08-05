@@ -300,7 +300,15 @@ gtag('config', 'G-Y0CS5VFCYH');
     stroke: var(--accent);
   }
 
-  .quickview-btn {
+  /* Дві окремі кнопки під один і той же клас "quickview-btn" для JS:
+     -overlay спливає на фото при hover (десктоп/миша), -mobile —
+     завжди видимий текстовий лінк під ціною (сенсорні екрани, де
+     :hover не працює нормально). Раніше це була одна кнопка всередині
+     .product-media з position:static на мобільних — але той div є
+     flex-контейнером з фіксованим aspect-ratio і overflow:hidden, тож
+     кнопка ставала flex-елементом поруч із фото і текст стискався у
+     вузьку вертикальну смужку замість рядка під фото. */
+  .quickview-btn-overlay {
     position: absolute;
     left: 0;
     right: 0;
@@ -318,22 +326,28 @@ gtag('config', 'G-Y0CS5VFCYH');
     transform: translateY(100%);
     transition: opacity .2s ease, transform .2s ease;
   }
-  .product-card:hover .quickview-btn {
+  .product-card:hover .quickview-btn-overlay {
     opacity: 1;
     transform: translateY(0);
   }
+  .quickview-btn-mobile {
+    display: none;
+  }
   @media (hover: none) {
-    .quickview-btn {
-      opacity: 1;
-      transform: translateY(0);
-      position: static;
-      margin-top: 8px;
-      background: none;
+    .quickview-btn-overlay {
+      display: none;
+    }
+    .quickview-btn-mobile {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
       color: var(--mute);
-      padding: 0;
-      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: .04em;
       text-decoration: underline;
       text-underline-offset: 2px;
+      text-align: left;
     }
   }
 
@@ -990,12 +1004,13 @@ function renderPage(page) {
           <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-10-9.3C0.3 8.1 2 4.5 5.7 4c2-.3 3.7.7 6.3 3 2.6-2.3 4.3-3.3 6.3-3 3.7.5 5.4 4.1 3.7 7.7C19.5 16.1 12 21 12 21z"/></svg>
         </button>
         ${photo ? `<img src="${photo}" alt="${p.name}" loading="lazy">` : placeholderSVG()}
-        <button class="quickview-btn" data-articul="${(p.articul || '').replace(/"/g, '&quot;')}">Швидкий перегляд</button>
+        <button class="quickview-btn quickview-btn-overlay" data-articul="${(p.articul || '').replace(/"/g, '&quot;')}">Швидкий перегляд</button>
       </div>
       <div class="product-info">
         ${p.brand ? `<div class="product-brand">${p.brand}</div>` : ''}
         <div class="product-name" title="${p.name}">${p.name}</div>
         <div class="product-price">${Number(p.price).toLocaleString('uk-UA')} грн</div>
+        <button class="quickview-btn quickview-btn-mobile" data-articul="${(p.articul || '').replace(/"/g, '&quot;')}">Швидкий перегляд</button>
       </div>
     `;
     grid.appendChild(card);
