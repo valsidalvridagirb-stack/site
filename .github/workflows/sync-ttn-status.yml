@@ -1,0 +1,36 @@
+name: Sync NP delivery statuses
+
+# Незалежний від Claude аналог тригера "Статуси доставки НП: автосинк".
+# Просто дзвонить у вже готовий ендпоінт /api/cron-sync-ttn (уся логіка
+# Нової пошти + запис у Supabase живе там, на Vercel) — тому тут не потрібні
+# жодні додаткові секрети, окрім самого CRON_SECRET.
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'   # кожні 3 години о хвилині :17 (той самий графік, що й був)
+  workflow_dispatch: {}       # можливість запустити вручну з вкладки Actions
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call cron-sync-ttn endpoint
+        run: |
+          set -e
+          HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" \
+            "https://nexxtlevel.store/api/cron-sync-ttn?secret=${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $HTTP_CODE"
+          cat response.json
+          echo ""
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::cron-sync-ttn повернув HTTP $HTTP_CODE"
+            exit 1
+          fi
+          python3 -c "
+          import json, sys
+          d = json.load(open('response.json'))
+          if not d.get('ok') or d.get('errors'):
+              print('::error::Синк повернув помилки:', d)
+              sys.exit(1)
+          print(f\"OK: перевірено={d.get('checked')} оновлено={d.get('updated')}\")
+          "
