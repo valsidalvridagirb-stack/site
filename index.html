@@ -121,20 +121,37 @@ gtag('config', 'G-Y0CS5VFCYH');
   /* ===== Hero Banner у Чорно-Білому Стилі ===== */
   .hero-banner {
     position: relative;
-    min-height: 500px;
+    min-height: clamp(560px, 82vh, 800px);
     display: flex;
     align-items: center;
     justify-content: center;
-    background-image: linear-gradient(rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.72)), url('https://images.unsplash.com/photo-1669671943625-e20799ee5f42?q=80&w=1600&auto=format&fit=crop');
-    background-size: cover;
-    background-position: center;
-    filter: grayscale(100%);
+    overflow: hidden;
+    background: #0d0d0d;
     color: #ffffff;
     padding: 60px 20px;
     text-align: center;
   }
 
+  .hero-video-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    filter: grayscale(100%);
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1;
+  }
+
   .hero-banner-content {
+    position: relative;
+    z-index: 2;
     max-width: 750px;
     width: 100%;
     display: flex;
@@ -647,7 +664,7 @@ gtag('config', 'G-Y0CS5VFCYH');
     .header-row { padding: 16px 20px; }
     .site-search { order: 3; min-width: 100%; max-width: 100%; }
     .wrap, .cats, .arrivals, .foot-bottom { padding-left: 20px; padding-right: 20px; }
-    .hero-banner { min-height: 440px; padding: 40px 16px; }
+    .hero-banner { min-height: clamp(460px, 70vh, 620px); padding: 40px 16px; }
     .hero-brand-logo { padding: 12px 20px; }
     .hero-brand-logo b { font-size: 24px; }
     .hero-brand-logo span { font-size: 9px; letter-spacing: 6px; }
@@ -696,6 +713,10 @@ gtag('config', 'G-Y0CS5VFCYH');
 </header>
   
 <section class="hero-banner">
+  <video class="hero-video-bg" autoplay muted loop playsinline preload="auto" poster="assets/hero-poster.jpg">
+    <source src="assets/hero-video.mp4" type="video/mp4">
+  </video>
+  <div class="hero-overlay"></div>
   <div class="hero-banner-content">
     <div class="hero-brand-logo">
       <b>NEXXTLEVEL</b>
