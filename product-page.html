@@ -345,12 +345,38 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .size-btn:hover{border-color:var(--ink);}
 .size-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
 .size-btn:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through;}
+.size-btn.unavailable{opacity:.4;text-decoration:line-through;}
+.size-btn.unavailable:hover{border-color:var(--line);}
 .size-btn-price{font-size:10px;font-weight:600;color:var(--mute);}
 .size-btn.active .size-btn-price{color:var(--paper);opacity:.8;}
+.size-low-badge{
+  position:absolute;top:-7px;right:-7px;
+  background:var(--accent);color:#fff;
+  font-size:9.5px;font-weight:700;line-height:1;
+  min-width:16px;height:16px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 4px;text-decoration:none;
+}
 .size-stock-hint{
   display:none;margin-top:10px;font-size:12px;font-weight:600;
   color:var(--accent);
 }
+
+/* ===== Модальне вікно "повідомити про наявність" ===== */
+.notify-modal{max-width:380px;}
+.notify-modal-sub{font-size:13px;color:var(--mute);line-height:1.5;margin:6px 0 18px;padding-right:8px;}
+.notify-input{
+  width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:6px;
+  font-family:inherit;font-size:14px;margin-bottom:12px;
+}
+.notify-input:focus{outline:none;border-color:var(--ink);}
+.notify-submit-btn{
+  width:100%;padding:13px;border:none;border-radius:6px;background:var(--ink);
+  color:var(--paper);font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+  font-size:13px;cursor:pointer;transition:opacity .2s;
+}
+.notify-submit-btn:hover{opacity:.85;}
+.notify-submit-btn:disabled{opacity:.5;cursor:not-allowed;}
 
 .recently-viewed-section{padding:56px 0;border-top:1px solid var(--line);margin-top:40px;}
 .rv-container{max-width:1200px;margin:0 auto;padding:0 24px;}
@@ -593,6 +619,13 @@ footer.site-footer {
   <div style="text-align:center;padding:48px;">Завантаження товару...</div>
 </main>
 
+<section class="recently-viewed-section" id="similarProductsSection" style="display:none;">
+  <div class="rv-container">
+    <h2 class="rv-title">З цим також дивляться</h2>
+    <div class="rv-grid" id="similarProductsGrid"></div>
+  </div>
+</section>
+
 <section class="recently-viewed-section" id="recentlyViewedSection" style="display:none;">
   <div class="rv-container">
     <h2 class="rv-title">Ви нещодавно переглядали</h2>
@@ -635,6 +668,20 @@ footer.site-footer {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </div>
     <div id="sizeModalBody"></div>
+  </div>
+</div>
+
+<div class="size-modal-overlay" id="notifyModalOverlay">
+  <div class="size-modal notify-modal">
+    <div class="size-modal-close" onclick="closeNotifyModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </div>
+    <h2>Повідомити про наявність</h2>
+    <p class="notify-modal-sub">Розмір <b id="notifyModalSize"></b> зараз відсутній. Залиште email або телефон — напишемо, щойно розмір з'явиться.</p>
+    <form id="notifyForm" onsubmit="submitNotify(event)">
+      <input type="text" id="notifyContactInput" class="notify-input" placeholder="Email або телефон" required>
+      <button type="submit" class="notify-submit-btn">Повідомити мене</button>
+    </form>
   </div>
 </div>
 
@@ -923,6 +970,8 @@ document.getElementById('sizeModalOverlay').addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   const overlay = document.getElementById('sizeModalOverlay');
   if (overlay.classList.contains('open') && e.key === 'Escape') closeSizeModal();
+  const notifyOverlay = document.getElementById('notifyModalOverlay');
+  if (notifyOverlay.classList.contains('open') && e.key === 'Escape') closeNotifyModal();
 });
 
 function placeholderSVG(){
@@ -1026,6 +1075,7 @@ function renderProduct(product, sizeMap) {
     photo: photos[0] || ''
   });
   renderRecentlyViewed();
+  loadSimilarProducts(product);
 
   trackViewContent({ name: product.name || product.title, articul: product.articul, id: product.id, price: initialPrice });
   currentSizeChartData = buildSizeChartData(product);
@@ -1101,9 +1151,11 @@ function renderProduct(product, sizeMap) {
               ${sortedSizes.map(size => {
                 const s = sizeMap[size];
                 const priceDiffers = Math.round(s.price) !== Math.round(initialPrice);
+                const lowStock = s.available && s.qty !== null && s.qty <= 2;
                 return `
-                <button class="size-btn" ${s.available ? '' : 'disabled'}
-                  onclick="selectSize('${size}', ${s.price}, this)">
+                <button class="size-btn ${s.available ? '' : 'unavailable'}"
+                  onclick="handleSizeClick('${size}', ${s.price}, ${s.available}, this)">
+                  ${lowStock ? `<span class="size-low-badge">${s.qty}</span>` : ''}
                   <span class="size-btn-label">${size}</span>
                   ${priceDiffers ? `<span class="size-btn-price">${s.price.toLocaleString('uk-UA')} грн</span>` : ''}
                 </button>
@@ -1258,6 +1310,60 @@ function mpPointerUp(e) {
   mpApplyTransform(e.currentTarget);
 }
 
+function handleSizeClick(size, price, available, btn) {
+  if (available) {
+    selectSize(size, price, btn);
+  } else {
+    openNotifyModal(size);
+  }
+}
+
+let notifySize = null;
+
+function openNotifyModal(size) {
+  notifySize = size;
+  document.getElementById('notifyModalSize').textContent = size;
+  document.getElementById('notifyContactInput').value = '';
+  document.getElementById('notifyModalOverlay').classList.add('open');
+}
+
+function closeNotifyModal() {
+  document.getElementById('notifyModalOverlay').classList.remove('open');
+}
+
+document.getElementById('notifyModalOverlay').addEventListener('click', e => {
+  if (e.target.id === 'notifyModalOverlay') closeNotifyModal();
+});
+
+async function submitNotify(event) {
+  event.preventDefault();
+  const input = document.getElementById('notifyContactInput');
+  const contact = input.value.trim();
+  if (!contact) return;
+
+  const submitBtn = event.target.querySelector('.notify-submit-btn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Надсилаємо...';
+
+  try {
+    const { error } = await supabaseClient.from('stock_notifications').insert({
+      articul: currentProductArticul,
+      size: notifySize,
+      contact: contact,
+      product_name: currentProductLabel
+    });
+    if (error) throw error;
+    showToast('Дякуємо! Повідомимо, щойно розмір з\'явиться.', 'success');
+    closeNotifyModal();
+  } catch (e) {
+    console.warn('submitNotify failed', e);
+    showToast('Не вдалося надіслати, спробуйте ще раз', 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Повідомити мене';
+  }
+}
+
 function selectSize(size, price, btn) {
   selectedSize = size;
   currentPrice = price;
@@ -1329,6 +1435,84 @@ function renderRecentlyViewed() {
   `).join('');
 
   section.style.display = 'block';
+}
+
+async function loadSimilarProducts(product) {
+  const section = document.getElementById('similarProductsSection');
+  const grid = document.getElementById('similarProductsGrid');
+  if (!section || !grid) return;
+
+  const category2 = String(product.category_2 || '').trim();
+  const gender = String(product.gender || '').trim();
+  const articul = String(product.articul || '').trim();
+  if (!category2) {
+    section.style.display = 'none';
+    return;
+  }
+
+  try {
+    let query = supabaseClient
+      .from('product_summary')
+      .select('id, articul, name, brand, gender, price, photos, category_2')
+      .eq('category_2', category2)
+      .neq('articul', articul)
+      .limit(24);
+    if (gender) query = query.eq('gender', gender);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    let items = data || [];
+    if (!items.length && gender) {
+      // Фолбек: якщо за статтю нічого не знайшлось, беремо ту саму категорію без фільтра статі
+      const fallback = await supabaseClient
+        .from('product_summary')
+        .select('id, articul, name, brand, gender, price, photos, category_2')
+        .eq('category_2', category2)
+        .neq('articul', articul)
+        .limit(24);
+      items = fallback.data || [];
+    }
+
+    // Перемішуємо та беремо перші 8, щоб блок не був завжди однаковим
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    items = items.slice(0, 8);
+
+    if (!items.length) {
+      section.style.display = 'none';
+      return;
+    }
+
+    grid.innerHTML = items.map(p => {
+      let rawPhoto = p.photos ? p.photos.split(/[;,]/)[0].trim() : null;
+      let photo = null;
+      if (rawPhoto) {
+        if (rawPhoto.startsWith('http://')) rawPhoto = rawPhoto.replace('http://', 'https://');
+        else if (rawPhoto.startsWith('//')) rawPhoto = 'https:' + rawPhoto;
+        photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}` : rawPhoto;
+      }
+      return `
+        <a href="product?articul=${encodeURIComponent(p.articul || '')}" class="rv-card">
+          <div class="rv-media">
+            ${photo ? `<img src="${photo}" alt="${p.name || ''}" loading="lazy">` : placeholderSVG()}
+          </div>
+          <div class="rv-info">
+            ${p.brand ? `<div class="rv-brand">${p.brand}</div>` : ''}
+            <div class="rv-name" title="${p.name || ''}">${p.name || ''}</div>
+            <div class="rv-price">${Number(p.price || 0).toLocaleString('uk-UA')} грн</div>
+          </div>
+        </a>
+      `;
+    }).join('');
+
+    section.style.display = 'block';
+  } catch (e) {
+    console.warn('loadSimilarProducts failed', e);
+    section.style.display = 'none';
+  }
 }
 
 function addToCart() {

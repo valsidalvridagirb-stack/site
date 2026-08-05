@@ -300,6 +300,109 @@ gtag('config', 'G-Y0CS5VFCYH');
     stroke: var(--accent);
   }
 
+  .quickview-btn {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 9px 0;
+    background: rgba(17,17,17,.86);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    text-align: center;
+    z-index: 3;
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  .product-card:hover .quickview-btn {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (hover: none) {
+    .quickview-btn {
+      opacity: 1;
+      transform: translateY(0);
+      position: static;
+      margin-top: 8px;
+      background: none;
+      color: var(--mute);
+      padding: 0;
+      text-align: left;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
+
+  /* ===== Модалка швидкого перегляду ===== */
+  .qv-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(10,10,10,.55);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .qv-overlay.open { display: flex; }
+  .qv-modal {
+    background: var(--paper); border-radius: 8px;
+    width: 100%; max-width: 780px; max-height: 88vh;
+    overflow-y: auto; position: relative;
+    padding: 26px;
+  }
+  .qv-close {
+    position: absolute; top: 14px; right: 14px;
+    width: 32px; height: 32px; border-radius: 50%; background: var(--smoke);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    z-index: 2; transition: background .2s;
+  }
+  .qv-close:hover { background: var(--line); }
+  .qv-close svg { width: 16px; height: 16px; stroke: var(--ink); }
+  .qv-layout { display: grid; grid-template-columns: 260px 1fr; gap: 28px; }
+  @media (max-width: 640px) {
+    .qv-layout { grid-template-columns: 1fr; }
+    .qv-modal { padding: 20px; }
+  }
+  .qv-media {
+    position: relative; background: var(--smoke); aspect-ratio: 4/5;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; overflow: hidden;
+  }
+  .qv-media img { width: 100%; height: 100%; object-fit: contain; }
+  .qv-thumbs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .qv-thumbs img {
+    width: 44px; height: 44px; object-fit: contain; background: var(--smoke);
+    border-radius: 4px; cursor: pointer; border: 1px solid var(--line); padding: 2px;
+  }
+  .qv-thumbs img.active { border-color: var(--ink); }
+  .qv-brand { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); }
+  .qv-name { font-size: 19px; font-weight: 600; text-transform: uppercase; line-height: 1.15; margin: 3px 0 8px; padding-right: 30px; }
+  .qv-price { font-size: 20px; font-weight: 500; margin-bottom: 14px; }
+  .qv-size-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 8px; }
+  .qv-size-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .qv-size-btn {
+    position: relative;
+    padding: 8px 14px; border: 1px solid var(--line); background: none;
+    font-weight: 700; font-size: 13px; cursor: pointer; border-radius: 10px; transition: all .15s;
+  }
+  .qv-size-btn:hover { border-color: var(--ink); }
+  .qv-size-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .qv-size-btn.unavailable { opacity: .4; text-decoration: line-through; }
+  .qv-add-btn {
+    width: 100%; padding: 13px; border: none; border-radius: 6px; background: var(--ink);
+    color: var(--paper); font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+    font-size: 13px; cursor: pointer; transition: opacity .2s; margin-bottom: 10px;
+  }
+  .qv-add-btn:hover { opacity: .85; }
+  .qv-add-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .qv-full-link {
+    display: inline-block; font-size: 12px; font-weight: 600; color: var(--mute);
+    text-decoration: underline; text-underline-offset: 2px;
+  }
+  .qv-full-link:hover { color: var(--ink); }
+  .qv-loading, .qv-error { padding: 40px 0; text-align: center; color: var(--mute); grid-column: 1 / -1; }
+
   .product-info{padding:0 2px;}
 
   .product-brand {
@@ -656,6 +759,15 @@ gtag('config', 'G-Y0CS5VFCYH');
   </div>
 </footer>
 
+<div class="qv-overlay" id="qvOverlay">
+  <div class="qv-modal">
+    <div class="qv-close" onclick="closeQuickView()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </div>
+    <div id="qvBody" class="qv-layout"><div class="qv-loading">Завантаження...</div></div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
@@ -878,6 +990,7 @@ function renderPage(page) {
           <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-10-9.3C0.3 8.1 2 4.5 5.7 4c2-.3 3.7.7 6.3 3 2.6-2.3 4.3-3.3 6.3-3 3.7.5 5.4 4.1 3.7 7.7C19.5 16.1 12 21 12 21z"/></svg>
         </button>
         ${photo ? `<img src="${photo}" alt="${p.name}" loading="lazy">` : placeholderSVG()}
+        <button class="quickview-btn" data-articul="${(p.articul || '').replace(/"/g, '&quot;')}">Швидкий перегляд</button>
       </div>
       <div class="product-info">
         ${p.brand ? `<div class="product-brand">${p.brand}</div>` : ''}
@@ -1015,6 +1128,161 @@ document.getElementById('productGrid').addEventListener('click', e => {
 
   localStorage.setItem('wishlist', JSON.stringify(Array.from(wishlist)));
   updateWishBadge();
+});
+
+document.getElementById('productGrid').addEventListener('click', e => {
+  const qvBtn = e.target.closest('.quickview-btn');
+  if (!qvBtn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  openQuickView(qvBtn.dataset.articul);
+});
+
+// ===== Модалка швидкого перегляду =====
+let qvSizeMap = {};
+let qvSelectedSize = null;
+let qvCurrentPrice = 0;
+let qvCurrentArticul = null;
+let qvCurrentLabel = '';
+
+async function openQuickView(articul) {
+  if (!articul) return;
+  const overlay = document.getElementById('qvOverlay');
+  const body = document.getElementById('qvBody');
+  body.innerHTML = '<div class="qv-loading">Завантаження...</div>';
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  try {
+    const { data: variants, error } = await supabaseClient.from('products').select('*').eq('articul', articul);
+    if (error) throw error;
+    if (!variants || !variants.length) {
+      body.innerHTML = '<div class="qv-error">Товар не знайдено</div>';
+      return;
+    }
+
+    const baseProduct = variants.find(v => v.photos) || variants[0];
+
+    const sizeMap = {};
+    variants.forEach(variant => {
+      const sz = variant.size !== null && variant.size !== undefined ? String(variant.size).trim() : '';
+      if (sz && !(sz in sizeMap)) {
+        const qty = (variant.quantity === undefined || variant.quantity === null) ? null : Number(variant.quantity);
+        sizeMap[sz] = { price: Number(variant.price), qty, available: qty === null ? true : qty > 0 };
+      }
+    });
+    qvSizeMap = sizeMap;
+    qvCurrentArticul = articul;
+    qvSelectedSize = null;
+
+    const seen = new Set();
+    let rawPhotos = (baseProduct.photos || '').split(/[;,]/).map(p => p.trim()).filter(Boolean).filter(p => {
+      const norm = p.toLowerCase().replace(/^https?:/, '').replace(/\/$/, '');
+      if (seen.has(norm)) return false;
+      seen.add(norm);
+      return true;
+    });
+    const ownStorage = rawPhotos.filter(p => p.includes('supabase.co/storage/'));
+    if (ownStorage.length > 0) rawPhotos = ownStorage;
+    const photos = rawPhotos.map(p => {
+      let clean = p;
+      if (clean.startsWith('http://')) clean = clean.replace('http://', 'https://');
+      else if (clean.startsWith('//')) clean = 'https:' + clean;
+      return clean.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(clean)}` : clean;
+    });
+
+    const sortedSizes = Object.keys(sizeMap).sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
+    const availableSizes = sortedSizes.filter(sz => sizeMap[sz].available);
+    const priceSourceSizes = availableSizes.length ? availableSizes : sortedSizes;
+    const initialPrice = priceSourceSizes.length ? Math.min(...priceSourceSizes.map(sz => sizeMap[sz].price)) : Number(baseProduct.price);
+    qvCurrentPrice = initialPrice;
+    qvCurrentLabel = [baseProduct.brand, baseProduct.name].filter(Boolean).join(' ') || baseProduct.name || '';
+
+    body.innerHTML = `
+      <div>
+        <div class="qv-media" id="qvMainMedia">
+          ${photos.length ? `<img id="qvMainImg" src="${photos[0]}" alt="${baseProduct.name || ''}">` : placeholderSVG()}
+        </div>
+        ${photos.length > 1 ? `
+          <div class="qv-thumbs">
+            ${photos.map((ph, idx) => `<img src="${ph}" class="${idx === 0 ? 'active' : ''}" onclick="qvChangePhoto('${ph}', this)">`).join('')}
+          </div>
+        ` : ''}
+      </div>
+      <div>
+        ${baseProduct.brand ? `<div class="qv-brand">${baseProduct.brand}</div>` : ''}
+        <div class="qv-name">${baseProduct.name || ''}</div>
+        <div class="qv-price" id="qvPrice">${initialPrice.toLocaleString('uk-UA')} грн</div>
+        ${sortedSizes.length ? `
+          <div class="qv-size-title">Оберіть розмір (US)</div>
+          <div class="qv-size-grid">
+            ${sortedSizes.map(size => {
+              const s = sizeMap[size];
+              return `<button class="qv-size-btn ${s.available ? '' : 'unavailable'}" onclick="qvSelectSize('${size}', ${s.price}, this)">${size}</button>`;
+            }).join('')}
+          </div>
+        ` : ''}
+        <button class="qv-add-btn" id="qvAddBtn" onclick="qvAddToCart()">Додати в кошик</button>
+        <a href="product?articul=${encodeURIComponent(articul)}" class="qv-full-link">Переглянути повну сторінку товару →</a>
+      </div>
+    `;
+  } catch (e) {
+    console.warn('openQuickView failed', e);
+    body.innerHTML = '<div class="qv-error">Не вдалося завантажити товар</div>';
+  }
+}
+
+function qvChangePhoto(src, el) {
+  const img = document.getElementById('qvMainImg');
+  if (img) img.src = src;
+  document.querySelectorAll('.qv-thumbs img').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+function qvSelectSize(size, price, btn) {
+  qvSelectedSize = size;
+  qvCurrentPrice = price;
+  document.querySelectorAll('.qv-size-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const priceEl = document.getElementById('qvPrice');
+  if (priceEl) priceEl.textContent = `${price.toLocaleString('uk-UA')} грн`;
+}
+
+function qvAddToCart() {
+  if (!qvSelectedSize) {
+    alert('Будь ласка, оберіть розмір перед додаванням у кошик!');
+    return;
+  }
+  let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  cart.push({
+    name: qvCurrentLabel,
+    articul: qvCurrentArticul,
+    size: qvSelectedSize,
+    price: qvCurrentPrice,
+    quantity: 1
+  });
+  localStorage.setItem('cart', JSON.stringify(cart));
+
+  const btn = document.getElementById('qvAddBtn');
+  if (btn) {
+    btn.textContent = 'Додано ✓';
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = 'Додати в кошик'; btn.disabled = false; }, 1500);
+  }
+}
+
+function closeQuickView() {
+  document.getElementById('qvOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('qvOverlay').addEventListener('click', e => {
+  if (e.target.id === 'qvOverlay') closeQuickView();
+});
+
+document.addEventListener('keydown', e => {
+  const overlay = document.getElementById('qvOverlay');
+  if (overlay.classList.contains('open') && e.key === 'Escape') closeQuickView();
 });
 
 updateWishBadge();
