@@ -196,13 +196,17 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
   position:absolute;top:0;left:0;right:0;z-index:5;
   display:flex;align-items:center;justify-content:space-between;
   padding:14px 20px;color:#fff;
-  background:linear-gradient(to bottom, rgba(0,0,0,.5), rgba(0,0,0,0) 85%);
   pointer-events:none;
 }
 .lightbox-top > *{pointer-events:auto;}
-.lightbox-counter{font-size:13px;font-weight:700;letter-spacing:.08em;color:#e6e5e2;}
+.lightbox-counter{
+  font-size:13px;font-weight:700;letter-spacing:.08em;color:#fff;
+  background:rgba(20,20,20,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  padding:7px 14px;border-radius:20px;
+}
 .lightbox-close{
-  width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.1);
+  width:42px;height:42px;border-radius:50%;background:rgba(20,20,20,.55);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;
   transition:background .2s,transform .15s;
 }
