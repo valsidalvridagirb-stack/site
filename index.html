@@ -547,6 +547,19 @@ gtag('config', 'G-Y0CS5VFCYH');
     color: var(--ink);
   }
 
+  .size-row .size-more {
+    border: none;
+    background: none;
+    padding: 4px 2px;
+    color: var(--mute);
+    font-weight: 700;
+  }
+
+  .product-card:hover .size-row .size-more {
+    border: none;
+    color: var(--mute);
+  }
+
   /* ===== Footer ===== */
   footer {
     background: var(--ink);
@@ -887,7 +900,7 @@ async function loadProducts(){
       </div>
       <div class="product-name" title="${p.name}">${p.name}</div>
       <div class="product-price">${Number(p.price).toLocaleString('uk-UA')} грн</div>
-      <div class="size-row">${sizes.slice(0, 4).map(s=>`<span>${s}</span>`).join('')}</div>
+      <div class="size-row">${sizes.slice(0, 4).map(s=>`<span>${s}</span>`).join('')}${sizes.length > 4 ? '<span class="size-more">…</span>' : ''}</div>
     `;
     grid.appendChild(card);
   });
