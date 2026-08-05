@@ -101,15 +101,17 @@ gtag('config', 'G-Y0CS5VFCYH');
   nav.main-nav a:hover{opacity:.55;}
   .nav-item{position:relative;}
   .nav-dropdown{
-    position:absolute;top:100%;left:50%;transform:translate(-50%,4px);
-    background:transparent;min-width:150px;padding:10px 0;
+    position:absolute;top:100%;left:50%;transform:translate(-50%,10px);
+    background:rgba(255,255,255,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border:1px solid var(--line);border-radius:14px;
+    min-width:160px;padding:10px 0;box-shadow:0 16px 36px rgba(0,0,0,.14);
     opacity:0;visibility:hidden;pointer-events:none;
-    transition:opacity .18s ease,transform .18s ease,visibility .18s;
+    transition:opacity .2s ease,transform .2s ease,visibility .2s;
     z-index:60;
   }
-  .nav-item:hover .nav-dropdown{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0);}
-  .nav-dropdown a{display:block;padding:6px 18px;font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;text-align:center;}
-  .nav-dropdown a:hover{opacity:.55;}
+  .nav-item:hover .nav-dropdown{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,4px);}
+  .nav-dropdown a{display:block;padding:9px 20px;font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;text-align:center;}
+  .nav-dropdown a:hover{background:var(--smoke);}
   .header-icons{display:flex;align-items:center;gap:22px;flex-shrink:0;}
   .icon-btn{position:relative;display:flex;}
   .icon-btn svg{width:19px;height:19px;stroke:var(--ink);}
