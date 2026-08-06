@@ -687,6 +687,16 @@ gtag('config', 'G-Y0CS5VFCYH');
         </button>
       </div>
 
+      <div class="filter-block open" id="typeBlock">
+        <button class="filter-block-header">
+          Тип товару
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="filter-block-body">
+          <div class="filter-options" id="typeOptions"></div>
+        </div>
+      </div>
+
       <div class="filter-block" id="brandBlock">
         <button class="filter-block-header">
           Бренд
@@ -827,12 +837,40 @@ let allProducts = [];
 let filteredProducts = []; 
 
 let activeFilters = {
+  types: new Set(),
   brands: new Set(),
   sizes: new Set(),
   priceMin: null,
   priceMax: null,
   sort: 'default'
 };
+
+// ===== Визначення типу товару (Кросівки/Тапочки/Шльопанці/Сандалі/...) =====
+// У базі немає окремого поля "тип товару" — категорія (category_2) наразі
+// містить лише "Кросівки" та "Шльопанці та сандалі" одним кошиком. Тому тип
+// визначаємо за ключовими словами в назві товару (і категорії як запасний
+// варіант) — так само, як це вже робить пошук за категоріями шапки сайту.
+// Порядок перевірки важливий: конкретніші слова (тапочки, сандалі) йдуть
+// раніше за загальні (шльопанці), щоб "Тапочки Crocs Classic" не потрапили
+// у "Шльопанці" лише тому, що обидва товари з розділу Crocs.
+const PRODUCT_TYPE_ORDER = ['Кросівки', 'Тапочки', 'Шльопанці', 'Сандалі', 'Сабо', 'Черевики'];
+function detectProductType(p) {
+  // Дивимось лише на назву товару — category_2 у базі вже містить об'єднану
+  // мітку "Шльопанці та сандалі", тож якби ми шукали ключові слова і в ній
+  // теж, підрядок "сандал" з цієї самої мітки хибно перекривав би товари,
+  // які насправді шльопанці (за назвою), а не сандалі.
+  const name = (p.name || '').toLowerCase();
+  if (/тапоч|капц/.test(name)) return 'Тапочки';
+  if (/сандал/.test(name)) return 'Сандалі';
+  if (/шльоп|слайд|slide/.test(name)) return 'Шльопанці';
+  if (/сабо|clog/.test(name)) return 'Сабо';
+  if (/черевик|boot/.test(name)) return 'Черевики';
+  if (/крос|кед|sneaker/.test(name)) return 'Кросівки';
+  // Запасний варіант, якщо назва не дала однозначної відповіді —
+  // використовуємо категорію як є, без розбору на ключові слова.
+  const cat = (p.category_2 || p.category_1 || '').trim();
+  return cat || 'Інше';
+}
 
 const urlParams = new URLSearchParams(window.location.search);
 const categoryParam = urlParams.get('cat');
@@ -920,11 +958,36 @@ function buildBaseQuery(cat, searchTerm) {
 }
 
 function populateFilterOptions() {
+  const typeSet = new Set();
   const brandSet = new Set();
   const sizeSet = new Set();
   allProducts.forEach(p => {
+    p.__type = detectProductType(p);
+    typeSet.add(p.__type);
     if (p.brand) brandSet.add(p.brand);
     (p.sizes || []).forEach(s => sizeSet.add(s));
+  });
+
+  const typeOptions = document.getElementById('typeOptions');
+  typeOptions.innerHTML = '';
+  Array.from(typeSet).sort((a, b) => {
+    const ia = PRODUCT_TYPE_ORDER.indexOf(a);
+    const ib = PRODUCT_TYPE_ORDER.indexOf(b);
+    if (ia === -1 && ib === -1) return a.localeCompare(b, 'uk');
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  }).forEach(type => {
+    const label = document.createElement('label');
+    label.className = 'filter-row';
+    label.innerHTML = `<input type="checkbox" value="${type}"> <span>${type}</span>`;
+    label.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) activeFilters.types.add(type);
+      else activeFilters.types.delete(type);
+      label.classList.toggle('checked', e.target.checked);
+      applyFiltersAndRender(true);
+    });
+    typeOptions.appendChild(label);
   });
 
   const brandOptions = document.getElementById('brandOptions');
@@ -959,7 +1022,7 @@ function populateFilterOptions() {
 }
 
 function updateFilterCountPill() {
-  const total = activeFilters.brands.size + activeFilters.sizes.size
+  const total = activeFilters.types.size + activeFilters.brands.size + activeFilters.sizes.size
     + (activeFilters.priceMin !== null ? 1 : 0) + (activeFilters.priceMax !== null ? 1 : 0);
   const pill = document.getElementById('filterCountPill');
   if (total > 0) {
@@ -974,6 +1037,7 @@ function applyFiltersAndRender(resetPage) {
   updateFilterCountPill();
 
   filteredProducts = allProducts.filter(p => {
+    if (activeFilters.types.size > 0 && !activeFilters.types.has(p.__type)) return false;
     if (activeFilters.brands.size > 0 && !activeFilters.brands.has(p.brand)) return false;
     if (activeFilters.sizes.size > 0) {
       const productSizes = p.sizes || [];
@@ -1136,6 +1200,7 @@ document.getElementById('priceMaxInput').addEventListener('input', e => {
 });
 
 document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+  activeFilters.types.clear();
   activeFilters.brands.clear();
   activeFilters.sizes.clear();
   activeFilters.priceMin = null;
