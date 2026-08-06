@@ -903,8 +903,9 @@ const ITEMS_PER_PAGE = 20;
 let currentPage = 1;
 let wishlist = new Set(JSON.parse(localStorage.getItem('wishlist') || '[]'));
 
-let allProducts = [];   
-let filteredProducts = []; 
+let allProducts = [];
+let filteredProducts = [];
+let loadedTypeSet = new Set();
 
 let activeFilters = {
   types: new Set(),
@@ -1087,9 +1088,18 @@ function populateFilterOptions() {
     if (p.brand) brandSet.add(p.brand);
     (p.sizes || []).forEach(s => sizeSet.add(s));
   });
+  loadedTypeSet = typeSet;
 
   if (pendingTypePreselect.size > 0) {
-    typeSet.forEach(t => { if (pendingTypePreselect.has(t)) activeFilters.types.add(t); });
+    if (typeParam) {
+      // Точний тип із нового пункту меню (Взуття/Одяг) — застосовуємо
+      // суворо: якщо серед завантажених товарів такого типу ще немає
+      // (наприклад, одяг поки не опубліковано в каталозі), чесно показуємо
+      // "Товарів не знайдено", а не весь асортимент статі без фільтра.
+      activeFilters.types.add(typeParam);
+    } else {
+      typeSet.forEach(t => { if (pendingTypePreselect.has(t)) activeFilters.types.add(t); });
+    }
     pendingTypePreselect.clear();
   }
 
@@ -1197,7 +1207,10 @@ function renderPage(page) {
   countEl.textContent = `Знайдено: ${filteredProducts.length} товарів`;
 
   if (filteredProducts.length === 0) {
-    grid.innerHTML = '<p class="empty-state">Товарів за цими критеріями не знайдено.</p>';
+    const notYetPublished = typeParam && !loadedTypeSet.has(typeParam);
+    grid.innerHTML = notYetPublished
+      ? `<p class="empty-state">Категорія «${typeParam}» скоро з'явиться в каталозі — товари ще додаються.</p>`
+      : '<p class="empty-state">Товарів за цими критеріями не знайдено.</p>';
     document.getElementById('pagination').innerHTML = '';
     return;
   }
