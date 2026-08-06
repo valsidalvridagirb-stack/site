@@ -613,14 +613,14 @@ gtag('config', 'G-Y0CS5VFCYH');
     </a>
     <nav class="main-nav">
       <div class="nav-item">
-        <a href="catalog.html?cat=Чоловічі кросівки" class="nav-toggle">Чоловіче</a>
+        <a href="catalog.html?cat=Чоловіче" class="nav-toggle">Чоловіче</a>
         <div class="nav-dropdown">
           <a href="catalog.html?cat=Чоловічі кросівки">Кросівки</a>
           <a href="catalog.html?cat=Чоловічі капці">Капці</a>
         </div>
       </div>
       <div class="nav-item">
-        <a href="catalog.html?cat=Жіночі кросівки" class="nav-toggle">Жіноче</a>
+        <a href="catalog.html?cat=Жіноче" class="nav-toggle">Жіноче</a>
         <div class="nav-dropdown">
           <a href="catalog.html?cat=Жіночі кросівки">Кросівки</a>
           <a href="catalog.html?cat=Жіночі капці">Капці</a>
@@ -853,7 +853,16 @@ let activeFilters = {
 // Порядок перевірки важливий: конкретніші слова (тапочки, сандалі) йдуть
 // раніше за загальні (шльопанці), щоб "Тапочки Crocs Classic" не потрапили
 // у "Шльопанці" лише тому, що обидва товари з розділу Crocs.
-const PRODUCT_TYPE_ORDER = ['Кросівки', 'Тапочки', 'Шльопанці', 'Сандалі', 'Сабо', 'Черевики'];
+// Взуттєві типи йдуть першими (це весь асортимент на сьогодні), одяг —
+// далі. Список неповний навмисно: усе, що не впізнається за ключовими
+// словами нижче, потрапляє в бакет за "сирою" категорією товару (division
+// нижче) — тобто нові типи, які з'являться в майбутньому (наприклад, окрема
+// категорія "Одяг" від постачальника), самі стануть пунктом фільтра, навіть
+// без правок цього списку.
+const PRODUCT_TYPE_ORDER = [
+  'Кросівки', 'Тапочки', 'Шльопанці', 'Сандалі', 'Сабо', 'Черевики',
+  'Штани', 'Куртки', 'Худі', 'Футболки', 'Шорти', 'Головні убори'
+];
 function detectProductType(p) {
   // Дивимось лише на назву товару — category_2 у базі вже містить об'єднану
   // мітку "Шльопанці та сандалі", тож якби ми шукали ключові слова і в ній
@@ -866,15 +875,42 @@ function detectProductType(p) {
   if (/сабо|clog/.test(name)) return 'Сабо';
   if (/черевик|boot/.test(name)) return 'Черевики';
   if (/крос|кед|sneaker/.test(name)) return 'Кросівки';
+  if (/штани|джинси|брюки/.test(name)) return 'Штани';
+  if (/куртк|пуховик|вітрівк/.test(name)) return 'Куртки';
+  if (/худі|світшот/.test(name)) return 'Худі';
+  if (/футболк|лонгслів/.test(name)) return 'Футболки';
+  if (/шорти/.test(name)) return 'Шорти';
+  if (/кепк|бейсболк|шапк/.test(name)) return 'Головні убори';
   // Запасний варіант, якщо назва не дала однозначної відповіді —
-  // використовуємо категорію як є, без розбору на ключові слова.
+  // використовуємо категорію як є, без розбору на ключові слова. Так нові
+  // категорії від постачальників автоматично стають пунктами фільтра.
   const cat = (p.category_2 || p.category_1 || '').trim();
   return cat || 'Інше';
+}
+
+// Категорія з посилання (наприклад "Чоловічі капці") лише попередньо
+// відмічає відповідні чекбокси типу при завантаженні сторінки — сам список
+// товарів під капотом уже містить усі типи для цієї статі, тож клієнт може
+// одразу зняти/додати галочки і побачити інші типи без переходу на іншу URL.
+function preselectTypesFromCat(cat) {
+  if (!cat) return [];
+  const c = cat.toLowerCase();
+  const types = [];
+  if (/кросівки|кед/.test(c)) types.push('Кросівки');
+  if (/капц|тапоч|шльоп|сланц|сандал|сабо/.test(c)) types.push('Тапочки', 'Шльопанці', 'Сандалі', 'Сабо');
+  return types;
 }
 
 const urlParams = new URLSearchParams(window.location.search);
 const categoryParam = urlParams.get('cat');
 const searchParam = urlParams.get('search') || '';
+
+// Попередньо відмічаємо тип товару за посиланням, яким прийшов клієнт
+// (напр. "Капці" в шапці) — саму множину товарів це вже не обмежує. Список
+// звужується до типів, які реально є серед завантажених товарів, у
+// populateFilterOptions() нижче (щоб не рахувати як "активний фільтр" тип,
+// якого серед результатів ще немає).
+const pendingTypePreselect = new Set(preselectTypesFromCat(categoryParam));
 
 if (categoryParam) {
   document.getElementById('pageTitle').textContent = categoryParam;
@@ -920,26 +956,17 @@ function buildBaseQuery(cat, searchTerm) {
       .select('id, articul, name, brand, gender, price, photos, sizes, site_categories, category_1, category_2')
       .order('id', { ascending: false });
 
+    // Категорія з шапки сайту ("Чоловічі кросівки", "Жіночі капці" тощо)
+    // раніше ще й обмежувала сам запит до Supabase конкретними ключовими
+    // словами типу товару — через це, наприклад, зайшовши з "Капці", кросівки
+    // взагалі не підвантажувались і клієнт не міг перемкнутись на них у
+    // фільтрі "Тип товару", не переходячи на іншу сторінку. Тепер із "cat"
+    // тут враховується лише стать — тип товару підвантажується весь одразу
+    // (для цієї статі) і керується вже на клієнті через фільтр "Тип товару"
+    // нижче (де початковий чекбокс просто попередньо відмічається).
     if (cat) {
       const isMale = /чоловіч/i.test(cat);
       const isFemale = /жіноч/i.test(cat);
-      const isSlippers = /тапоч|шльоп|сланц|капц/i.test(cat);
-      const isFootwear = !isSlippers && /взуття|кросівки/i.test(cat);
-      const isClothing = /одяг/i.test(cat);
-      const shoeKeywords = ['крос', 'кед', 'взут', 'шльоп', 'сланц', 'крокс', 'тапоч', 'бутс', 'сандал', 'папуч', 'сабо'];
-      const slipperKeywords = ['тапоч', 'шльоп', 'сланц', 'капц', 'сандал', 'папуч', 'сабо', 'крокс', 'мул'];
-
-      if (isSlippers) {
-        const slipperOr = slipperKeywords.map(k => `name.ilike.%${k}%,category_1.ilike.%${k}%,category_2.ilike.%${k}%`).join(',');
-        query = query.or(slipperOr);
-      } else if (isFootwear) {
-        const footwearOr = shoeKeywords.map(k => `name.ilike.%${k}%,category_1.ilike.%${k}%,category_2.ilike.%${k}%`).join(',');
-        query = query.or(footwearOr);
-      } else if (isClothing) {
-        shoeKeywords.forEach(k => {
-          query = query.not('name', 'ilike', `%${k}%`).not('category_1', 'ilike', `%${k}%`).not('category_2', 'ilike', `%${k}%`);
-        });
-      }
 
       if (isMale) {
         query = query.or('gender.ilike.%Чолов%,gender.ilike.%Унісекс%');
@@ -968,6 +995,11 @@ function populateFilterOptions() {
     (p.sizes || []).forEach(s => sizeSet.add(s));
   });
 
+  if (pendingTypePreselect.size > 0) {
+    typeSet.forEach(t => { if (pendingTypePreselect.has(t)) activeFilters.types.add(t); });
+    pendingTypePreselect.clear();
+  }
+
   const typeOptions = document.getElementById('typeOptions');
   typeOptions.innerHTML = '';
   Array.from(typeSet).sort((a, b) => {
@@ -979,8 +1011,9 @@ function populateFilterOptions() {
     return ia - ib;
   }).forEach(type => {
     const label = document.createElement('label');
-    label.className = 'filter-row';
-    label.innerHTML = `<input type="checkbox" value="${type}"> <span>${type}</span>`;
+    const isChecked = activeFilters.types.has(type);
+    label.className = 'filter-row' + (isChecked ? ' checked' : '');
+    label.innerHTML = `<input type="checkbox" value="${type}" ${isChecked ? 'checked' : ''}> <span>${type}</span>`;
     label.querySelector('input').addEventListener('change', e => {
       if (e.target.checked) activeFilters.types.add(type);
       else activeFilters.types.delete(type);
