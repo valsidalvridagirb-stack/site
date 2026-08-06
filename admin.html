@@ -649,13 +649,21 @@ function detectForegroundBBox(img) {
   ];
   const bg = [0, 1, 2].map(k => corners.reduce((s, c) => s + c[k], 0) / corners.length);
 
-  const THRESHOLD = 24; // наскільки колір пікселя має відрізнятись від фону
+  const THRESHOLD = 24; // поріг для "тут щось є" і для зваженого центру
+  // М'які тіні/відблиски під товаром зазвичай відрізняються від фону
+  // помірно (сірі, розмиті), тоді як сам товар — набагато сильніше. Якщо
+  // межі кадру рахувати за тим самим м'яким порогом, тінь може розтягнути
+  // рамку вбік — і товар виглядатиме не по центру. Тому межі (minX..maxY)
+  // рахуємо за суворішим порогом, ігноруючи бліді ділянки типу тіні.
+  const BBOX_THRESHOLD = 55;
   let minX = w, maxX = 0, minY = h, maxY = 0, found = false;
+  let minXs = w, maxXs = 0, minYs = h, maxYs = 0, foundStrict = false;
   // Зважений "центр ваги" товару (за силою контрасту кожного пікселя) —
   // потрібен, щоб кадрувати не просто по середині bbox, а по тому, де
-  // товар візуально виглядає збалансованим (bbox-середина "з'їжджає",
-  // якщо тінь чи силует несиметричні).
+  // товар візуально виглядає збалансованим. Рахуємо його теж по суворому
+  // порогу (де є), щоб тінь не тягнула центр кадру в свій бік.
   let sumX = 0, sumY = 0, weight = 0;
+  let sumXs = 0, sumYs = 0, weightS = 0;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
@@ -669,16 +677,32 @@ function detectForegroundBBox(img) {
         if (y > maxY) maxY = y;
         sumX += x * dist; sumY += y * dist; weight += dist;
       }
+      if (dist > BBOX_THRESHOLD) {
+        foundStrict = true;
+        if (x < minXs) minXs = x;
+        if (x > maxXs) maxXs = x;
+        if (y < minYs) minYs = y;
+        if (y > maxYs) maxYs = y;
+        sumXs += x * dist; sumYs += y * dist; weightS += dist;
+      }
     }
   }
   if (!found) return null; // однотонне фото без виразного об'єкта — не чіпаємо
 
+  // Якщо є достатньо контрастне "ядро" товару — межі кадру й центр беремо
+  // з нього (без м'яких тіней навколо); інакше лишаємо м'який поріг як
+  // запасний варіант (напр. для світлих товарів, де мало сильного контрасту).
+  const useStrict = foundStrict;
+  const bMinX = useStrict ? minXs : minX, bMaxX = useStrict ? maxXs : maxX;
+  const bMinY = useStrict ? minYs : minY, bMaxY = useStrict ? maxYs : maxY;
+  const cSumX = useStrict ? sumXs : sumX, cSumY = useStrict ? sumYs : sumY, cWeight = useStrict ? weightS : weight;
+
   const inv = 1 / scale;
   return {
-    minX: minX * inv, maxX: maxX * inv,
-    minY: minY * inv, maxY: maxY * inv,
-    centroidX: (weight ? sumX / weight : (minX + maxX) / 2) * inv,
-    centroidY: (weight ? sumY / weight : (minY + maxY) / 2) * inv,
+    minX: bMinX * inv, maxX: bMaxX * inv,
+    minY: bMinY * inv, maxY: bMaxY * inv,
+    centroidX: (cWeight ? cSumX / cWeight : (bMinX + bMaxX) / 2) * inv,
+    centroidY: (cWeight ? cSumY / cWeight : (bMinY + bMaxY) / 2) * inv,
     bg, // середній колір фону — потрібен, якщо доведеться домальовувати поля
   };
 }
@@ -702,10 +726,18 @@ async function cropToVertical(file, opts) {
     let cropW = bx1 - bx0;
     let cropH = by1 - by0;
 
-    // Ширину не звужуємо менше за розмір самого товару (щоб не обрізати
-    // його) — замість цього підбираємо висоту під потрібну пропорцію.
+    // Ні ширину, ні висоту не звужуємо менше за розмір самого товару
+    // (щоб не обрізати його) — замість цього підбираємо ту сторону, яка
+    // коротша, під потрібну пропорцію 4:5. Картка на сайті — це
+    // фіксований контейнер 4:5 з object-fit:contain, тож якщо кадр
+    // вийде не рівно 4:5, з боків/зверху-знизу з'являться порожні смуги.
     const targetH = cropW / PHOTO_TARGET_ASPECT;
-    if (targetH > cropH) cropH = targetH;
+    if (targetH > cropH) {
+      cropH = targetH;
+    } else {
+      const targetW = cropH * PHOTO_TARGET_ASPECT;
+      if (targetW > cropW) cropW = targetW;
+    }
 
     // Якщо товар (напр. кросівок у профіль) сам по собі широкий і на
     // повну висоту оригінального фото 4:5 не влазить — не обрізаємо кадр
