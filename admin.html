@@ -692,7 +692,18 @@ function extOf(name) {
 // темною обвідкою, щоб було видно і на світлому, і на темному фото.
 const WATERMARK_TEXT = 'NEXXTLEVEL.STORE';
 
-async function drawWatermark(file) {
+// canvas.toBlob() надійно підтримує лише кілька MIME — якщо запросити щось
+// незвичне (напр. "image/jfif", яке інколи трапляється як заявлений тип
+// файлу з розширенням .jfif), браузер може мовчки повернути щось не те.
+// Тому завжди просимо один із безпечних форматів, а не довіряємо file.type.
+const SAFE_CANVAS_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+// opts.strict=true (використовується у масовому інструменті) кидає помилку
+// замість того, щоб мовчки повернути оригінал — інакше невдала обробка
+// виглядає як успіх (файл "перезаписується" сам собою, без знаку) і
+// позначається в базі як оброблена назавжди.
+async function drawWatermark(file, opts = {}) {
+  const strict = !!opts.strict;
   try {
     const bitmap = await createImageBitmap(file);
     const canvas = document.createElement('canvas');
@@ -717,12 +728,16 @@ async function drawWatermark(file) {
     ctx.strokeText(WATERMARK_TEXT, x, y);
     ctx.fillText(WATERMARK_TEXT, x, y);
 
-    const mime = file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg';
+    const mime = SAFE_CANVAS_MIME.has(file.type) ? file.type : 'image/jpeg';
     const blob = await new Promise(resolve => canvas.toBlob(resolve, mime, 0.92));
-    if (!blob) return file; // canvas не спрацював — краще завантажити оригінал, ніж зірвати публікацію
+    if (!blob) {
+      if (strict) throw new Error('canvas.toBlob() повернув порожній результат');
+      return file; // краще завантажити оригінал, ніж зірвати публікацію
+    }
     return new File([blob], file.name, { type: mime });
   } catch (e) {
-    console.error('Не вдалось накласти водяний знак, завантажую оригінал:', e);
+    console.error('Не вдалось накласти водяний знак:', e);
+    if (strict) throw e;
     return file;
   }
 }
@@ -874,7 +889,8 @@ async function getReferencedPhotoPaths() {
         const idx = url.indexOf(marker);
         if (idx === -1) return;
         try {
-          const path = decodeURIComponent(url.slice(idx + marker.length));
+          const rawPath = url.slice(idx + marker.length).split('?')[0]; // без query (напр. ?v=... для кешбастингу)
+          const path = decodeURIComponent(rawPath);
           if (path) paths.add(path);
         } catch (e) { /* пропускаємо некоректний URL */ }
       });
@@ -883,6 +899,29 @@ async function getReferencedPhotoPaths() {
     offset += limit;
   }
   return Array.from(paths);
+}
+
+// Дописує/оновлює версійну мітку (?v=...) в URL цього фото у полі photos
+// усіх товарних рядків, де він зустрічається (той самий артикул може мати
+// кілька рядків — по одному на розмір). Так проксі-кеш images.weserv.nl
+// сприймає це як новий запит і забирає свіжий (з водяним знаком) файл.
+async function bustCacheForPath(path) {
+  const baseUrl = supabaseClient.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  const bustedUrl = baseUrl + '?v=' + Date.now();
+  const escaped = baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // База URL, за нею опційно стара мітка версії (?v=... і т.п.) до найближчого ';' або кінця рядка
+  const re = new RegExp(escaped + '(\\?[^;]*)?');
+
+  const { data: rows, error: selErr } = await supabaseClient.from('products').select('id, photos').ilike('photos', `%${path}%`);
+  if (selErr) throw new Error('Не вдалось знайти товари для оновлення URL ' + path + ': ' + selErr.message);
+  if (!rows || !rows.length) return; // не мало б траплятись, якщо шлях узятий саме з photos
+
+  for (const row of rows) {
+    if (!row.photos || !re.test(row.photos)) continue;
+    const newPhotos = row.photos.replace(re, bustedUrl);
+    const { error: updErr } = await supabaseClient.from('products').update({ photos: newPhotos }).eq('id', row.id);
+    if (updErr) throw new Error('Файл перезаписано, але не вдалось оновити URL у товарі ' + row.id + ': ' + updErr.message);
+  }
 }
 
 async function getWatermarkedPathSet() {
@@ -936,10 +975,22 @@ document.getElementById('bulkWatermarkBtn').addEventListener('click', async () =
 
         const name = path.split('/').pop();
         const srcFile = new File([blob], name, { type: blob.type || 'image/jpeg' });
-        const watermarkedFile = await drawWatermark(srcFile);
+        // strict: true — якщо накладання знаку не вдалось, кидаємо помилку
+        // замість того, щоб мовчки перезаписати файл самим собою і хибно
+        // позначити його як оброблений.
+        const watermarkedFile = await drawWatermark(srcFile, { strict: true });
 
         const { error: upErr } = await supabaseClient.storage.from(BUCKET).upload(path, watermarkedFile, { upsert: true, contentType: watermarkedFile.type });
         if (upErr) throw new Error('Не вдалось перезаписати ' + path + ': ' + upErr.message);
+
+        // Сайт показує фото через зовнішній проксі-сервіс стиснення
+        // (images.weserv.nl), який кешує картинку за URL на своєму боці
+        // (за їхньою ж документацією — до 31 дня, БЕЗ можливості примусово
+        // почистити кеш). Оскільки шлях/URL файлу не змінюється при
+        // перезаписі, проксі й далі роздаватиме стару, без знаку, версію.
+        // Тому дописуємо до URL у базі мітку версії — для проксі це вже
+        // інший запит, і він забирає свіжий файл з джерела.
+        await bustCacheForPath(path);
 
         const { error: logErr } = await supabaseClient.from('watermarked_photos').upsert({ path });
         if (logErr) throw new Error('Файл оброблено, але не вдалось зберегти позначку у базі для ' + path + ': ' + logErr.message);
