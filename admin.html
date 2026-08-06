@@ -651,6 +651,11 @@ function detectForegroundBBox(img) {
 
   const THRESHOLD = 24; // наскільки колір пікселя має відрізнятись від фону
   let minX = w, maxX = 0, minY = h, maxY = 0, found = false;
+  // Зважений "центр ваги" товару (за силою контрасту кожного пікселя) —
+  // потрібен, щоб кадрувати не просто по середині bbox, а по тому, де
+  // товар візуально виглядає збалансованим (bbox-середина "з'їжджає",
+  // якщо тінь чи силует несиметричні).
+  let sumX = 0, sumY = 0, weight = 0;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
@@ -662,6 +667,7 @@ function detectForegroundBBox(img) {
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
         if (y > maxY) maxY = y;
+        sumX += x * dist; sumY += y * dist; weight += dist;
       }
     }
   }
@@ -671,6 +677,8 @@ function detectForegroundBBox(img) {
   return {
     minX: minX * inv, maxX: maxX * inv,
     minY: minY * inv, maxY: maxY * inv,
+    centroidX: (weight ? sumX / weight : (minX + maxX) / 2) * inv,
+    centroidY: (weight ? sumY / weight : (minY + maxY) / 2) * inv,
   };
 }
 
@@ -691,8 +699,6 @@ async function cropToVertical(file) {
 
     let cropW = bx1 - bx0;
     let cropH = by1 - by0;
-    const cx = (bx0 + bx1) / 2;
-    const cy = (by0 + by1) / 2;
 
     // Ширину не звужуємо менше за розмір самого товару (щоб не обрізати
     // його) — замість цього підбираємо висоту під потрібну пропорцію.
@@ -704,12 +710,21 @@ async function cropToVertical(file) {
     // сенсу (це вже й так щільне фото), лишаємо оригінал без перекодування.
     if (cropW >= W * 0.98 && cropH >= H * 0.98) return file;
 
-    let y0 = cy - cropH / 2;
-    if (y0 < 0) y0 = 0;
-    if (y0 + cropH > H) y0 = H - cropH;
-    let x0 = cx - cropW / 2;
-    if (x0 < 0) x0 = 0;
-    if (x0 + cropW > W) x0 = W - cropW;
+    // Розміщуємо кадр так, щоб його центр був якомога ближче до
+    // зваженого центру товару (не просто середини bbox), але сам товар
+    // (b0..b1) завжди повністю влазив у кадр і кадр не виходив за межі фото.
+    function place(centroid, b0, b1, size, full) {
+      let p0 = centroid - size / 2;
+      const minP0 = b1 - size; // товар має повністю влізти в кадр
+      const maxP0 = b0;
+      if (p0 < minP0) p0 = minP0;
+      if (p0 > maxP0) p0 = maxP0;
+      if (p0 < 0) p0 = 0;
+      if (p0 + size > full) p0 = full - size;
+      return p0;
+    }
+    const y0 = place(bbox.centroidY, by0, by1, cropH, H);
+    const x0 = place(bbox.centroidX, bx0, bx1, cropW, W);
 
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(cropW);
