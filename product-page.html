@@ -903,8 +903,16 @@ async function fetchProduct() {
   renderProduct(baseProduct, sizeMap);
 }
 
+// Літерні розміри одягу (XS/S/M/L/XL/2XL і т.д.) не мають цифр (крім 2XL/3XL,
+// де цифра плутала б їх із номерами взуття) — тому спершу шукаємо точний
+// збіг у цьому списку, і лише якщо його нема, повертаємось до старої
+// цифрової логіки для розмірів взуття (38, 38.5, "41-42" тощо).
+const CLOTHING_SIZE_ORDER = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', 'XXXL', '3XL', '4XL', '5XL'];
 function sizeSortKey(sz) {
-  const m = String(sz).match(/[\d.]+/);
+  const s = String(sz).trim().toUpperCase();
+  const idx = CLOTHING_SIZE_ORDER.indexOf(s);
+  if (idx !== -1) return 1000 + idx;
+  const m = s.match(/[\d.]+/);
   return m ? parseFloat(m[0]) : 9999;
 }
 
