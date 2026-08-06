@@ -568,6 +568,9 @@ footer.site-footer {
   }
   .p-title { font-size: 24px; }
 }
+/* Захист фото: базовий бар'єр проти простого перетягування/збереження
+   зображень товарів (повністю заблокувати збереження неможливо). */
+img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 </style>
 </head>
 <body>
@@ -1733,5 +1736,13 @@ fetchProduct();
   </a>
 </div>
 <!-- End Social FAB -->
+<script>
+// Захист фото: базові бар'єри проти простого збереження — блокують
+// контекстне меню та перетягування на зображеннях. Повністю заблокувати
+// збереження фото технічно неможливо (браузер завжди отримує байти фото,
+// щоб їх показати), це лише підвищує поріг для випадкового копіювання.
+document.addEventListener('contextmenu', function (e) { if (e.target.tagName === 'IMG') e.preventDefault(); });
+document.addEventListener('dragstart', function (e) { if (e.target.tagName === 'IMG') e.preventDefault(); });
+</script>
 </body>
 </html>
