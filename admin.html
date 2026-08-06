@@ -767,6 +767,11 @@ async function cropToVertical(file, opts) {
     return new File([blob], file.name, { type: blob.type });
   } catch (e) {
     console.warn('Не вдалось автоматично обрізати фото, лишаю оригінал:', e);
+    // При force (масове переобробити в адмінці) не ховаємо помилку — інакше
+    // масовий інструмент мовчки рахує все "вже гарне", а насправді щось
+    // ламається всередині. Пробрасуємо далі, щоб інструмент показав
+    // реальну причину в списку помилок.
+    if (force) throw e;
     return file;
   }
 }
@@ -870,11 +875,11 @@ document.getElementById('bulkRecropBtn').addEventListener('click', async () => {
       }
     }
 
-    status.className = 'status-line status-ok';
+    status.className = failed ? 'status-line status-err' : 'status-line status-ok';
     status.textContent = `Готово. Перекроєно: ${changed}, вже вертикальні (без змін): ${skipped}, помилок: ${failed}.`;
     if (failedList.length) {
       console.warn('Фото, які не вдалось обробити:', failedList);
-      status.textContent += ' Деталі помилок — у консолі браузера (F12).';
+      status.textContent += ` Перша помилка: ${failedList[0]}`;
     }
   } catch (e) {
     status.className = 'status-line status-err';
