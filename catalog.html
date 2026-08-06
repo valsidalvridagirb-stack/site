@@ -113,6 +113,7 @@ gtag('config', 'G-Y0CS5VFCYH');
   .nav-item.open .nav-dropdown{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,4px);}
   .nav-dropdown a{display:block;padding:9px 20px;font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;text-align:left;}
   .nav-dropdown a:hover{background:var(--smoke);}
+  .nav-dropdown > a:first-child{text-align:center;}
   /* Підрозділи "Взуття"/"Одяг" — розкривний акордеон усередині випадашки,
      а не окреме флайаут-меню: так само поводиться і на десктопі, і на
      мобільних, без клопоту з позиціюванням другого рівня. */
@@ -639,8 +640,6 @@ gtag('config', 'G-Y0CS5VFCYH');
               <a href="catalog.html?cat=Чоловіче&amp;type=Кросівки">Кросівки</a>
               <a href="catalog.html?cat=Чоловіче&amp;type=Шльопанці">Шльопанці</a>
               <a href="catalog.html?cat=Чоловіче&amp;type=Сандалі">Сандалі</a>
-              <a href="catalog.html?cat=Чоловіче&amp;type=Тапочки">Тапочки</a>
-              <a href="catalog.html?cat=Чоловіче&amp;type=Сабо">Сабо</a>
               <a href="catalog.html?cat=Чоловіче&amp;type=Черевики">Черевики</a>
             </div>
           </div>
@@ -651,13 +650,10 @@ gtag('config', 'G-Y0CS5VFCYH');
             <div class="nav-subgroup-body">
               <a href="catalog.html?cat=Чоловіче&amp;type=Куртки">Куртки</a>
               <a href="catalog.html?cat=Чоловіче&amp;type=Футболки">Футболки</a>
-              <a href="catalog.html?cat=Чоловіче&amp;type=Кофти та светри">Кофти та светри</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Кофти">Кофти</a>
               <a href="catalog.html?cat=Чоловіче&amp;type=Штани">Штани</a>
               <a href="catalog.html?cat=Чоловіче&amp;type=Шорти">Шорти</a>
               <a href="catalog.html?cat=Чоловіче&amp;type=Спортивні костюми">Спортивні костюми</a>
-              <a href="catalog.html?cat=Чоловіче&amp;type=Термобілизна">Термобілизна</a>
-              <a href="catalog.html?cat=Чоловіче&amp;type=Шкарпетки">Шкарпетки</a>
-              <a href="catalog.html?cat=Чоловіче&amp;type=Головні убори">Головні убори</a>
             </div>
           </div>
         </div>
@@ -674,8 +670,6 @@ gtag('config', 'G-Y0CS5VFCYH');
               <a href="catalog.html?cat=Жіноче&amp;type=Кросівки">Кросівки</a>
               <a href="catalog.html?cat=Жіноче&amp;type=Шльопанці">Шльопанці</a>
               <a href="catalog.html?cat=Жіноче&amp;type=Сандалі">Сандалі</a>
-              <a href="catalog.html?cat=Жіноче&amp;type=Тапочки">Тапочки</a>
-              <a href="catalog.html?cat=Жіноче&amp;type=Сабо">Сабо</a>
               <a href="catalog.html?cat=Жіноче&amp;type=Черевики">Черевики</a>
             </div>
           </div>
@@ -686,14 +680,10 @@ gtag('config', 'G-Y0CS5VFCYH');
             <div class="nav-subgroup-body">
               <a href="catalog.html?cat=Жіноче&amp;type=Куртки">Куртки</a>
               <a href="catalog.html?cat=Жіноче&amp;type=Футболки">Футболки</a>
-              <a href="catalog.html?cat=Жіноче&amp;type=Кофти та светри">Кофти та светри</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Кофти">Кофти</a>
               <a href="catalog.html?cat=Жіноче&amp;type=Штани">Штани</a>
               <a href="catalog.html?cat=Жіноче&amp;type=Шорти">Шорти</a>
-              <a href="catalog.html?cat=Жіноче&amp;type=Сукні та спідниці">Сукні та спідниці</a>
               <a href="catalog.html?cat=Жіноче&amp;type=Спортивні костюми">Спортивні костюми</a>
-              <a href="catalog.html?cat=Жіноче&amp;type=Термобілизна">Термобілизна</a>
-              <a href="catalog.html?cat=Жіноче&amp;type=Шкарпетки">Шкарпетки</a>
-              <a href="catalog.html?cat=Жіноче&amp;type=Головні убори">Головні убори</a>
             </div>
           </div>
         </div>
@@ -949,9 +939,8 @@ let activeFilters = {
 // "сирою" категорією товару (fallback нижче) — тобто типи, яких немає в
 // цьому списку, самі стануть пунктом фільтра, без правок коду.
 const PRODUCT_TYPE_ORDER = [
-  'Кросівки', 'Шльопанці', 'Сандалі', 'Тапочки', 'Сабо', 'Черевики',
-  'Куртки', 'Футболки', 'Кофти та светри', 'Штани', 'Шорти',
-  'Сукні та спідниці', 'Спортивні костюми', 'Термобілизна', 'Шкарпетки', 'Головні убори'
+  'Кросівки', 'Шльопанці', 'Сандалі', 'Черевики',
+  'Куртки', 'Футболки', 'Кофти', 'Штани', 'Шорти', 'Спортивні костюми'
 ];
 function detectProductType(p) {
   // Дивимось лише на назву товару — category_2 у базі вже містить об'єднану
@@ -960,26 +949,26 @@ function detectProductType(p) {
   // які насправді шльопанці (за назвою), а не сандалі.
   const name = (p.name || '').toLowerCase();
   // --- Взуття ---
-  if (/тапоч|капц/.test(name)) return 'Тапочки';
+  // Тапочки/капці/сабо/крокси об'єднані в один тип "Шльопанці" — клієнту
+  // простіше орієнтуватись в одному пункті, ніж розбиратись у межах між
+  // дуже схожими домашньо-пляжними видами взуття.
   if (/сандал/.test(name)) return 'Сандалі';
-  if (/шльоп|слайд|slide/.test(name)) return 'Шльопанці';
-  if (/сабо|clog|крокс/.test(name)) return 'Сабо';
+  if (/тапоч|капц|шльоп|слайд|slide|сабо|clog|крокс/.test(name)) return 'Шльопанці';
   if (/черевик|чоботи|boot/.test(name)) return 'Черевики';
   if (/крос|кед|sneaker/.test(name)) return 'Кросівки';
   // --- Одяг ---
   if (/куртк|пуховик|вітрівк|пальто|плащ|тренч/.test(name)) return 'Куртки';
   if (/футболк|сорочк|блуз|лонгслів|майк/.test(name)) return 'Футболки';
-  if (/кофт|худі|світшот|джемпер|светр|толстовк/.test(name)) return 'Кофти та светри';
+  if (/кофт|худі|світшот|джемпер|светр|толстовк/.test(name)) return 'Кофти';
   if (/штани|лосин|тайтс|бриджи|джинси|брюки/.test(name)) return 'Штани';
   if (/шорти/.test(name)) return 'Шорти';
-  if (/сукн|спідниц/.test(name)) return 'Сукні та спідниці';
   if (/костюм|комбінезон/.test(name)) return 'Спортивні костюми';
-  if (/термобілизн/.test(name)) return 'Термобілизна';
-  if (/шкарпетк|гетри/.test(name)) return 'Шкарпетки';
-  if (/кепк|бейсболк|шапк|рукавиц/.test(name)) return 'Головні убори';
   // Запасний варіант, якщо назва не дала однозначної відповіді —
   // використовуємо категорію як є, без розбору на ключові слова. Так нові
-  // категорії від постачальників автоматично стають пунктами фільтра.
+  // категорії від постачальників (наприклад, "Сукні та спідниці",
+  // "Термобілизна", "Шкарпетки", "Головні убори" — їх навмисно немає в
+  // списку вище, щоб не захаращувати меню) все одно потраплять у фільтр
+  // "Тип товару" самі, просто без окремого пункту в шапці сайту.
   const cat = (p.category_2 || p.category_1 || '').trim();
   return cat || 'Інше';
 }
@@ -997,7 +986,7 @@ function preselectTypesFromCat(cat) {
   const c = cat.toLowerCase();
   const types = [];
   if (/кросівки|кед/.test(c)) types.push('Кросівки');
-  if (/капц|тапоч|шльоп|сланц|сандал|сабо/.test(c)) types.push('Тапочки', 'Шльопанці', 'Сандалі', 'Сабо');
+  if (/капц|тапоч|шльоп|сланц|сандал|сабо/.test(c)) types.push('Шльопанці', 'Сандалі');
   return types;
 }
 
