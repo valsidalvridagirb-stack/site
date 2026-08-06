@@ -880,20 +880,37 @@ async function listAllInFolder(folder) {
   return out;
 }
 
-async function listAllStorageObjectPaths() {
+// Кожна папка (артикул) — окремий мережевий запит; при сотнях товарів
+// послідовний перебір триває дуже довго і виглядає як "зависло". Читаємо
+// папки паралельно (обмежена кількість одночасних запитів) і повідомляємо
+// прогрес через onProgress, щоб адмін бачив, що процес іде, а не завис.
+async function listAllStorageObjectPaths(onProgress) {
   const paths = [];
   const roots = await listAllInFolder('');
-  for (const entry of roots) {
-    // Папки в Supabase Storage повертаються без id/metadata — файли мають id.
-    if (entry.id === null || entry.id === undefined) {
+  // Папки в Supabase Storage повертаються без id/metadata — файли мають id.
+  const folders = roots.filter(e => e.id === null || e.id === undefined);
+  const rootFiles = roots.filter(e => e.id !== null && e.id !== undefined);
+  rootFiles.forEach(f => paths.push(f.name));
+
+  const CONCURRENCY = 8;
+  let nextIdx = 0;
+  let doneFolders = 0;
+  if (onProgress) onProgress(0, folders.length);
+
+  async function worker() {
+    while (nextIdx < folders.length) {
+      const entry = folders[nextIdx++];
       const files = await listAllInFolder(entry.name);
       for (const f of files) {
         if (f.id !== null && f.id !== undefined) paths.push(`${entry.name}/${f.name}`);
       }
-    } else {
-      paths.push(entry.name);
+      doneFolders++;
+      if (onProgress) onProgress(doneFolders, folders.length);
     }
   }
+
+  const workers = Array.from({ length: Math.min(CONCURRENCY, folders.length) }, () => worker());
+  await Promise.all(workers);
   return paths;
 }
 
@@ -928,7 +945,12 @@ document.getElementById('bulkWatermarkBtn').addEventListener('click', async () =
   let done = 0, skipped = 0, errors = 0, total = 0;
 
   try {
-    const allPaths = await listAllStorageObjectPaths();
+    const allPaths = await listAllStorageObjectPaths((doneFolders, totalFolders) => {
+      statusLine.textContent = totalFolders
+        ? `Читаю папки товарів у сховищі: ${doneFolders} з ${totalFolders}…`
+        : 'Отримую список файлів у сховищі…';
+    });
+    statusLine.textContent = 'Перевіряю, які фото вже з водяним знаком…';
     const watermarked = await getWatermarkedPathSet();
     const todo = allPaths.filter(p => !watermarked.has(p));
     total = todo.length;
