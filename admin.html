@@ -817,7 +817,7 @@ document.getElementById('bulkRecropBtn').addEventListener('click', async () => {
           continue;
         }
         const { error: upErr } = await supabaseClient.storage.from(BUCKET)
-          .upload(path, cropped, { upsert: true, contentType: cropped.type });
+          .upload(path, cropped, { upsert: true, contentType: cropped.type, cacheControl: '60' });
         if (upErr) throw new Error(upErr.message);
         changed++;
       } catch (e) {
