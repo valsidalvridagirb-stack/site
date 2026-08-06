@@ -693,7 +693,7 @@ async function cropToVertical(file, opts) {
     const bbox = detectForegroundBBox(img);
     if (!bbox) return file; // однотонне фото без виразного об'єкта — не чіпаємо
 
-    const pad = Math.round(Math.max(W, H) * 0.035);
+    const pad = Math.round(Math.max(W, H) * 0.012);
     const bx0 = bbox.minX - pad;
     const bx1 = bbox.maxX + pad;
     const by0 = bbox.minY - pad;
