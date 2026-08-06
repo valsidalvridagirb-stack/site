@@ -168,19 +168,9 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .main-image-wrap img{
   width:100%;height:100%;object-fit:cover;display:block;
   user-select:none;-webkit-user-select:none;-webkit-user-drag:none;
-  touch-action:pan-y;will-change:transform;
-  transition:transform .12s ease-out, opacity .12s ease-out;
-  opacity:0;
+  touch-action:pan-y;will-change:transform;transition:transform .12s ease-out;
 }
 .main-image-wrap img.dragging{transition:none;}
-/* Поки фото ще не завантажилось і ми не знаємо його реальних пропорцій,
-   картка стоїть за замовчуванням 4:5/cover — показувати фото в цьому
-   вигляді ДО того, як спрацює fitMainImage(), не можна: на щільно
-   обрізаних (без зайвого фону) фото це виглядає як помилковий "зумований"
-   кадр на долю секунди. Тому фото ховаємо (opacity:0) і показуємо лише
-   після того, як пропорції визначені і потрібний клас застосовано.
-   .mp-ready. */
-.main-image-wrap img.mp-ready{opacity:1;}
 /* Квадратні/горизонтальні фото (наприклад 1950x1950) не обрізаємо кадром
    4:5 — картка сама стає квадратною, а фото показується повністю (contain).
    Вертикальні фото лишаються як є (обрізка під 4:5, cover) — це влаштовує. */
@@ -1283,13 +1273,10 @@ function fitMainImage(img) {
   if (!wrap || !img || !img.naturalWidth || !img.naturalHeight) return;
   const ratio = img.naturalWidth / img.naturalHeight;
   wrap.classList.toggle('is-square', ratio >= 0.92);
-  img.classList.add('mp-ready');
 }
 
 function changePhoto(src, btn, idx) {
-  const mainImg = document.getElementById('mainPhoto');
-  if (mainImg) mainImg.classList.remove('mp-ready');
-  mainImg.src = src;
+  document.getElementById('mainPhoto').src = src;
   document.querySelectorAll('.thumb-img').forEach(img => img.classList.remove('active'));
   btn.classList.add('active');
   currentPhotoIndex = idx;
@@ -1300,10 +1287,7 @@ function mainPhotoStep(direction) {
   if (!lightboxPhotos.length) return;
   currentPhotoIndex = (currentPhotoIndex + direction + lightboxPhotos.length) % lightboxPhotos.length;
   const mainImg = document.getElementById('mainPhoto');
-  if (mainImg) {
-    mainImg.classList.remove('mp-ready');
-    mainImg.src = lightboxPhotos[currentPhotoIndex];
-  }
+  if (mainImg) mainImg.src = lightboxPhotos[currentPhotoIndex];
   document.querySelectorAll('.thumb-img').forEach((img, i) => {
     img.classList.toggle('active', i === currentPhotoIndex);
   });
