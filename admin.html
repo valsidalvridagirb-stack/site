@@ -679,11 +679,9 @@ async function cropToVertical(file) {
     const img = await loadImageFromFile(file);
     const W = img.naturalWidth, H = img.naturalHeight;
     URL.revokeObjectURL(img.src);
-    // Вже досить вертикальне фото — не чіпаємо.
-    if (H / W >= 1 / PHOTO_TARGET_ASPECT) return file;
 
     const bbox = detectForegroundBBox(img);
-    if (!bbox) return file;
+    if (!bbox) return file; // однотонне фото без виразного об'єкта — не чіпаємо
 
     const pad = Math.round(Math.max(W, H) * 0.035);
     const bx0 = Math.max(0, bbox.minX - pad);
@@ -701,6 +699,10 @@ async function cropToVertical(file) {
     const targetH = cropW / PHOTO_TARGET_ASPECT;
     if (targetH > cropH) cropH = targetH;
     if (cropH > H) cropH = H; // не виходимо за межі оригінального фото
+
+    // Якщо потрібний кадр і так займає майже все фото — обрізати нема
+    // сенсу (це вже й так щільне фото), лишаємо оригінал без перекодування.
+    if (cropW >= W * 0.98 && cropH >= H * 0.98) return file;
 
     let y0 = cy - cropH / 2;
     if (y0 < 0) y0 = 0;
