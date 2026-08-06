@@ -103,16 +103,31 @@ gtag('config', 'G-Y0CS5VFCYH');
   .nav-item{position:relative;}
   .nav-dropdown{
     position:absolute;top:100%;left:50%;transform:translate(-50%,10px);
-    background:rgba(255,255,255,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    background:rgba(255,255,255,.97);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
     border:1px solid var(--line);border-radius:14px;
-    min-width:160px;padding:10px 0;box-shadow:0 16px 36px rgba(0,0,0,.14);
+    width:230px;padding:10px 0;box-shadow:0 16px 36px rgba(0,0,0,.14);
     opacity:0;visibility:hidden;pointer-events:none;
     transition:opacity .2s ease,transform .2s ease,visibility .2s;
-    z-index:60;
+    z-index:60;max-height:75vh;overflow-y:auto;
   }
   .nav-item.open .nav-dropdown{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,4px);}
-  .nav-dropdown a{display:block;padding:9px 20px;font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;text-align:center;}
+  .nav-dropdown a{display:block;padding:9px 20px;font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;text-align:left;}
   .nav-dropdown a:hover{background:var(--smoke);}
+  /* Підрозділи "Взуття"/"Одяг" — розкривний акордеон усередині випадашки,
+     а не окреме флайаут-меню: так само поводиться і на десктопі, і на
+     мобільних, без клопоту з позиціюванням другого рівня. */
+  .nav-subgroup-toggle{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:9px 20px;font-size:13px;font-weight:500;color:var(--ink);
+    background:none;border:none;font-family:inherit;cursor:pointer;text-align:left;
+  }
+  .nav-subgroup-toggle:hover{background:var(--smoke);}
+  .nav-subgroup-toggle .chevron{width:12px;height:12px;stroke:currentColor;flex-shrink:0;transition:transform .2s;}
+  .nav-subgroup.open .nav-subgroup-toggle .chevron{transform:rotate(180deg);}
+  .nav-subgroup-body{display:none;padding:2px 0 6px;}
+  .nav-subgroup.open .nav-subgroup-body{display:block;}
+  .nav-subgroup-body a{padding-left:34px;font-size:12.5px;color:var(--mute);}
+  .nav-subgroup-body a:hover{color:var(--ink);}
   .header-icons{display:flex;align-items:center;gap:22px;flex-shrink:0;}
   .icon-btn{position:relative;display:flex;}
   .icon-btn svg{width:19px;height:19px;stroke:var(--ink);}
@@ -616,16 +631,71 @@ gtag('config', 'G-Y0CS5VFCYH');
         <a href="catalog.html?cat=Чоловіче" class="nav-toggle">Чоловіче</a>
         <div class="nav-dropdown">
           <a href="catalog.html?cat=Чоловіче">Всі товари</a>
-          <a href="catalog.html?cat=Чоловічі кросівки">Кросівки</a>
-          <a href="catalog.html?cat=Чоловічі капці">Капці</a>
+          <div class="nav-subgroup">
+            <button type="button" class="nav-subgroup-toggle">Взуття
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="nav-subgroup-body">
+              <a href="catalog.html?cat=Чоловіче&amp;type=Кросівки">Кросівки</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Шльопанці">Шльопанці</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Сандалі">Сандалі</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Тапочки">Тапочки</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Сабо">Сабо</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Черевики">Черевики</a>
+            </div>
+          </div>
+          <div class="nav-subgroup">
+            <button type="button" class="nav-subgroup-toggle">Одяг
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="nav-subgroup-body">
+              <a href="catalog.html?cat=Чоловіче&amp;type=Куртки">Куртки</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Футболки">Футболки</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Кофти та светри">Кофти та светри</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Штани">Штани</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Шорти">Шорти</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Спортивні костюми">Спортивні костюми</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Термобілизна">Термобілизна</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Шкарпетки">Шкарпетки</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Головні убори">Головні убори</a>
+            </div>
+          </div>
         </div>
       </div>
       <div class="nav-item">
         <a href="catalog.html?cat=Жіноче" class="nav-toggle">Жіноче</a>
         <div class="nav-dropdown">
           <a href="catalog.html?cat=Жіноче">Всі товари</a>
-          <a href="catalog.html?cat=Жіночі кросівки">Кросівки</a>
-          <a href="catalog.html?cat=Жіночі капці">Капці</a>
+          <div class="nav-subgroup">
+            <button type="button" class="nav-subgroup-toggle">Взуття
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="nav-subgroup-body">
+              <a href="catalog.html?cat=Жіноче&amp;type=Кросівки">Кросівки</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Шльопанці">Шльопанці</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Сандалі">Сандалі</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Тапочки">Тапочки</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Сабо">Сабо</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Черевики">Черевики</a>
+            </div>
+          </div>
+          <div class="nav-subgroup">
+            <button type="button" class="nav-subgroup-toggle">Одяг
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="nav-subgroup-body">
+              <a href="catalog.html?cat=Жіноче&amp;type=Куртки">Куртки</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Футболки">Футболки</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Кофти та светри">Кофти та светри</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Штани">Штани</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Шорти">Шорти</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Сукні та спідниці">Сукні та спідниці</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Спортивні костюми">Спортивні костюми</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Термобілизна">Термобілизна</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Шкарпетки">Шкарпетки</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Головні убори">Головні убори</a>
+            </div>
+          </div>
         </div>
       </div>
     </nav>
@@ -641,6 +711,15 @@ gtag('config', 'G-Y0CS5VFCYH');
           const wasOpen = item.classList.contains('open');
           document.querySelectorAll('.nav-item.open').forEach(el => el.classList.remove('open'));
           if (!wasOpen) item.classList.add('open');
+        });
+      });
+      // Підрозділи "Взуття"/"Одяг" — акордеон усередині вже відкритої
+      // випадашки, незалежний для кожного (можна тримати відкритими обидва).
+      document.querySelectorAll('.nav-subgroup-toggle').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          btn.closest('.nav-subgroup').classList.toggle('open');
         });
       });
       document.addEventListener('click', e => {
@@ -860,9 +939,19 @@ let activeFilters = {
 // нижче) — тобто нові типи, які з'являться в майбутньому (наприклад, окрема
 // категорія "Одяг" від постачальника), самі стануть пунктом фільтра, навіть
 // без правок цього списку.
+// Тип товару — узгоджений з пунктами меню "Взуття"/"Одяг" у шапці (там
+// кожне посилання передає ?type=<точна назва з цього списку>). Взуттєві
+// типи йдуть першими (це весь асортимент, який реально продається сьогодні),
+// одяг — далі (у магазині поки немає жодного опублікованого товару одягу,
+// але пункти меню вже готові на майбутнє — щойно товари з'являться в базі,
+// вони одразу підхоплять потрібний бакет). Список неповний навмисно: усе,
+// що не впізнається за ключовими словами нижче, потрапляє в бакет за
+// "сирою" категорією товару (fallback нижче) — тобто типи, яких немає в
+// цьому списку, самі стануть пунктом фільтра, без правок коду.
 const PRODUCT_TYPE_ORDER = [
-  'Кросівки', 'Тапочки', 'Шльопанці', 'Сандалі', 'Сабо', 'Черевики',
-  'Штани', 'Куртки', 'Худі', 'Футболки', 'Шорти', 'Головні убори'
+  'Кросівки', 'Шльопанці', 'Сандалі', 'Тапочки', 'Сабо', 'Черевики',
+  'Куртки', 'Футболки', 'Кофти та светри', 'Штани', 'Шорти',
+  'Сукні та спідниці', 'Спортивні костюми', 'Термобілизна', 'Шкарпетки', 'Головні убори'
 ];
 function detectProductType(p) {
   // Дивимось лише на назву товару — category_2 у базі вже містить об'єднану
@@ -870,18 +959,24 @@ function detectProductType(p) {
   // теж, підрядок "сандал" з цієї самої мітки хибно перекривав би товари,
   // які насправді шльопанці (за назвою), а не сандалі.
   const name = (p.name || '').toLowerCase();
+  // --- Взуття ---
   if (/тапоч|капц/.test(name)) return 'Тапочки';
   if (/сандал/.test(name)) return 'Сандалі';
   if (/шльоп|слайд|slide/.test(name)) return 'Шльопанці';
-  if (/сабо|clog/.test(name)) return 'Сабо';
-  if (/черевик|boot/.test(name)) return 'Черевики';
+  if (/сабо|clog|крокс/.test(name)) return 'Сабо';
+  if (/черевик|чоботи|boot/.test(name)) return 'Черевики';
   if (/крос|кед|sneaker/.test(name)) return 'Кросівки';
-  if (/штани|джинси|брюки/.test(name)) return 'Штани';
-  if (/куртк|пуховик|вітрівк/.test(name)) return 'Куртки';
-  if (/худі|світшот/.test(name)) return 'Худі';
-  if (/футболк|лонгслів/.test(name)) return 'Футболки';
+  // --- Одяг ---
+  if (/куртк|пуховик|вітрівк|пальто|плащ|тренч/.test(name)) return 'Куртки';
+  if (/футболк|сорочк|блуз|лонгслів|майк/.test(name)) return 'Футболки';
+  if (/кофт|худі|світшот|джемпер|светр|толстовк/.test(name)) return 'Кофти та светри';
+  if (/штани|лосин|тайтс|бриджи|джинси|брюки/.test(name)) return 'Штани';
   if (/шорти/.test(name)) return 'Шорти';
-  if (/кепк|бейсболк|шапк/.test(name)) return 'Головні убори';
+  if (/сукн|спідниц/.test(name)) return 'Сукні та спідниці';
+  if (/костюм|комбінезон/.test(name)) return 'Спортивні костюми';
+  if (/термобілизн/.test(name)) return 'Термобілизна';
+  if (/шкарпетк|гетри/.test(name)) return 'Шкарпетки';
+  if (/кепк|бейсболк|шапк|рукавиц/.test(name)) return 'Головні убори';
   // Запасний варіант, якщо назва не дала однозначної відповіді —
   // використовуємо категорію як є, без розбору на ключові слова. Так нові
   // категорії від постачальників автоматично стають пунктами фільтра.
@@ -889,10 +984,14 @@ function detectProductType(p) {
   return cat || 'Інше';
 }
 
-// Категорія з посилання (наприклад "Чоловічі капці") лише попередньо
-// відмічає відповідні чекбокси типу при завантаженні сторінки — сам список
-// товарів під капотом уже містить усі типи для цієї статі, тож клієнт може
-// одразу зняти/додати галочки і побачити інші типи без переходу на іншу URL.
+// Категорія з посилання (наприклад "Чоловічі капці") попередньо відмічає
+// відповідні чекбокси типу при завантаженні сторінки — сам список товарів
+// під капотом уже містить усі типи для цієї статі, тож клієнт може одразу
+// зняти/додати галочки і побачити інші типи без переходу на іншу URL. Для
+// нових посилань з меню (Взуття/Одяг) використовується точний параметр
+// ?type=... — preselectTypesFromCat лишається для старих посилань типу
+// "Чоловічі кросівки"/"Чоловічі капці" (сумісність із вже проіндексованими
+// URL) та для footer-посилань.
 function preselectTypesFromCat(cat) {
   if (!cat) return [];
   const c = cat.toLowerCase();
@@ -904,17 +1003,21 @@ function preselectTypesFromCat(cat) {
 
 const urlParams = new URLSearchParams(window.location.search);
 const categoryParam = urlParams.get('cat');
+const typeParam = urlParams.get('type');
 const searchParam = urlParams.get('search') || '';
 
-// Попередньо відмічаємо тип товару за посиланням, яким прийшов клієнт
-// (напр. "Капці" в шапці) — саму множину товарів це вже не обмежує. Список
-// звужується до типів, які реально є серед завантажених товарів, у
-// populateFilterOptions() нижче (щоб не рахувати як "активний фільтр" тип,
-// якого серед результатів ще немає).
-const pendingTypePreselect = new Set(preselectTypesFromCat(categoryParam));
+// Попередньо відмічаємо тип товару: якщо в посиланні є точний ?type=... —
+// довіряємо йому один-в-один (так приходять нові пункти меню Взуття/Одяг).
+// Інакше — стара евристика за текстом "cat". Список звужується до типів,
+// які реально є серед завантажених товарів, у populateFilterOptions()
+// нижче (щоб не рахувати як "активний фільтр" тип, якого серед
+// результатів ще немає — наприклад, одяг, поки його не опубліковано).
+const pendingTypePreselect = new Set(typeParam ? [typeParam] : preselectTypesFromCat(categoryParam));
 
 if (categoryParam) {
-  document.getElementById('pageTitle').textContent = categoryParam;
+  document.getElementById('pageTitle').textContent = typeParam ? `${categoryParam} — ${typeParam}` : categoryParam;
+} else if (typeParam) {
+  document.getElementById('pageTitle').textContent = typeParam;
 } else if (searchParam) {
   document.getElementById('pageTitle').textContent = `Пошук: "${searchParam}"`;
 }
