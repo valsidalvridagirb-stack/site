@@ -682,7 +682,8 @@ function detectForegroundBBox(img) {
   };
 }
 
-async function cropToVertical(file) {
+async function cropToVertical(file, opts) {
+  const force = !!(opts && opts.force);
   try {
     const img = await loadImageFromFile(file);
     const W = img.naturalWidth, H = img.naturalHeight;
@@ -706,10 +707,6 @@ async function cropToVertical(file) {
     if (targetH > cropH) cropH = targetH;
     if (cropH > H) cropH = H; // не виходимо за межі оригінального фото
 
-    // Якщо потрібний кадр і так займає майже все фото — обрізати нема
-    // сенсу (це вже й так щільне фото), лишаємо оригінал без перекодування.
-    if (cropW >= W * 0.98 && cropH >= H * 0.98) return file;
-
     // Розміщуємо кадр так, щоб його центр був якомога ближче до
     // зваженого центру товару (не просто середини bbox), але сам товар
     // (b0..b1) завжди повністю влазив у кадр і кадр не виходив за межі фото.
@@ -725,6 +722,15 @@ async function cropToVertical(file) {
     }
     const y0 = place(bbox.centroidY, by0, by1, cropH, H);
     const x0 = place(bbox.centroidX, bx0, bx1, cropW, W);
+
+    // Якщо потрібний кадр і так практично збігається з усім фото (і за
+    // розміром, і за положенням) — обрізати нема сенсу, лишаємо оригінал
+    // без перекодування. При force (повторна обробка вже опублікованих
+    // фото) цю оптимізацію пропускаємо — інакше вже раз обрізане фото
+    // ніколи не підхопить оновлену логіку центрування.
+    if (!force && cropW >= W * 0.98 && cropH >= H * 0.98 && x0 <= W * 0.01 && y0 <= H * 0.01) {
+      return file;
+    }
 
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(cropW);
@@ -826,7 +832,7 @@ document.getElementById('bulkRecropBtn').addEventListener('click', async () => {
         const path = storagePathFromPublicUrl(url);
         if (!path) throw new Error('не вдалось розпізнати шлях у Storage');
         const file = await fetchUrlAsFile(url, path.split('/').pop());
-        const cropped = await cropToVertical(file);
+        const cropped = await cropToVertical(file, { force: true });
         if (cropped === file) {
           skipped++;
           continue;
