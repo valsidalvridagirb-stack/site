@@ -178,6 +178,16 @@
     </div>
 
     <div class="card">
+      <h3>Інструменти</h3>
+      <div class="actions-row">
+        <button class="btn" id="bulkWatermarkBtn">Накласти водяний знак на всі опубліковані фото</button>
+      </div>
+      <div class="desc-hint">Одноразова дія: перевіряє всі фото у сховищі, пропускає ті, що вже з водяним знаком (за списком у базі), і накладає знак на решту. Можна безпечно натиснути кілька разів — вже оброблені фото не будуть оброблені повторно.</div>
+      <div class="progress" id="wmProgressWrap" style="display:none;"><i id="wmProgressBar"></i></div>
+      <div class="status-line" id="wmStatusLine"></div>
+    </div>
+
+    <div class="card">
       <h3>1. Артикул</h3>
       <div class="search-row">
         <input type="text" id="artInput" placeholder="напр. DX7999-001" autocomplete="off">
@@ -675,6 +685,48 @@ function extOf(name) {
   return m ? m[1].toLowerCase() : 'jpg';
 }
 
+// ---------- водяний знак ----------
+// Невелика напівпрозора мітка в кутку фото, "запечена" прямо в файл —
+// на відміну від візуального шару на сторінці, вона лишається навіть
+// якщо фото завантажити/скопіювати. Малюємо через canvas: текст білим з
+// темною обвідкою, щоб було видно і на світлому, і на темному фото.
+const WATERMARK_TEXT = 'NEXXTLEVEL.STORE';
+
+async function drawWatermark(file) {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close && bitmap.close();
+
+    const fontSize = Math.max(14, Math.round(canvas.width * 0.035));
+    const paddingX = Math.round(canvas.width * 0.03);
+    const paddingY = Math.round(canvas.height * 0.025);
+    ctx.font = `600 ${fontSize}px Arial, sans-serif`;
+    ctx.textBaseline = 'bottom';
+    ctx.textAlign = 'right';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.14));
+    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    const x = canvas.width - paddingX;
+    const y = canvas.height - paddingY;
+    ctx.strokeText(WATERMARK_TEXT, x, y);
+    ctx.fillText(WATERMARK_TEXT, x, y);
+
+    const mime = file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg';
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, mime, 0.92));
+    if (!blob) return file; // canvas не спрацював — краще завантажити оригінал, ніж зірвати публікацію
+    return new File([blob], file.name, { type: mime });
+  } catch (e) {
+    console.error('Не вдалось накласти водяний знак, завантажую оригінал:', e);
+    return file;
+  }
+}
+
 async function publish() {
   if (!currentArticul) return;
   if (!editOnlyMode && !currentMatches.length) return;
@@ -701,7 +753,7 @@ async function publish() {
         finalUrls.push(item.url);
         continue;
       }
-      const file = item.file;
+      const file = await drawWatermark(item.file);
       const path = `${currentArticul}/${crypto.randomUUID()}.${extOf(file.name)}`;
       const { error: upErr } = await supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: false });
       if (upErr) throw new Error('Не вдалось завантажити ' + file.name + ': ' + upErr.message);
@@ -798,6 +850,118 @@ async function unpublish() {
   document.getElementById('existingNote').textContent = '';
   loadProductList().catch(() => {});
 }
+
+// ---------- масове накладання водяного знаку на вже опубліковані фото ----------
+async function listAllInFolder(folder) {
+  const out = [];
+  const limit = 1000;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supabaseClient.storage.from(BUCKET).list(folder, { limit, offset });
+    if (error) throw new Error('Не вдалось прочитати ' + (folder || '(корінь)') + ': ' + error.message);
+    if (!data || !data.length) break;
+    out.push(...data);
+    if (data.length < limit) break;
+    offset += limit;
+  }
+  return out;
+}
+
+async function listAllStorageObjectPaths() {
+  const paths = [];
+  const roots = await listAllInFolder('');
+  for (const entry of roots) {
+    // Папки в Supabase Storage повертаються без id/metadata — файли мають id.
+    if (entry.id === null || entry.id === undefined) {
+      const files = await listAllInFolder(entry.name);
+      for (const f of files) {
+        if (f.id !== null && f.id !== undefined) paths.push(`${entry.name}/${f.name}`);
+      }
+    } else {
+      paths.push(entry.name);
+    }
+  }
+  return paths;
+}
+
+async function getWatermarkedPathSet() {
+  const set = new Set();
+  const limit = 1000;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supabaseClient.from('watermarked_photos').select('path').range(offset, offset + limit - 1);
+    if (error) throw new Error('Не вдалось прочитати таблицю watermarked_photos: ' + error.message);
+    if (!data || !data.length) break;
+    data.forEach(r => set.add(r.path));
+    if (data.length < limit) break;
+    offset += limit;
+  }
+  return set;
+}
+
+document.getElementById('bulkWatermarkBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('bulkWatermarkBtn');
+  const progressWrap = document.getElementById('wmProgressWrap');
+  const progressBar = document.getElementById('wmProgressBar');
+  const statusLine = document.getElementById('wmStatusLine');
+
+  btn.disabled = true;
+  progressWrap.style.display = 'block';
+  progressBar.style.width = '0%';
+  statusLine.className = 'status-line';
+  statusLine.textContent = 'Отримую список файлів у сховищі…';
+
+  let firstError = null;
+  let done = 0, skipped = 0, errors = 0, total = 0;
+
+  try {
+    const allPaths = await listAllStorageObjectPaths();
+    const watermarked = await getWatermarkedPathSet();
+    const todo = allPaths.filter(p => !watermarked.has(p));
+    total = todo.length;
+
+    if (!total) {
+      statusLine.textContent = `Готово. Усі фото (${allPaths.length}) вже з водяним знаком — обробляти нічого.`;
+      btn.disabled = false;
+      return;
+    }
+
+    for (const path of todo) {
+      statusLine.textContent = `Обробка: ${done + 1} з ${total}… (пропущено раніше оброблених: ${allPaths.length - total}, помилок: ${errors})`;
+      try {
+        const { data: blob, error: dlErr } = await supabaseClient.storage.from(BUCKET).download(path);
+        if (dlErr) throw new Error('Не вдалось завантажити ' + path + ': ' + dlErr.message);
+
+        const name = path.split('/').pop();
+        const srcFile = new File([blob], name, { type: blob.type || 'image/jpeg' });
+        const watermarkedFile = await drawWatermark(srcFile);
+
+        const { error: upErr } = await supabaseClient.storage.from(BUCKET).upload(path, watermarkedFile, { upsert: true, contentType: watermarkedFile.type });
+        if (upErr) throw new Error('Не вдалось перезаписати ' + path + ': ' + upErr.message);
+
+        const { error: logErr } = await supabaseClient.from('watermarked_photos').upsert({ path });
+        if (logErr) throw new Error('Файл оброблено, але не вдалось зберегти позначку у базі для ' + path + ': ' + logErr.message);
+
+        done++;
+      } catch (e) {
+        errors++;
+        if (!firstError) firstError = e.message || String(e);
+        console.error('Помилка водяного знаку для', path, e);
+      }
+      progressBar.style.width = Math.round(((done + errors) / total) * 100) + '%';
+    }
+
+    statusLine.className = errors ? 'status-line status-err' : 'status-line status-ok';
+    statusLine.textContent = `Готово. Оброблено: ${done}, помилок: ${errors}, вже було з водяним знаком: ${allPaths.length - total}.` +
+      (firstError ? ` Перша помилка: ${firstError}` : '');
+  } catch (e) {
+    statusLine.className = 'status-line status-err';
+    statusLine.textContent = 'Помилка: ' + (e.message || String(e));
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 // ---------- вкладки ----------
 const tabPhotosBtn = document.getElementById('tabPhotosBtn');
