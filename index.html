@@ -1003,7 +1003,7 @@ async function loadProducts(){
     if (rawPhoto) {
       if (rawPhoto.startsWith('http://')) rawPhoto = rawPhoto.replace('http://', 'https://');
       else if (rawPhoto.startsWith('//')) rawPhoto = 'https:' + rawPhoto;
-      photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}&trim=10&fit=cover&w=640&h=800&a=attention` : rawPhoto;
+      photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}&trim=10&w=800` : rawPhoto;
     }
     const sizes = Array.isArray(p.sizes) ? p.sizes : [];
     const isWished = wishlist.has(p.id);
