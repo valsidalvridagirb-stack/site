@@ -1288,7 +1288,7 @@ function renderPage(page) {
     if (rawPhoto) {
       if (rawPhoto.startsWith('http://')) rawPhoto = rawPhoto.replace('http://', 'https://');
       else if (rawPhoto.startsWith('//')) rawPhoto = 'https:' + rawPhoto;
-      photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}` : rawPhoto;
+      photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}&trim=10&fit=cover&w=640&h=800&a=attention` : rawPhoto;
     }
     const isWished = wishlist.has(String(p.id));
 
