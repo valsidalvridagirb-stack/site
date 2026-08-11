@@ -937,7 +937,13 @@ const SIZE_CHART_BRAND_SLUGS = {
 function buildSizeChartData(product) {
   const cat1 = String(product.category_1 || '').trim();
   const genderRaw = String(product.gender || '').trim();
-  const genderKey = genderRaw === 'Чоловіки' ? 'men' : (genderRaw === 'Жінки' ? 'women' : null);
+  // Ручне перевизначення з адмінки (size_chart_gender: 'men'/'women') має
+  // пріоритет над автоматичним визначенням за полем gender — постачальник
+  // часто плутає стать у прайсі, і адмін бачить це на самому товарі.
+  const overrideKey = String(product.size_chart_gender || '').trim();
+  const genderKey = (overrideKey === 'men' || overrideKey === 'women')
+    ? overrideKey
+    : (genderRaw === 'Чоловіки' ? 'men' : (genderRaw === 'Жінки' ? 'women' : null));
 
   if (cat1 === 'Одяг') {
     const c = SIZE_CHART_META.clothes;
