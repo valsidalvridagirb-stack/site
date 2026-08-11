@@ -308,6 +308,17 @@ async function init() {
   panelSection.style.display = 'block';
   loadCatalog().catch(() => {});
   loadProductList().catch(() => {});
+
+  // Відкриття посилання ?articul=... в новій вкладці (напр. колесиком миші
+  // по "Редагувати" у списку товарів) — одразу підвантажуємо картку цього
+  // товару, а не лишаємо порожню форму пошуку.
+  const artFromUrl = new URLSearchParams(location.search).get('articul');
+  if (artFromUrl) {
+    document.getElementById('artInput').value = artFromUrl;
+    doSearch().then(() => {
+      document.getElementById('photoCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }).catch(() => {});
+  }
 }
 
 // ---------- список товарів на сайті (для кнопки "Редагувати") ----------
@@ -344,9 +355,18 @@ function renderProductList() {
         <div class="pname">${p.name || p.articul}</div>
         <div class="pmeta">${String(p.articul || '').toUpperCase()} · ${p.brand || ''} · ${p.price ? p.price + '₴' : ''} · ${p.total_quantity ?? 0} шт</div>
       </div>
-      <button class="btn btn-secondary" style="padding:8px 14px; font-size:12px;">Редагувати</button>
+      <a href="?articul=${encodeURIComponent(p.articul)}" class="btn btn-secondary edit-link" style="padding:8px 14px; font-size:12px;">Редагувати</a>
     `;
-    row.querySelector('button').addEventListener('click', () => editProductByArticul(p.articul));
+    // Справжнє посилання (href), а не просто onclick, — тому колесиком/Ctrl+клік
+    // браузер сам відкриє редагування цього товару в новій вкладці (стандартна
+    // поведінка браузера для <a>, її не потрібно емулювати вручну). Але звичайний
+    // клік лівою кнопкою перехоплюємо і без перезавантаження сторінки одразу
+    // показуємо картку — це швидше, ніж чекати на повне перезавантаження.
+    row.querySelector('a.edit-link').addEventListener('click', (e) => {
+      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      editProductByArticul(p.articul);
+    });
     listEl.appendChild(row);
   });
 }
@@ -355,6 +375,7 @@ document.getElementById('productListFilter').addEventListener('input', renderPro
 
 async function editProductByArticul(articul) {
   document.getElementById('artInput').value = articul;
+  history.pushState(null, '', '?articul=' + encodeURIComponent(articul));
   await doSearch();
   document.getElementById('photoCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
