@@ -161,7 +161,15 @@ gtag('config', 'G-Y0CS5VFCYH');
   /* ===== Hero Banner у Чорно-Білому Стилі ===== */
   .hero-banner {
     position: relative;
-    min-height: clamp(560px, 82vh, 800px);
+    /* Відео/постер мають повністю закривати перший екран без жодного
+       "просвіту" фону сторінки знизу — раніше висота була обмежена зверху
+       (max 800px), і на екранах з висотою вьюпорта більшою за це значення
+       під банером виднілась смужка фону body. min-height: 100vh — фолбек
+       для браузерів без підтримки max()/svh; другий рядок його перекриває
+       там, де є підтримка, і додатково гарантує мінімум 480px на дуже
+       низьких вьюпортах (напр. мобільний landscape). */
+    min-height: 100vh;
+    min-height: max(480px, 100svh);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -713,7 +721,7 @@ gtag('config', 'G-Y0CS5VFCYH');
     .header-row { padding: 16px 20px; }
     .site-search { order: 3; min-width: 100%; max-width: 100%; }
     .wrap, .cats, .arrivals, .foot-bottom { padding-left: 20px; padding-right: 20px; }
-    .hero-banner { min-height: clamp(460px, 70vh, 620px); padding: 70px 16px 40px; }
+    .hero-banner { min-height: 100vh; min-height: max(420px, 100svh); padding: 70px 16px 40px; }
     .hero-brand-logo { padding: 12px 20px; }
     .hero-brand-logo b { font-size: 24px; }
     .hero-brand-logo span { font-size: 9px; letter-spacing: 6px; }
