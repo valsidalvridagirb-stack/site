@@ -928,8 +928,8 @@ function sizeSortKey(sz) {
 
 // ---------- дані для модального вікна «Розмірна сітка» (бренд + стать + категорія) ----------
 // SIZE_CHART_BRAND_SLUGS підключається зі спільного size-chart-data.js.
-const SIZE_CHART_GENDER_LABEL = { men: 'Чоловіча', women: 'Жіноча', teen: 'Підліткова' };
-const SIZE_CHART_GENDER_LINK = { men: 'male', women: 'female', teen: 'teen' };
+const SIZE_CHART_GENDER_LABEL = { men: 'Чоловіча', women: 'Жіноча', teen: 'Підліткова', unisex: 'Унісекс' };
+const SIZE_CHART_GENDER_LINK = { men: 'male', women: 'female', teen: 'teen', unisex: 'unisex' };
 
 function buildSizeChartData(product) {
   const cat1 = String(product.category_1 || '').trim();
@@ -986,8 +986,12 @@ function buildSizeChartData(product) {
       if (single) return single;
     }
 
-    // Ручне "унісекс" — показати всі сітки, які реально є в цього бренду.
+    // Ручне "унісекс" — якщо в бренду є окрема унісекс-сітка (напр. New
+    // Balance) — показуємо саме її однією таблицею; інакше падаємо назад на
+    // показ усіх сіток бренду з перемикачем.
     if (overrideKey === 'unisex') {
+      const single = buildSingle('unisex');
+      if (single) return single;
       const tabs = buildTabs(['men', 'women', 'teen']);
       if (tabs) return tabs;
     }
@@ -1000,8 +1004,11 @@ function buildSizeChartData(product) {
     }
 
     // Стать товару — "Унісекс" (або не розпізнана) і без ручного
-    // перевизначення — не ховаємо сітку зовсім, а показуємо всі доступні
-    // варіанти бренду (чоловічу, жіночу, за наявності — підліткову).
+    // перевизначення — не ховаємо сітку зовсім. Якщо в бренду є окрема
+    // унісекс-сітка (New Balance) — показуємо її однією таблицею; інакше
+    // показуємо всі доступні варіанти бренду (чоловічу, жіночу, підліткову).
+    const autoSingle = buildSingle('unisex');
+    if (autoSingle) return autoSingle;
     return buildTabs(['men', 'women', 'teen']);
   }
 
