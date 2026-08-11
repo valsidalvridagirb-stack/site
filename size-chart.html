@@ -328,7 +328,33 @@ gtag('config', 'G-Y0CS5VFCYH');
 
   <div class="tab-panel" id="tab-clothes">
     <div class="chart-section">
-      <h2>Одяг: футболки, худі, штани, куртки</h2>
+      <h2>Nike — жіночий одяг (верх, куртки)</h2>
+      <p class="chart-note">Обхвати тіла в сантиметрах. Обхват грудей — по найширшій частині грудної клітини; обхват талії — по найвужчій частині; обхват стегон — по найширшій частині стегон.</p>
+      <div class="table-scroll">
+        <table class="size-table" id="nikeClothesWomenTable">
+          <thead>
+            <tr><th>Розмір</th><th>Грудна клітина, см</th><th>Талія, см</th><th>Стегна, см</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <h2>Nike — чоловічий одяг (верх, куртки)</h2>
+      <p class="chart-note">Обхвати тіла в сантиметрах (діапазон "мін/макс" за офіційною сіткою Nike). Обхват грудей — по найширшій частині грудної клітини; обхват талії — по найвужчій частині; обхват стегон — по найширшій частині стегон.</p>
+      <div class="table-scroll">
+        <table class="size-table" id="nikeClothesMenTable">
+          <thead>
+            <tr><th>Розмір</th><th>Грудна клітина, см</th><th>Талія, см</th><th>Стегна, см</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <h2>Одяг інших брендів: футболки, худі, штани, куртки</h2>
       <p class="chart-note">Виміри тіла в сантиметрах. Обхват грудей — по найширшій частині грудної клітини; обхват талії — по найвужчій частині; обхват стегон — по найширшій частині стегон.</p>
       <div class="table-scroll">
         <table class="size-table" id="clothTable">
@@ -441,6 +467,8 @@ fillTable('nbTeenTable', NB_TEEN);
 fillTable('adidasMenTable', ADIDAS_MEN);
 fillTable('adidasWomenTable', ADIDAS_WOMEN);
 fillTable('clothTable', CLOTH_SIZES);
+fillTable('nikeClothesWomenTable', NIKE_CLOTHES_WOMEN);
+fillTable('nikeClothesMenTable', NIKE_CLOTHES_MEN);
 
 // ---------- перемикання вкладок (Взуття / Одяг) ----------
 function selectTab(tabId) {
@@ -480,8 +508,16 @@ document.querySelectorAll('.brand-btn').forEach(btn => {
   if (tab === 'clothes') selectTab('clothes');
   else if (tab === 'shoes' || brand) selectTab('shoes');
 
+  // Для одягу поки що є фірмова сітка лише в Nike, і вона живе прямо у
+  // вкладці "Одяг" (без окремого перемикача брендів, як у взутті) — тому
+  // для tab=clothes скоуп завжди сама вкладка, а бренд лише звужує пошук
+  // заголовка (щоб не поплутати з загальною таблицею "Інші бренди").
   let scopeEl = null;
-  if (brand && BRAND_IDS.includes(brand)) {
+  let requireBrandInHeading = null;
+  if (tab === 'clothes') {
+    scopeEl = document.getElementById('tab-clothes');
+    if (brand === 'nike') requireBrandInHeading = 'nike';
+  } else if (brand && BRAND_IDS.includes(brand)) {
     selectBrand(brand);
     scopeEl = document.getElementById('brand-' + brand);
   }
@@ -490,7 +526,10 @@ document.querySelectorAll('.brand-btn').forEach(btn => {
     const wantWord = gender === 'male' ? 'чоловіч' : (gender === 'female' ? 'жіноч' : (gender === 'teen' ? 'підлітк' : 'унісекс'));
     setTimeout(() => {
       const heading = [...scopeEl.querySelectorAll('.chart-section h2')]
-        .find(h2 => h2.textContent.toLowerCase().includes(wantWord));
+        .find(h2 => {
+          const t = h2.textContent.toLowerCase();
+          return t.includes(wantWord) && (!requireBrandInHeading || t.includes(requireBrandInHeading));
+        });
       if (!heading) return;
       const section = heading.closest('.chart-section');
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });

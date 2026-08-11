@@ -942,6 +942,23 @@ function buildSizeChartData(product) {
   const overrideKey = String(product.size_chart_gender || '').trim();
 
   if (cat1 === 'Одяг') {
+    // Фірмова сітка бренду (поки що Nike) — точніша за загальну, але
+    // потребує і відомого бренду, і розпізнаної статі (чоловіча/жіноча);
+    // для унісекс/невідомої статі чи інших брендів — загальна таблиця нижче.
+    const brandSlug = SIZE_CHART_BRAND_SLUGS[String(product.brand || '').trim().toLowerCase()];
+    const clothesGenderKey = genderRaw === 'Чоловіки' ? 'men' : (genderRaw === 'Жінки' ? 'women' : null);
+    const brandClothes = brandSlug && clothesGenderKey && SIZE_CHART_META.clothesBrands[brandSlug];
+    const bc = brandClothes && brandClothes[clothesGenderKey];
+    if (bc) {
+      return {
+        kind: 'clothes',
+        title: bc.title, note: bc.note, columns: bc.columns, rows: bc.rows,
+        howto: SIZE_CHART_META.howtoClothes,
+        howtoTitle: 'Як виміряти',
+        deepLink: `size-chart.html?tab=clothes&brand=${brandSlug}&gender=${SIZE_CHART_GENDER_LINK[clothesGenderKey]}`
+      };
+    }
+
     const c = SIZE_CHART_META.clothes;
     return {
       kind: 'clothes',
