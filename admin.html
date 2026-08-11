@@ -10,6 +10,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Ті самі дані розмірних сіток, що й на product-page.html/size-chart.html — щоб
+     адмінка знала, які варіанти сітки (чол./жін./підліткова) реально є для бренду. -->
+<script src="size-chart-data.js"></script>
 <style>
   :root { --ink:#111111; --paper:#ffffff; --smoke:#f8f8f6; --line:#e6e5e2; --mute:#767470; --radius:4px; --ok:#385723; --okbg:#e2f0d9; --err:#8a1f11; --errbg:#fbe4e0; }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -205,8 +208,9 @@
           <option value="">Авто (за статтю з прайсу постачальника)</option>
           <option value="men">Завжди чоловіча</option>
           <option value="women">Завжди жіноча</option>
+          <option value="unisex">Унісекс (показати всі сітки бренду з перемикачем)</option>
         </select>
-        <div class="desc-hint">За замовчуванням сітка визначається за статтю з прайсу постачальника — вона часто буває переплутана. Тут можна примусово задати правильну, незалежно від статі в прайсі.</div>
+        <div class="desc-hint">За замовчуванням сітка визначається за статтю з прайсу постачальника — вона часто буває переплутана. Тут можна примусово задати правильну, незалежно від статі в прайсі. Список варіантів залежить від бренду — наприклад, підліткова сітка є лише в New Balance.</div>
       </div>
     </div>
 
@@ -519,6 +523,25 @@ document.getElementById('nameResetBtn').addEventListener('click', () => {
   nameInput.value = nameInput.dataset.auto || '';
 });
 
+// Список доступних варіантів ручного перевизначення сітки залежить від
+// бренду — напр. "підліткова" сітка задана лише для New Balance
+// (SIZE_CHART_META зі спільного size-chart-data.js). Додаємо/прибираємо цей
+// варіант при кожному пошуку товару, щоб не пропонувати те, чого нема.
+function updateSizeChartGenderOptions(brand) {
+  const select = document.getElementById('sizeChartGenderSelect');
+  const prevTeen = select.querySelector('option[value="teen"]');
+  if (prevTeen) prevTeen.remove();
+
+  const brandSlug = SIZE_CHART_BRAND_SLUGS[String(brand || '').trim().toLowerCase()];
+  const shoeBrand = brandSlug ? SIZE_CHART_META.shoes[brandSlug] : null;
+  if (shoeBrand && shoeBrand.teen) {
+    const opt = document.createElement('option');
+    opt.value = 'teen';
+    opt.textContent = 'Завжди підліткова';
+    select.insertBefore(opt, select.querySelector('option[value="unisex"]'));
+  }
+}
+
 async function doSearch() {
   const art = document.getElementById('artInput').value.trim();
   if (!art) return;
@@ -593,6 +616,7 @@ async function doSearch() {
   const sizeChartGenderWrap = document.getElementById('sizeChartGenderWrap');
   const sizeChartGenderSelect = document.getElementById('sizeChartGenderSelect');
   if (cat1Final === 'Взуття') {
+    updateSizeChartGenderOptions(first.brand);
     sizeChartGenderWrap.style.display = 'block';
     sizeChartGenderSelect.value = (existingRows.length && existingRows[0].size_chart_gender) ? existingRows[0].size_chart_gender : '';
   } else {

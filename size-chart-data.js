@@ -204,6 +204,17 @@ const CLOTH_SIZES = [
   ['XXXL', '114-120', '98-104', '120-126']
 ];
 
+// Бренд у товарі (products.brand, нижнім регістром) → ключ бренду в SIZE_CHART_META.shoes.
+// Спільне для product-page.html (вибір сітки в модалці) і admin.html
+// (список доступних варіантів у ручному перевизначенні сітки).
+const SIZE_CHART_BRAND_SLUGS = {
+  'nike': 'nike',
+  'jordan': 'jordan',
+  'adidas': 'adidas',
+  'puma': 'puma',
+  'new balance': 'nb'
+};
+
 // ---- Метадані для генерації UI (заголовки/примітки/колонки) ----
 // Використовується модальним вікном на product.html; size-chart.html
 // продовжує використовувати власну статичну розмітку заголовків/приміток,

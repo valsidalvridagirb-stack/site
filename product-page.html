@@ -927,23 +927,19 @@ function sizeSortKey(sz) {
 }
 
 // ---------- дані для модального вікна «Розмірна сітка» (бренд + стать + категорія) ----------
-const SIZE_CHART_BRAND_SLUGS = {
-  'nike': 'nike',
-  'jordan': 'jordan',
-  'adidas': 'adidas',
-  'puma': 'puma',
-  'new balance': 'nb'
-};
+// SIZE_CHART_BRAND_SLUGS підключається зі спільного size-chart-data.js.
+const SIZE_CHART_GENDER_LABEL = { men: 'Чоловіча', women: 'Жіноча', teen: 'Підліткова' };
+const SIZE_CHART_GENDER_LINK = { men: 'male', women: 'female', teen: 'teen' };
+
 function buildSizeChartData(product) {
   const cat1 = String(product.category_1 || '').trim();
   const genderRaw = String(product.gender || '').trim();
-  // Ручне перевизначення з адмінки (size_chart_gender: 'men'/'women') має
-  // пріоритет над автоматичним визначенням за полем gender — постачальник
-  // часто плутає стать у прайсі, і адмін бачить це на самому товарі.
+  // Ручне перевизначення з адмінки (size_chart_gender) має пріоритет над
+  // автоматичним визначенням за полем gender — постачальник часто плутає
+  // стать у прайсі, і адмін бачить це на самому товарі.
+  // 'men'/'women'/'teen' — примусово одна конкретна сітка,
+  // 'unisex' — показати всі сітки бренду, доступні для товару, з перемикачем.
   const overrideKey = String(product.size_chart_gender || '').trim();
-  const genderKey = (overrideKey === 'men' || overrideKey === 'women')
-    ? overrideKey
-    : (genderRaw === 'Чоловіки' ? 'men' : (genderRaw === 'Жінки' ? 'women' : null));
 
   if (cat1 === 'Одяг') {
     const c = SIZE_CHART_META.clothes;
@@ -962,32 +958,51 @@ function buildSizeChartData(product) {
     const shoeBrand = SIZE_CHART_META.shoes[brandSlug];
     if (!shoeBrand) return null;
 
-    if (genderKey) {
-      const entry = shoeBrand[genderKey];
+    const buildSingle = (key) => {
+      const entry = shoeBrand[key];
       if (!entry) return null;
-      const linkGender = genderKey === 'men' ? 'male' : 'female';
       return {
         kind: 'shoes',
         title: entry.title, note: entry.note, columns: entry.columns, rows: entry.rows,
         howto: SIZE_CHART_META.howtoShoes,
         howtoTitle: 'Як виміряти розмір ноги',
-        deepLink: `size-chart.html?tab=shoes&brand=${brandSlug}&gender=${linkGender}`
+        deepLink: `size-chart.html?tab=shoes&brand=${brandSlug}&gender=${SIZE_CHART_GENDER_LINK[key]}`
       };
+    };
+
+    const buildTabs = (keys) => {
+      const tabs = keys
+        .filter(k => shoeBrand[k])
+        .map(k => ({ key: k, label: SIZE_CHART_GENDER_LABEL[k], ...shoeBrand[k], deepLink: `size-chart.html?tab=shoes&brand=${brandSlug}&gender=${SIZE_CHART_GENDER_LINK[k]}` }));
+      if (!tabs.length) return null;
+      return { kind: 'shoes-both', tabs, howto: SIZE_CHART_META.howtoShoes, howtoTitle: 'Як виміряти розмір ноги' };
+    };
+
+    // Ручне перевизначення на конкретну сітку (чол./жін./підліткова) — якщо
+    // для цього бренду такої сітки нема (напр. "teen" на Nike), падаємо
+    // назад на автоматичну логіку нижче, а не показуємо порожню модалку.
+    if (overrideKey === 'men' || overrideKey === 'women' || overrideKey === 'teen') {
+      const single = buildSingle(overrideKey);
+      if (single) return single;
     }
 
-    // Стать товару — "Унісекс" (або не розпізнана) — не ховаємо сітку зовсім,
-    // а показуємо обидві (чоловічу і жіночу) з перемикачем у модалці.
-    const tabs = [];
-    if (shoeBrand.men) tabs.push({ key: 'men', label: 'Чоловіча', ...shoeBrand.men, deepLink: `size-chart.html?tab=shoes&brand=${brandSlug}&gender=male` });
-    if (shoeBrand.women) tabs.push({ key: 'women', label: 'Жіноча', ...shoeBrand.women, deepLink: `size-chart.html?tab=shoes&brand=${brandSlug}&gender=female` });
-    if (!tabs.length) return null;
+    // Ручне "унісекс" — показати всі сітки, які реально є в цього бренду.
+    if (overrideKey === 'unisex') {
+      const tabs = buildTabs(['men', 'women', 'teen']);
+      if (tabs) return tabs;
+    }
 
-    return {
-      kind: 'shoes-both',
-      tabs,
-      howto: SIZE_CHART_META.howtoShoes,
-      howtoTitle: 'Як виміряти розмір ноги'
-    };
+    const genderKey = genderRaw === 'Чоловіки' ? 'men' : (genderRaw === 'Жінки' ? 'women' : null);
+    if (genderKey) {
+      const single = buildSingle(genderKey);
+      if (single) return single;
+      return null;
+    }
+
+    // Стать товару — "Унісекс" (або не розпізнана) і без ручного
+    // перевизначення — не ховаємо сітку зовсім, а показуємо всі доступні
+    // варіанти бренду (чоловічу, жіночу, за наявності — підліткову).
+    return buildTabs(['men', 'women', 'teen']);
   }
 
   return null;

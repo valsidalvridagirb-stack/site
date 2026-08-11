@@ -472,8 +472,8 @@ document.querySelectorAll('.brand-btn').forEach(btn => {
     scopeEl = document.getElementById('brand-' + brand);
   }
 
-  if (scopeEl && (gender === 'male' || gender === 'female')) {
-    const wantWord = gender === 'male' ? 'чоловіч' : 'жіноч';
+  if (scopeEl && (gender === 'male' || gender === 'female' || gender === 'teen')) {
+    const wantWord = gender === 'male' ? 'чоловіч' : (gender === 'female' ? 'жіноч' : 'підлітк');
     setTimeout(() => {
       const heading = [...scopeEl.querySelectorAll('.chart-section h2')]
         .find(h2 => h2.textContent.toLowerCase().includes(wantWord));
