@@ -1,23 +1,37 @@
 #!/usr/bin/env python3
 """
 sync_catalog.py — синхронізує api/_data/excel-catalog.json (каталог для пошуку
-в адмінці) та готує SQL-запити для оновлення price/quantity вже опублікованих
-на сайті товарів, на основі актуального catalog_*.xlsx з Google Drive
-(генерується локальним update.py на комп'ютері власника сайту).
+в адмінці) та готує SQL-запити для (1) оновлення price/quantity вже
+опублікованих на сайті товарів і (2) додавання нових розмірів, які
+з'явились у постачальника для вже опублікованого артикулу — на основі
+актуального catalog_*.xlsx з Google Drive (генерується локальним update.py
+на комп'ютері власника сайту).
 
 Джерело даних (Роздрібна ціна, категорії, дедублікація) вже повністю прораховане
 update.py — цей скрипт нічого не перераховує заново, тільки перекладає формат
 і порівнює з тим, що вже є в Supabase.
 
+ВАЖЛИВО (свідоме обмеження, не чіпати без окремого запиту власника):
+- Скрипт НІКОЛИ не публікує товар, якого зараз немає на сайті взагалі (жодного
+  розміру) — це та дія, яка вимагає фото/опису і лишається ручною через
+  адмінку. Він лише додає розміри до артикулів, які вже мають хоча б один
+  опублікований розмір, копіюючи їхні фото/опис/назву/перевизначення
+  розмірної сітки з уже наявного рядка того ж артикулу.
+- Розмір, який адмін вручну прибрав через excluded_sizes, НЕ повертається
+  автоматично, навіть якщо він знов з'явився в прайсі постачальника.
+- Розмір, який зник із прайсу постачальника, НЕ видаляється і не ховається —
+  лишається на сайті як є (тільки попередження в підсумку).
+
 Використання:
     python3 sync_catalog.py \
         --catalog-tool-result <path-to-download_file_content-json> \
         --repo <path-to-site-checkout> \
-        --current-products-json <path-to-json-[{id,articul,size,price,quantity}]> \
-        --sql-out <path-to-write-generated-UPDATE-statements>
+        --current-products-json <path-to-json-[{id,articul,size,price,quantity,name,description,photos,brand,gender,category_1,category_2,category_3,supplier,size_chart_gender}]> \
+        --excluded-sizes-json <path-to-json-[{articul,size}]> \
+        --sql-out <path-to-write-generated-UPDATE/INSERT-statements>
 
 Виводить у stdout короткий текстовий підсумок (кількість рядків, кількість
-оновлень) — саме це агент показує користувачу.
+оновлень, кількість доданих розмірів) — саме це агент показує користувачу.
 """
 
 import argparse
@@ -33,6 +47,11 @@ REQUIRED_COLUMNS = [
     'Бренд', 'Стать', 'Категорія 1', 'Категорія 2', 'Категорія 3', 'Постачальник',
 ]
 
+# Колонки products, які беремо з ШАБЛОННОГО (вже опублікованого) рядка того ж
+# артикулу при вставці нового розміру — вони мають бути однакові для всіх
+# розмірів одного товару (так їх завжди писала адмінка при публікації).
+TEMPLATE_FIELDS = ['name', 'description', 'photos', 'size_chart_gender']
+
 
 def parse_args():
     p = argparse.ArgumentParser()
@@ -41,10 +60,13 @@ def parse_args():
                          '(містить base64 вміст xlsx у полі "content")')
     p.add_argument('--repo', required=True, help='Шлях до чекауту репозиторію сайту')
     p.add_argument('--current-products-json', required=True,
-                    help='Шлях до JSON-масиву [{id, articul, size, price, quantity}] — '
-                         'поточний стан таблиці products у Supabase')
+                    help='Шлях до JSON-масиву поточного стану таблиці products у Supabase '
+                         '(id, articul, size, price, quantity + name, description, photos, brand, '
+                         'gender, category_1/2/3, supplier, size_chart_gender)')
+    p.add_argument('--excluded-sizes-json', required=True,
+                    help='Шлях до JSON-масиву [{"articul":.., "size":..}] — вміст таблиці excluded_sizes')
     p.add_argument('--sql-out', required=True,
-                    help='Куди записати згенеровані UPDATE-запити (порожній файл, якщо оновлень немає)')
+                    help='Куди записати згенеровані UPDATE/INSERT-запити (порожній файл, якщо нічого робити)')
     p.add_argument('--tmp-xlsx', default='/tmp/_sync_catalog_source.xlsx')
     return p.parse_args()
 
@@ -61,9 +83,19 @@ def load_catalog_xlsx(tool_result_path, tmp_xlsx_path):
     return d.get('title', '(unknown)')
 
 
-def load_current_products(path):
+def load_json(path):
     with open(path, encoding='utf-8') as f:
         return json.load(f)
+
+
+def sql_str(v):
+    """SQL-літерал для text/nullable-text колонки: NULL або 'екрановане значення'."""
+    if v is None:
+        return 'NULL'
+    s = str(v)
+    if s == '':
+        return 'NULL' if s is None else "''"
+    return "'" + s.replace("'", "''") + "'"
 
 
 def main():
@@ -123,7 +155,11 @@ def main():
             continue
         seen.add(key)
 
-        catalog_rows.append([art, size, name, price_n, qty_n, brand, gender, cat1, cat2, cat3, supplier])
+        catalog_rows.append({
+            'art': art, 'size': size, 'name': name, 'price': price_n, 'qty': qty_n,
+            'brand': brand, 'gender': gender, 'cat1': cat1, 'cat2': cat2, 'cat3': cat3,
+            'supplier': supplier,
+        })
 
     print(f'[sync] Розпарсено {len(catalog_rows)} рядків каталогу '
           f'(пропущено {skipped_dupe} дублів, {skipped_bad} биті рядки)')
@@ -131,7 +167,8 @@ def main():
     # --- 1. Перезбираємо excel-catalog.json (каталог для пошуку в адмінці) ---
     catalog_json = {
         'cols': ['art', 'size', 'name', 'price', 'qty', 'brand', 'gender', 'cat1', 'cat2', 'cat3', 'supplier'],
-        'rows': catalog_rows,
+        'rows': [[c['art'], c['size'], c['name'], c['price'], c['qty'], c['brand'], c['gender'],
+                  c['cat1'], c['cat2'], c['cat3'], c['supplier']] for c in catalog_rows],
     }
     out_path = f'{args.repo}/api/_data/excel-catalog.json'
     with open(out_path, 'w', encoding='utf-8') as f:
@@ -139,21 +176,33 @@ def main():
     print(f'[sync] Записано {out_path}')
 
     # --- 2. Порівнюємо з уже опублікованими на сайті товарами (Supabase) ---
-    current_products = load_current_products(args.current_products_json)
+    current_products = load_json(args.current_products_json)
+    excluded_sizes = load_json(args.excluded_sizes_json)
 
-    lookup = {}
-    for row in catalog_rows:
-        art, size, _name, price_n, qty_n = row[0], row[1], row[2], row[3], row[4]
-        lookup[(art.lower(), str(size))] = (price_n, qty_n)
+    lookup = {(c['art'].lower(), str(c['size'])): c for c in catalog_rows}
 
+    existing_keys = set()
+    existing_articuls = set()
+    template_by_articul = {}
+    for p in current_products:
+        art_l = str(p['articul']).lower()
+        existing_keys.add((art_l, str(p['size'])))
+        existing_articuls.add(art_l)
+        if art_l not in template_by_articul:
+            template_by_articul[art_l] = p
+
+    excluded_keys = {(str(e['articul']).lower(), str(e['size'])) for e in excluded_sizes}
+
+    # --- 2a. Ціна/залишок для розмірів, які вже опубліковані ---
     updates = []
     gone = []
     for p in current_products:
         key = (str(p['articul']).lower(), str(p['size']))
-        if key not in lookup:
+        c = lookup.get(key)
+        if c is None:
             gone.append(p)
             continue
-        new_price, new_qty = lookup[key]
+        new_price, new_qty = c['price'], c['qty']
         old_price = float(p['price'])
         old_qty = int(p['quantity'])
         if abs(new_price - old_price) > 0.01 or new_qty != old_qty:
@@ -171,13 +220,70 @@ def main():
               + ', '.join(f"{g['articul']}/{g['size']}" for g in gone[:20])
               + ('...' if len(gone) > 20 else ''))
 
-    sql_lines = [
-        f"UPDATE products SET price = {u['new_price']}, quantity = {u['new_qty']} WHERE id = {u['id']};"
-        for u in updates
-    ]
+    # --- 2b. Нові розміри для вже опублікованих артикулів ---
+    new_sizes = []
+    skipped_excluded = []
+    for c in catalog_rows:
+        key = (c['art'].lower(), c['size'])
+        if key in existing_keys:
+            continue  # вже опублікований розмір — покривається апдейтом ціни/залишку вище
+        if c['art'].lower() not in existing_articuls:
+            continue  # артикулу взагалі немає на сайті — новий товар публікуємо тільки вручну
+        if key in excluded_keys:
+            skipped_excluded.append(c)
+            continue
+        template = template_by_articul[c['art'].lower()]
+        new_sizes.append({'catalog': c, 'template': template})
+
+    print(f'[sync] {len(new_sizes)} нових розмірів з\'явилось у вже опублікованих товарів')
+    if skipped_excluded:
+        print(f'[sync] {len(skipped_excluded)} розмірів пропущено — вручну прибрані адміном '
+              f'(excluded_sizes), не повертаємо автоматично: '
+              + ', '.join(f"{s['art']}/{s['size']}" for s in skipped_excluded[:20])
+              + ('...' if len(skipped_excluded) > 20 else ''))
+
+    # --- 3. Формуємо SQL ---
+    sql_lines = []
+
+    if updates:
+        sql_lines.append('-- оновлення ціни/залишку вже опублікованих розмірів')
+        for u in updates:
+            sql_lines.append(
+                f"UPDATE products SET price = {u['new_price']}, quantity = {u['new_qty']} "
+                f"WHERE id = {u['id']};"
+            )
+
+    if new_sizes:
+        sql_lines.append('-- нові розміри вже опублікованих товарів')
+        cols = ['articul', 'name', 'size', 'price', 'quantity', 'brand', 'gender',
+                'category_1', 'category_2', 'category_3', 'description', 'photos',
+                'supplier', 'size_chart_gender']
+        for item in new_sizes:
+            c, t = item['catalog'], item['template']
+            values = {
+                'articul': sql_str(t.get('articul', c['art'])),
+                'name': sql_str(t.get('name')),
+                'size': sql_str(c['size']),
+                'price': c['price'],
+                'quantity': c['qty'],
+                'brand': sql_str(c['brand']),
+                'gender': sql_str(c['gender']),
+                'category_1': sql_str(c['cat1']),
+                'category_2': sql_str(c['cat2']),
+                'category_3': sql_str(c['cat3']),
+                'description': sql_str(t.get('description')),
+                'photos': sql_str(t.get('photos')),
+                'supplier': sql_str(c['supplier']),
+                'size_chart_gender': sql_str(t.get('size_chart_gender')),
+            }
+            row_sql = ', '.join(str(values[col]) for col in cols)
+            sql_lines.append(
+                f"INSERT INTO products ({', '.join(cols)}) VALUES ({row_sql});"
+            )
+
     with open(args.sql_out, 'w', encoding='utf-8') as f:
         f.write('\n'.join(sql_lines) + ('\n' if sql_lines else ''))
-    print(f'[sync] Записано {len(sql_lines)} UPDATE-запитів у {args.sql_out}')
+    print(f'[sync] Записано {len(sql_lines)} SQL-рядків (запитів + коментарів) у {args.sql_out}')
 
     summary = {
         'timestamp': datetime.now(timezone.utc).isoformat(),
@@ -185,9 +291,14 @@ def main():
         'catalog_rows': len(catalog_rows),
         'products_checked': len(current_products),
         'updates': len(updates),
+        'new_sizes_added': len(new_sizes),
+        'skipped_excluded': len(skipped_excluded),
         'no_longer_available': len(gone),
     }
     print('[sync] SUMMARY_JSON: ' + json.dumps(summary, ensure_ascii=False))
+    if new_sizes:
+        sample = ', '.join(f"{i['catalog']['art']}/{i['catalog']['size']}" for i in new_sizes[:20])
+        print(f'[sync] Додані розміри: {sample}' + ('...' if len(new_sizes) > 20 else ''))
 
 
 if __name__ == '__main__':
