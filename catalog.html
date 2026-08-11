@@ -1507,6 +1507,9 @@ async function openQuickView(articul) {
     const sortedSizes = Object.keys(sizeMap).sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
     const availableSizes = sortedSizes.filter(sz => sizeMap[sz].available);
     const priceSourceSizes = availableSizes.length ? availableSizes : sortedSizes;
+    // Розміри не в наявності — ховаємо повністю (як на сторінці товару), а не
+    // показуємо закресленими. З'являться самі, коли розмір знову буде в наявності.
+    const visibleSizes = availableSizes.length ? availableSizes : sortedSizes;
     const initialPrice = priceSourceSizes.length ? Math.min(...priceSourceSizes.map(sz => sizeMap[sz].price)) : Number(baseProduct.price);
     qvCurrentPrice = initialPrice;
     qvCurrentLabel = [baseProduct.brand, baseProduct.name].filter(Boolean).join(' ') || baseProduct.name || '';
@@ -1526,10 +1529,10 @@ async function openQuickView(articul) {
         ${baseProduct.brand ? `<div class="qv-brand">${baseProduct.brand}</div>` : ''}
         <div class="qv-name">${baseProduct.name || ''}</div>
         <div class="qv-price" id="qvPrice">${initialPrice.toLocaleString('uk-UA')} грн</div>
-        ${sortedSizes.length ? `
+        ${visibleSizes.length ? `
           <div class="qv-size-title">Оберіть розмір (US)</div>
           <div class="qv-size-grid">
-            ${sortedSizes.map(size => {
+            ${visibleSizes.map(size => {
               const s = sizeMap[size];
               return `<button class="qv-size-btn ${s.available ? '' : 'unavailable'}" onclick="qvSelectSize('${size}', ${s.price}, this)">${size}</button>`;
             }).join('')}

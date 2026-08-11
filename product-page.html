@@ -1165,6 +1165,12 @@ function renderProduct(product, sizeMap) {
   const sortedSizes = Object.keys(sizeMap).sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
   const availableSizesForPrice = sortedSizes.filter(sz => sizeMap[sz].available);
   const priceSourceSizes = availableSizesForPrice.length ? availableSizesForPrice : sortedSizes;
+  // Розміри, яких зараз немає в наявності, на сторінці не показуємо взагалі —
+  // з'являться самі, коли розмір знову буде в наявності (sizeMap будується
+  // заново при кожному завантаженні сторінки з актуальних даних). Якщо в
+  // наявності взагалі немає жодного розміру — показуємо всі закреслені, щоб
+  // сторінка не лишалась зовсім без інформації про розмірний ряд.
+  const visibleSizes = availableSizesForPrice.length ? availableSizesForPrice : sortedSizes;
   const initialPrice = priceSourceSizes.length
     ? Math.min(...priceSourceSizes.map(sz => sizeMap[sz].price))
     : Number(product.price);
@@ -1251,7 +1257,7 @@ function renderProduct(product, sizeMap) {
         ${currentProductArticul ? `<div class="p-articul">Артикул: <b>${currentProductArticul}</b></div>` : ''}
         <div class="p-price" id="productPrice">${initialPrice.toLocaleString('uk-UA')} грн</div>
 
-        ${sortedSizes.length ? `
+        ${visibleSizes.length ? `
           <div class="size-section">
             <div class="size-title-row">
               <div class="size-title">Оберіть розмір (US)</div>
@@ -1263,7 +1269,7 @@ function renderProduct(product, sizeMap) {
               ` : ''}
             </div>
             <div class="size-grid">
-              ${sortedSizes.map(size => {
+              ${visibleSizes.map(size => {
                 const s = sizeMap[size];
                 const priceDiffers = Math.round(s.price) !== Math.round(initialPrice);
                 return `
