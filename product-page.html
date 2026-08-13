@@ -1158,6 +1158,20 @@ function firstWord(s) {
 // category_2 — напр. "Тапочки" в назві vs "Шльопанці та сандалі" в категорії).
 // Категорія та бренд вже показуються окремо на сторінці, артикул — окремим
 // рядком, тож для заголовка лишаємо тільки саму назву моделі.
+// Опис товару адміни часто структурують підписами на початку рядка перед
+// двокрапкою (напр. "Верх моделі: ...", "Підошва: ..."). Екрануємо HTML (щоб
+// випадкові < > у тексті опису не ламали розмітку) і виділяємо ці підписи
+// жирним — решту тексту лишаємо як є.
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+function formatDescriptionHtml(desc) {
+  return escapeHtml(desc).replace(/^([^\n:]{2,40}):(\s)/gm, '<strong>$1:</strong>$2');
+}
+
 function cleanModelName(product) {
   const original = String(product.name || product.title || '').trim();
   let n = original;
@@ -1353,7 +1367,7 @@ function renderProduct(product, sizeMap) {
     ${product.description ? `
       <div class="product-description">
         <h2 class="pd-title">Опис товару</h2>
-        <div class="pd-text">${product.description}</div>
+        <div class="pd-text">${formatDescriptionHtml(product.description)}</div>
       </div>
     ` : ''}
   `;
