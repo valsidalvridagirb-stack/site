@@ -97,6 +97,9 @@ gtag('config', 'G-Y0CS5VFCYH');
   .payment-cta { background:#eef6f0; border:1px solid #cfe8d6; border-radius:var(--radius); padding:20px; margin:20px 0; text-align:left; }
   .payment-cta .pc-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:#1f5c33; margin-bottom:6px; }
   .payment-cta .pc-amount { font-size:26px; font-weight:700; color:#1f5c33; margin-bottom:14px; }
+  .payment-cta .pc-mode-toggle { display:flex; gap:18px; margin-bottom:12px; font-size:13px; flex-wrap:wrap; }
+  .payment-cta .pc-mode-option { display:flex; align-items:center; gap:6px; cursor:pointer; color:#1f5c33; }
+  .payment-cta .pc-mode-option input { accent-color:#1f5c33; cursor:pointer; }
   .payment-cta .pc-btn-group { display:flex; flex-direction:column; gap:10px; }
   .payment-cta .pc-btn { display:block; width:100%; text-align:center; padding:14px; background:#1f5c33; color:#fff; border-radius:var(--radius); font-weight:600; text-transform:uppercase; font-size:14px; }
   .payment-cta .pc-btn:hover { opacity:0.9; }
@@ -539,6 +542,52 @@ function renderCart() {
   }
 }
 
+// Будує блок оплати на сторінці підтвердження замовлення. Клієнт сам обирає:
+// сплатити лише передоплату (щоб пришвидшити обробку) чи одразу повну суму
+// за товар. Кнопки банків незмінні (це ручний переказ) — змінюється лише
+// сума й текст підказки відповідно до обраного режиму.
+function buildPaymentBlock(prepayTotal, fullTotal, orderId) {
+  if (fullTotal <= 0) return '';
+
+  const hasPrepayOption = prepayTotal > 0 && prepayTotal < fullTotal;
+  const modeToggle = hasPrepayOption ? `
+    <div class="pc-mode-toggle">
+      <label class="pc-mode-option">
+        <input type="radio" name="payMode" value="prepay" checked onchange="updatePaymentMode('prepay', ${prepayTotal}, ${fullTotal}, ${orderId})">
+        <span>Передоплата</span>
+      </label>
+      <label class="pc-mode-option">
+        <input type="radio" name="payMode" value="full" onchange="updatePaymentMode('full', ${prepayTotal}, ${fullTotal}, ${orderId})">
+        <span>Повна оплата за товар</span>
+      </label>
+    </div>
+  ` : '';
+
+  const initialAmount = hasPrepayOption ? prepayTotal : fullTotal;
+  const initialLabel = hasPrepayOption ? 'передоплату' : 'повну суму за товар';
+
+  return `
+    <div class="payment-cta">
+      <div class="pc-title">Оплата</div>
+      ${modeToggle}
+      <div class="pc-amount" id="pcAmount">${initialAmount.toLocaleString()} грн</div>
+      <div class="pc-btn-group">
+        <a href="${PAYMENT_LINK_PRIVAT}" target="_blank" rel="noopener" class="pc-btn">Оплатити через Приват24</a>
+        <a href="${PAYMENT_LINK_MONO}" target="_blank" rel="noopener" class="pc-btn pc-btn-mono">Оплатити через Monobank</a>
+      </div>
+      <div class="pc-note" id="pcNote">Оберіть зручний банк і вкажіть суму ${initialAmount.toLocaleString()} грн (${initialLabel}) і номер замовлення №${orderId} у коментарі до переказу — це прискорить обробку.</div>
+    </div>
+  `;
+}
+
+function updatePaymentMode(mode, prepayTotal, fullTotal, orderId) {
+  const amount = mode === 'full' ? fullTotal : prepayTotal;
+  const label = mode === 'full' ? 'повну суму за товар' : 'передоплату';
+  document.getElementById('pcAmount').textContent = `${amount.toLocaleString()} грн`;
+  document.getElementById('pcNote').textContent =
+    `Оберіть зручний банк і вкажіть суму ${amount.toLocaleString()} грн (${label}) і номер замовлення №${orderId} у коментарі до переказу — це прискорить обробку.`;
+}
+
 function removeCartItem(index) {
   if (index < 0 || index >= cart.length) return;
   const removed = cart[index];
@@ -615,21 +664,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     `Замовлення №${order.id} прийнято в обробку.${currentUser ? '' : ' Запам\'ятайте номер замовлення — за ним можна перевірити статус.'}`;
 
   const paymentBlockEl = document.getElementById('confirmPaymentBlock');
-  if (lastPrepaymentTotal > 0) {
-    paymentBlockEl.innerHTML = `
-      <div class="payment-cta">
-        <div class="pc-title">Передоплата для швидшої обробки</div>
-        <div class="pc-amount">${lastPrepaymentTotal.toLocaleString()} грн</div>
-        <div class="pc-btn-group">
-          <a href="${PAYMENT_LINK_PRIVAT}" target="_blank" rel="noopener" class="pc-btn">Оплатити через Приват24</a>
-          <a href="${PAYMENT_LINK_MONO}" target="_blank" rel="noopener" class="pc-btn pc-btn-mono">Оплатити через Monobank</a>
-        </div>
-        <div class="pc-note">Оберіть зручний банк і вкажіть суму ${lastPrepaymentTotal.toLocaleString()} грн і номер замовлення №${order.id} у коментарі до переказу — це прискорить обробку.</div>
-      </div>
-    `;
-  } else {
-    paymentBlockEl.innerHTML = '';
-  }
+  paymentBlockEl.innerHTML = buildPaymentBlock(lastPrepaymentTotal, Number(order.total_price) || 0, order.id);
 
   document.getElementById('confirmContinueBtn').href = currentUser ? 'account.html' : `track-order.html?order=${order.id}`;
   confirmEl.style.display = 'block';
