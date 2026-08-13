@@ -65,6 +65,17 @@ gtag('config', 'G-Y0CS5VFCYH');
   
   .cart-item { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding:10px 0; }
   .cart-item:last-child { border-bottom:none; }
+  .cart-item-warehouse { display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--mute); background:var(--smoke); border-radius:10px; padding:2px 8px; margin-top:4px; }
+
+  /* ===== Попередження про товари з різних складів (окремі посилки) ===== */
+  .warehouse-warning {
+    display:flex; gap:10px; align-items:flex-start;
+    background:#fff8e8; border:1px solid #f0d999; border-left:4px solid #d9a441;
+    border-radius:var(--radius); padding:12px 14px; margin-bottom:16px;
+    font-size:13px; line-height:1.5; color:#6b4e14;
+  }
+  .warehouse-warning svg { flex-shrink:0; width:18px; height:18px; margin-top:1px; color:#d9a441; }
+  .warehouse-warning b { font-weight:700; }
   
   .btn-submit { width:100%; padding:16px; background:var(--ink); color:#fff; font-weight:500; border:none; border-radius:var(--radius); cursor:pointer; text-transform:uppercase; font-size:14px; margin-top:20px; }
   .btn-submit:hover { opacity:0.9; }
@@ -254,6 +265,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
     <!-- Состав заказа -->
     <div class="summary-section">
       <h2>Ваше замовлення</h2>
+      <div id="warehouseWarning"></div>
       <div id="cartList"></div>
       <div style="border-top:2px solid var(--ink); margin-top:16px; padding-top:16px; display:flex; justify-content:space-between; font-weight:500; font-size:18px;">
         <span>Разом:</span>
@@ -363,6 +375,21 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let currentUser = null;
 
+// Товари різних постачальників фізично лежать на різних складах (у різних
+// містах) і відправляються окремими накладними Новою Поштою — навіть в
+// межах одного замовлення. Мітки знеособлені ("Склад N"), самі назви
+// постачальників покупцю не показуємо. Позиції зі старого кошика (додані
+// до цього оновлення) можуть не мати supplier — для них мітку просто не
+// показуємо і в підрахунок попередження їх не враховуємо.
+const WAREHOUSE_BY_SUPPLIER = {
+  'dropyesoriginal': 1,
+  'ultrasport': 2,
+  'ideasport': 3,
+  '7dreamsport': 4,
+  'tcross': 5,
+  'olxandery': 6
+};
+
 async function initCheckout() {
   // Заполняем корзину
   renderCart();
@@ -388,20 +415,26 @@ async function initCheckout() {
 
 function renderCart() {
   const container = document.getElementById('cartList');
+  const warningEl = document.getElementById('warehouseWarning');
   if (cart.length === 0) {
     container.innerHTML = '<p style="color:var(--mute);">Кошик порожній</p>';
     document.getElementById('totalPrice').textContent = '0 грн';
+    warningEl.innerHTML = '';
     return;
   }
 
   let total = 0;
+  const warehouseNumbers = new Set();
   container.innerHTML = cart.map((item, index) => {
     total += Number(item.price) * (item.quantity || 1);
+    const wh = WAREHOUSE_BY_SUPPLIER[String(item.supplier || '').trim().toLowerCase()];
+    if (wh) warehouseNumbers.add(wh);
     return `
       <div class="cart-item">
         <div>
           <div style="font-weight:700; font-size:14px;">${item.name}</div>
           <div style="font-size:12px; color:var(--mute);">Розмір: ${item.size}</div>
+          ${wh ? `<div class="cart-item-warehouse">Склад ${wh}</div>` : ''}
         </div>
         <div style="font-weight:700;">${Number(item.price).toLocaleString()} грн</div>
       </div>
@@ -409,6 +442,17 @@ function renderCart() {
   }).join('');
 
   document.getElementById('totalPrice').textContent = `${total.toLocaleString()} грн`;
+
+  if (warehouseNumbers.size > 1) {
+    warningEl.innerHTML = `
+      <div class="warehouse-warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        <div><b>Товари поїдуть окремими посилками.</b> У вашому замовленні є позиції з різних складів (${warehouseNumbers.size}) — Нова Пошта відправить їх різними накладними, можливо в різні дні.</div>
+      </div>
+    `;
+  } else {
+    warningEl.innerHTML = '';
+  }
 }
 
 document.getElementById('checkoutForm').addEventListener('submit', async (e) => {

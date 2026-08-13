@@ -861,6 +861,7 @@ let currentProductLabel = '';
 let currentProductArticul = '';
 let currentSizeMap = null;
 let currentProductId = null;
+let currentProductSupplier = '';
 
 async function fetchProduct() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -1205,6 +1206,7 @@ function renderProduct(product, sizeMap) {
   currentProductArticul = String(product.articul || '').trim();
   currentSizeMap = sizeMap;
   currentProductId = product.id;
+  currentProductSupplier = String(product.supplier || '').trim();
 
   recordRecentlyViewed({
     id: product.id,
@@ -1615,7 +1617,8 @@ function addToCart() {
     articul: currentProductArticul,
     size: selectedSize,
     price: currentPrice,
-    quantity: 1
+    quantity: 1,
+    supplier: currentProductSupplier
   };
   cart.push(newItem);
 

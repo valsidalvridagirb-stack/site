@@ -1457,6 +1457,7 @@ let qvSelectedSize = null;
 let qvCurrentPrice = 0;
 let qvCurrentArticul = null;
 let qvCurrentLabel = '';
+let qvCurrentSupplier = '';
 
 async function openQuickView(articul) {
   if (!articul) return;
@@ -1513,6 +1514,7 @@ async function openQuickView(articul) {
     const initialPrice = priceSourceSizes.length ? Math.min(...priceSourceSizes.map(sz => sizeMap[sz].price)) : Number(baseProduct.price);
     qvCurrentPrice = initialPrice;
     qvCurrentLabel = [baseProduct.brand, baseProduct.name].filter(Boolean).join(' ') || baseProduct.name || '';
+    qvCurrentSupplier = String(baseProduct.supplier || '').trim();
 
     body.innerHTML = `
       <div>
@@ -1575,7 +1577,8 @@ function qvAddToCart() {
     articul: qvCurrentArticul,
     size: qvSelectedSize,
     price: qvCurrentPrice,
-    quantity: 1
+    quantity: 1,
+    supplier: qvCurrentSupplier
   });
   localStorage.setItem('cart', JSON.stringify(cart));
 
