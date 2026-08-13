@@ -202,6 +202,15 @@
         <input type="text" id="nameInput" class="name-input" placeholder="напр. Кросівки Nike Metcon 10">
         <div class="desc-hint">Для нових товарів підставляється автоматично у форматі «БРЕНД МОДЕЛЬ» (без категорії, артикулу та зайвих літер M/W з прайсу постачальника) — можна відредагувати, зміна збережеться і не перезапишеться автоматично при наступних синхронізаціях. <span class="desc-reset" id="nameResetBtn">Повернути автоматичну назву</span></div>
       </div>
+      <div id="genderOverrideWrap" style="display:none; margin-top:16px;">
+        <label class="name-input-label" for="genderOverrideSelect">Стать / категорія товару</label>
+        <select id="genderOverrideSelect" class="name-input">
+          <option value="Чоловіки">Чоловіки</option>
+          <option value="Жінки">Жінки</option>
+          <option value="Унісекс">Унісекс</option>
+        </select>
+        <div class="desc-hint">Постачальник часто помиляється зі статтю товару (напр. жіночі кросівки позначені як "Чоловічі"). Тут можна вручну виправити — це змінить і фільтр Чоловіче/Жіноче на сайті, і категорію "Взуття/Кросівки/Чоловічі" ↔ "…/Жіночі". Виправлення збережеться і не перезапишеться автоматично при наступних синхронізаціях цін/залишків.</div>
+      </div>
       <div id="sizeChartGenderWrap" style="display:none; margin-top:16px;">
         <label class="name-input-label" for="sizeChartGenderSelect">Розмірна сітка на сторінці товару</label>
         <select id="sizeChartGenderSelect" class="name-input">
@@ -453,6 +462,10 @@ function buildDisplayName(rawName, brand, cat2, articul) {
 }
 
 const GENDER_PHRASE = { 'Чоловіки':'чоловіків', 'Жінки':'жінок', 'Унісекс':'чоловіків та жінок' };
+// category_3 — той самий "гендерний" ярлик, що керує пунктами "…/Чоловічі" /
+// "…/Жіночі" у навігації каталогу (див. normalize_category() у локальному
+// update.py) — завжди похідний від gender, тому обидва поля виправляємо разом.
+const GENDER_TO_CAT3 = { 'Чоловіки':'Чоловічі', 'Жінки':'Жіночі', 'Унісекс':'Унісекс' };
 function buildDescription(name, brand, cat1, gender) {
   const gp = GENDER_PHRASE[gender] || null;
   if (cat1 === 'Одяг') {
@@ -594,6 +607,7 @@ async function doSearch() {
   if (!currentMatches.length && !existingRows.length) {
     info.innerHTML = `<span class="pill" style="background:var(--errbg); color:var(--err);">Не знайдено в Excel-каталозі</span>`;
     document.getElementById('nameEditWrap').style.display = 'none';
+    document.getElementById('genderOverrideWrap').style.display = 'none';
     document.getElementById('photoCard').style.display = 'none';
     document.getElementById('descCard').style.display = 'none';
     document.getElementById('publishCard').style.display = 'none';
@@ -629,6 +643,13 @@ async function doSearch() {
   nameInput.value = (existingRows.length && existingRows[0].name) ? existingRows[0].name : autoName;
   nameInput.dataset.auto = autoName;
   document.getElementById('nameEditWrap').style.display = 'block';
+
+  // Стать/категорія (виправляє помилки постачальника типу "жіночі кросівки
+  // позначені як чоловічі") — доступно завжди, для взуття й одягу однаково.
+  const currentGender = (existingRows.length ? existingRows[0].gender : first.gender) || '';
+  const genderOverrideSelect = document.getElementById('genderOverrideSelect');
+  genderOverrideSelect.value = GENDER_TO_CAT3[currentGender] ? currentGender : 'Унісекс';
+  document.getElementById('genderOverrideWrap').style.display = 'block';
 
   // Ручне перевизначення розмірної сітки має сенс лише для взуття (одяг
   // на сайті завжди показує ту саму сітку, незалежно від статі) — тому
@@ -856,21 +877,24 @@ async function publish() {
     const sizeChartGenderSelect = document.getElementById('sizeChartGenderSelect');
     const sizeChartGenderWrap = document.getElementById('sizeChartGenderWrap');
     const sizeChartGender = sizeChartGenderWrap.style.display !== 'none' ? (sizeChartGenderSelect.value || null) : null;
+    const genderOverride = document.getElementById('genderOverrideSelect').value;
+    const cat3Override = GENDER_TO_CAT3[genderOverride] || genderOverride;
     let rowsCount;
 
     if (editOnlyMode) {
-      // товару немає в актуальному Excel-каталозі — оновлюємо лише назву, опис
-      // і фото, ціну/кількість/розміри в базі не чіпаємо
+      // товару немає в актуальному Excel-каталозі — оновлюємо лише назву, опис,
+      // фото і стать/категорію; ціну/кількість/розміри в базі не чіпаємо
       const description = descInput.value.trim() || existingRows[0]?.description || '';
       const name = nameInput.value.trim() || existingRows[0]?.name || '';
       const { error: updErr } = await supabaseClient.from('products')
-        .update({ name, description, photos: finalPhotos, size_chart_gender: sizeChartGender })
+        .update({ name, description, photos: finalPhotos, size_chart_gender: sizeChartGender,
+                  gender: genderOverride, category_3: cat3Override })
         .eq('articul', currentArticul);
       if (updErr) throw new Error('Не вдалось зберегти товар: ' + updErr.message);
       rowsCount = existingRows.length;
     } else {
       const first = currentMatches[0];
-      const description = descInput.value.trim() || buildDescription(first.name, first.brand, first.cat1, first.gender);
+      const description = descInput.value.trim() || buildDescription(first.name, first.brand, first.cat1, genderOverride);
       const name = nameInput.value.trim() || nameInput.dataset.auto || first.name;
 
       const matchesToPublish = currentMatches.filter(m => !excludedSizes.has(String(m.size)));
@@ -885,10 +909,10 @@ async function publish() {
         price: m.price,
         quantity: m.qty,
         brand: m.brand,
-        gender: m.gender,
+        gender: genderOverride,
         category_1: m.cat1,
         category_2: m.cat2,
-        category_3: m.cat3,
+        category_3: cat3Override,
         size_chart_gender: sizeChartGender,
         description,
         photos: finalPhotos,
