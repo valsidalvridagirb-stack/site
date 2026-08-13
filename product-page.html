@@ -864,6 +864,11 @@ const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Лічильник "Обране" в шапці — раніше тут завжди був хардкод "0", бо ніхто
+// не читав localStorage на цій сторінці.
+document.getElementById('wishCount').textContent =
+  (JSON.parse(localStorage.getItem('wishlist') || '[]')).length;
+
 let selectedSize = null;
 let currentPrice = null;
 let currentProductLabel = '';

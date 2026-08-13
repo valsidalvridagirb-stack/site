@@ -705,7 +705,7 @@ async function loadWishlist(){
   const { data, error } = await supabaseClient
     .from('product_summary')
     .select('id, articul, name, brand, price, photos')
-    .in('id', ids);
+    .in('articul', ids);
 
   if (error){
     console.error(error);
@@ -713,8 +713,23 @@ async function loadWishlist(){
     return;
   }
 
+  // Самовідновлення: товар міг розпродатись (зник з product_summary) або
+  // бути повністю знятий з продажу — прибираємо такі "мертві" записи з
+  // обраного автоматично, щоб лічильник у шапці більше не показував
+  // застаріле число, яке ніколи не зменшувалось само.
+  const foundArticuls = new Set((data || []).map(p => String(p.articul)));
+  const staleIds = ids.filter(id => !foundArticuls.has(String(id)));
+  if (staleIds.length){
+    staleIds.forEach(id => wishlist.delete(id));
+    localStorage.setItem('wishlist', JSON.stringify(Array.from(wishlist)));
+    updateWishBadge();
+  }
+
   if (!data || data.length === 0){
-    grid.innerHTML = `<p class="empty-state">Товари з обраного більше не доступні.</p>`;
+    grid.innerHTML = `<p class="empty-state">
+      Ваш список обраного порожній.<br><br>
+      <a href="catalog.html" style="text-decoration:underline;font-weight:600;">Перейти в каталог →</a>
+    </p>`;
     countEl.textContent = 'Обрано: 0 товарів';
     return;
   }
@@ -736,7 +751,7 @@ async function loadWishlist(){
     card.className = 'product-card';
     card.innerHTML = `
       <div class="product-media">
-        <button class="wish-btn active" data-id="${p.id}" aria-label="Прибрати з обраного">
+        <button class="wish-btn active" data-id="${p.articul}" aria-label="Прибрати з обраного">
           <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-10-9.3C0.3 8.1 2 4.5 5.7 4c2-.3 3.7.7 6.3 3 2.6-2.3 4.3-3.3 6.3-3 3.7.5 5.4 4.1 3.7 7.7C19.5 16.1 12 21 12 21z"/></svg>
         </button>
         ${photo ? `<img src="${photo}" alt="${p.name}" loading="lazy">` : placeholderSVG()}
