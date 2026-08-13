@@ -66,6 +66,9 @@ gtag('config', 'G-Y0CS5VFCYH');
   .cart-item { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding:10px 0; }
   .cart-item:last-child { border-bottom:none; }
   .cart-item-warehouse { display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--mute); background:var(--smoke); border-radius:10px; padding:2px 8px; margin-top:4px; }
+  .cart-item-remove { display:flex; align-items:center; justify-content:center; width:26px; height:26px; padding:0; border:none; background:none; color:var(--mute); cursor:pointer; border-radius:50%; flex-shrink:0; }
+  .cart-item-remove svg { width:15px; height:15px; }
+  .cart-item-remove:hover { background:var(--smoke); color:var(--accent, #c0392b); }
 
   /* ===== Попередження про товари з різних складів (окремі посилки) ===== */
   .warehouse-warning {
@@ -488,7 +491,12 @@ function renderCart() {
           <div style="font-size:12px; color:var(--mute);">Розмір: ${item.size}</div>
           ${wh ? `<div class="cart-item-warehouse">Склад ${wh}</div>` : ''}
         </div>
-        <div style="font-weight:700;">${Number(item.price).toLocaleString()} грн</div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="font-weight:700;">${Number(item.price).toLocaleString()} грн</div>
+          <button type="button" class="cart-item-remove" onclick="removeCartItem(${index})" title="Прибрати з кошика" aria-label="Прибрати з кошика">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
       </div>
     `;
   }).join('');
@@ -525,6 +533,15 @@ function renderCart() {
   } else {
     prepaymentEl.innerHTML = '';
   }
+}
+
+function removeCartItem(index) {
+  if (index < 0 || index >= cart.length) return;
+  const removed = cart[index];
+  cart.splice(index, 1);
+  localStorage.setItem('cart', JSON.stringify(cart));
+  renderCart();
+  showToast(`«${removed.name}» видалено з кошика`, 'success');
 }
 
 document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
