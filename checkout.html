@@ -76,7 +76,16 @@ gtag('config', 'G-Y0CS5VFCYH');
   }
   .warehouse-warning svg { flex-shrink:0; width:18px; height:18px; margin-top:1px; color:#d9a441; }
   .warehouse-warning b { font-weight:700; }
-  
+
+  /* ===== Сума передоплати (по складах) ===== */
+  .prepayment-info {
+    background:#eef6f0; border:1px solid #cfe8d6; border-radius:var(--radius);
+    padding:10px 14px; margin-top:12px; font-size:13.5px; color:#1f5c33;
+  }
+  .prepayment-info .pp-row { display:flex; justify-content:space-between; align-items:center; }
+  .prepayment-info b { font-weight:700; }
+  .prepayment-info .pp-note { font-size:11px; color:#4a7a5a; margin-top:4px; line-height:1.4; }
+
   .btn-submit { width:100%; padding:16px; background:var(--ink); color:#fff; font-weight:500; border:none; border-radius:var(--radius); cursor:pointer; text-transform:uppercase; font-size:14px; margin-top:20px; }
   .btn-submit:hover { opacity:0.9; }
 
@@ -271,6 +280,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
         <span>Разом:</span>
         <span id="totalPrice">0 грн</span>
       </div>
+      <div id="prepaymentInfo"></div>
     </div>
 
   </div>
@@ -390,6 +400,18 @@ const WAREHOUSE_BY_SUPPLIER = {
   'olxandery': 6
 };
 
+// Передоплата за кожен склад окрема (кожен склад = окреме замовлення у
+// постачальника, окрема посилка) — якщо в кошику товари з кількох складів,
+// передоплата сумується по кожному залученому складу.
+const PREPAYMENT_BY_WAREHOUSE = {
+  1: 150,
+  2: 200,
+  3: 150,
+  4: 150,
+  5: 200,
+  6: 150
+};
+
 async function initCheckout() {
   // Заполняем корзину
   renderCart();
@@ -416,10 +438,12 @@ async function initCheckout() {
 function renderCart() {
   const container = document.getElementById('cartList');
   const warningEl = document.getElementById('warehouseWarning');
+  const prepaymentEl = document.getElementById('prepaymentInfo');
   if (cart.length === 0) {
     container.innerHTML = '<p style="color:var(--mute);">Кошик порожній</p>';
     document.getElementById('totalPrice').textContent = '0 грн';
     warningEl.innerHTML = '';
+    prepaymentEl.innerHTML = '';
     return;
   }
 
@@ -452,6 +476,25 @@ function renderCart() {
     `;
   } else {
     warningEl.innerHTML = '';
+  }
+
+  const sortedWarehouses = [...warehouseNumbers].sort((a, b) => a - b);
+  const prepaymentTotal = sortedWarehouses.reduce((sum, wh) => sum + (PREPAYMENT_BY_WAREHOUSE[wh] || 0), 0);
+  if (prepaymentTotal > 0) {
+    const breakdown = sortedWarehouses.length > 1
+      ? `<div class="pp-note">Склад ${sortedWarehouses.map(wh => `${wh} — ${(PREPAYMENT_BY_WAREHOUSE[wh] || 0).toLocaleString()} грн`).join(' + Склад ')}</div>`
+      : '';
+    prepaymentEl.innerHTML = `
+      <div class="prepayment-info">
+        <div class="pp-row">
+          <span>Передоплата на Нову пошту:</span>
+          <b>${prepaymentTotal.toLocaleString()} грн</b>
+        </div>
+        ${breakdown}
+      </div>
+    `;
+  } else {
+    prepaymentEl.innerHTML = '';
   }
 }
 
