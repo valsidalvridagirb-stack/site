@@ -86,6 +86,20 @@ gtag('config', 'G-Y0CS5VFCYH');
   .prepayment-info b { font-weight:700; }
   .prepayment-info .pp-note { font-size:11px; color:#4a7a5a; margin-top:4px; line-height:1.4; }
 
+  /* ===== Підтвердження замовлення + оплата передоплати ===== */
+  .order-confirmation { max-width:560px; margin:0 auto; text-align:center; border:1px solid var(--line); border-radius:var(--radius); padding:40px 32px; }
+  .order-confirmation .confirm-icon { width:52px; height:52px; margin:0 auto 16px; color:#2f8f4e; }
+  .order-confirmation h2 { margin-bottom:12px; }
+  .order-confirmation p { color:var(--mute); font-size:14px; line-height:1.6; }
+  .payment-cta { background:#eef6f0; border:1px solid #cfe8d6; border-radius:var(--radius); padding:20px; margin:20px 0; text-align:left; }
+  .payment-cta .pc-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:#1f5c33; margin-bottom:6px; }
+  .payment-cta .pc-amount { font-size:26px; font-weight:700; color:#1f5c33; margin-bottom:14px; }
+  .payment-cta .pc-btn { display:block; width:100%; text-align:center; padding:14px; background:#1f5c33; color:#fff; border-radius:var(--radius); font-weight:600; text-transform:uppercase; font-size:14px; }
+  .payment-cta .pc-btn:hover { opacity:0.9; }
+  .payment-cta .pc-note { font-size:11.5px; color:#4a7a5a; margin-top:10px; line-height:1.5; }
+  .confirm-continue-btn { display:inline-block; margin-top:8px; padding:14px 28px; background:var(--ink); color:#fff; font-weight:500; border-radius:var(--radius); text-transform:uppercase; font-size:13px; }
+  .confirm-continue-btn:hover { opacity:0.9; }
+
   .btn-submit { width:100%; padding:16px; background:var(--ink); color:#fff; font-weight:500; border:none; border-radius:var(--radius); cursor:pointer; text-transform:uppercase; font-size:14px; margin-top:20px; }
   .btn-submit:hover { opacity:0.9; }
 
@@ -284,6 +298,15 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
     </div>
 
   </div>
+
+  <div id="orderConfirmation" class="order-confirmation" style="display:none;">
+    <svg class="confirm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
+    <h2>Замовлення оформлено!</h2>
+    <p id="confirmOrderNumber"></p>
+    <div id="confirmPaymentBlock"></div>
+    <a href="#" id="confirmContinueBtn" class="confirm-continue-btn">Переглянути статус замовлення</a>
+  </div>
+
 </main>
 
 <footer class="site-footer">
@@ -384,6 +407,10 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let currentUser = null;
+let lastPrepaymentTotal = 0;
+
+// Посилання на переказ (Privat24) для оплати передоплати після оформлення замовлення.
+const PAYMENT_LINK = 'https://www.privat24.ua/send/4p6ba';
 
 // Товари різних постачальників фізично лежать на різних складах (у різних
 // містах) і відправляються окремими накладними Новою Поштою — навіть в
@@ -444,6 +471,7 @@ function renderCart() {
     document.getElementById('totalPrice').textContent = '0 грн';
     warningEl.innerHTML = '';
     prepaymentEl.innerHTML = '';
+    lastPrepaymentTotal = 0;
     return;
   }
 
@@ -480,6 +508,7 @@ function renderCart() {
 
   const sortedWarehouses = [...warehouseNumbers].sort((a, b) => a - b);
   const prepaymentTotal = sortedWarehouses.reduce((sum, wh) => sum + (PREPAYMENT_BY_WAREHOUSE[wh] || 0), 0);
+  lastPrepaymentTotal = prepaymentTotal;
   if (prepaymentTotal > 0) {
     const breakdown = sortedWarehouses.length > 1
       ? `<div class="pp-note">Склад ${sortedWarehouses.map(wh => `${wh} — ${(PREPAYMENT_BY_WAREHOUSE[wh] || 0).toLocaleString()} грн`).join(' + Склад ')}</div>`
@@ -556,9 +585,31 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     })
   }).catch(() => {});
 
-  setTimeout(() => {
-    window.location.href = currentUser ? 'account.html' : `track-order.html?order=${order.id}`;
-  }, 1800);
+  // Показуємо підтвердження замовлення на цій же сторінці (замість миттєвого
+  // редіректу) — щоб клієнт встиг побачити суму передоплати і оплатити її
+  // за посиланням, не поспішаючи.
+  document.querySelector('.checkout-grid').style.display = 'none';
+  const confirmEl = document.getElementById('orderConfirmation');
+  document.getElementById('confirmOrderNumber').textContent =
+    `Замовлення №${order.id} прийнято в обробку.${currentUser ? '' : ' Запам\'ятайте номер замовлення — за ним можна перевірити статус.'}`;
+
+  const paymentBlockEl = document.getElementById('confirmPaymentBlock');
+  if (lastPrepaymentTotal > 0) {
+    paymentBlockEl.innerHTML = `
+      <div class="payment-cta">
+        <div class="pc-title">Передоплата для швидшої обробки</div>
+        <div class="pc-amount">${lastPrepaymentTotal.toLocaleString()} грн</div>
+        <a href="${PAYMENT_LINK}" target="_blank" rel="noopener" class="pc-btn">Оплатити передоплату</a>
+        <div class="pc-note">Після переходу за посиланням вкажіть суму ${lastPrepaymentTotal.toLocaleString()} грн і номер замовлення №${order.id} у коментарі до переказу — це прискорить обробку.</div>
+      </div>
+    `;
+  } else {
+    paymentBlockEl.innerHTML = '';
+  }
+
+  document.getElementById('confirmContinueBtn').href = currentUser ? 'account.html' : `track-order.html?order=${order.id}`;
+  confirmEl.style.display = 'block';
+  confirmEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
 initCheckout();
