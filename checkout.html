@@ -413,7 +413,26 @@ const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+// «Купити зараз» з картки товару відкриває checkout.html?buynow=1 з одним
+// товаром у localStorage['buyNowItem'] — оформлюємо лише його, не чіпаючи
+// справжній кошик (localStorage['cart']), щоб інші товари в кошику не
+// загубились/не оформились разом із «швидкою» покупкою.
+let isBuyNowMode = new URLSearchParams(window.location.search).get('buynow') === '1';
+let cart;
+if (isBuyNowMode) {
+  const buyNowItem = JSON.parse(localStorage.getItem('buyNowItem') || 'null');
+  localStorage.removeItem('buyNowItem');
+  if (buyNowItem) {
+    cart = [buyNowItem];
+  } else {
+    // Прямий заход на ?buynow=1 без збереженого товару (наприклад, оновлення
+    // сторінки) — це вже не «швидка покупка», працюємо зі звичайним кошиком.
+    isBuyNowMode = false;
+    cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  }
+} else {
+  cart = JSON.parse(localStorage.getItem('cart') || '[]');
+}
 let currentUser = null;
 let lastPrepaymentTotal = 0;
 
@@ -592,7 +611,11 @@ function removeCartItem(index) {
   if (index < 0 || index >= cart.length) return;
   const removed = cart[index];
   cart.splice(index, 1);
-  localStorage.setItem('cart', JSON.stringify(cart));
+  // У режимі «Купити зараз» кошик (cart) — тимчасовий, окремий від
+  // localStorage['cart'], тож справжній кошик клієнта чіпати не можна.
+  if (!isBuyNowMode) {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }
   renderCart();
   showToast(`«${removed.name}» видалено з кошика`, 'success');
 }
@@ -638,7 +661,12 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
 
   showToast(`Дякуємо! Замовлення №${order.id} успішно оформлено.${currentUser ? '' : ' Запам\'ятайте номер замовлення — за ним можна перевірити статус.'}`, 'success');
   trackPurchase(order.id, rpcItems, order.total_price);
-  localStorage.removeItem('cart');
+  // У режимі «Купити зараз» справжній кошик (localStorage['cart']) у це
+  // замовлення не входив — очищати його тут не можна, інакше зникнуть
+  // товари, які клієнт додав туди окремо.
+  if (!isBuyNowMode) {
+    localStorage.removeItem('cart');
+  }
 
   // Сповіщення адміну в Telegram — не блокує оформлення, якщо не спрацює
   fetch('/api/notify-order', {

@@ -417,6 +417,15 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .add-btn:hover{opacity:0.9;}
 .add-btn:active{transform:scale(.98);}
 
+.buy-now-btn{
+  width:100%;padding:18px;background:var(--paper);color:var(--ink);
+  font-weight:500;font-size:16px;text-transform:uppercase;letter-spacing:1px;
+  border:2px solid var(--ink);border-radius:12px;cursor:pointer;margin-top:10px;
+  transition:opacity .2s ease,transform .15s ease;
+}
+.buy-now-btn:hover{opacity:0.7;}
+.buy-now-btn:active{transform:scale(.98);}
+
 .reviews-link{
   display:flex;align-items:center;justify-content:center;gap:8px;
   margin-top:12px;padding:12px;
@@ -1312,6 +1321,7 @@ function renderProduct(product, sizeMap) {
         ` : ''}
 
         <button class="add-btn" onclick="addToCart()">Додати в кошик</button>
+        <button class="buy-now-btn" onclick="buyNow()">Купити зараз</button>
 
         <a href="https://www.instagram.com/s/aGlnaGxpZ2h0OjE3OTAwODMwMjExNTc0MTI1?story_media_id=3025144205089761620_54154252528&amp;igsh=MWNvbTV5b3VkNDBlOA==" target="_blank" rel="noopener" class="reviews-link">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
@@ -1630,6 +1640,28 @@ function addToCart() {
   if (confirm('Товар додано в кошик! Перейти до оформления замовлення?')) {
     window.location.href = 'checkout.html';
   }
+}
+
+// «Купити зараз» — миттєвий перехід до оформлення лише цього товару, без
+// впливу на вміст звичайного кошика (щоб не змішувати з тим, що там вже є).
+function buyNow() {
+  if (!selectedSize) {
+    showToast('Будь ласка, оберіть розмір перед покупкою!', 'error');
+    return;
+  }
+
+  const item = {
+    name: currentProductLabel || document.querySelector('.p-title').textContent,
+    articul: currentProductArticul,
+    size: selectedSize,
+    price: currentPrice,
+    quantity: 1,
+    supplier: currentProductSupplier
+  };
+
+  localStorage.setItem('buyNowItem', JSON.stringify(item));
+  trackAddToCart(item);
+  window.location.href = 'checkout.html?buynow=1';
 }
 
 let lightboxPhotos = [];
