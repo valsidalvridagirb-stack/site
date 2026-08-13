@@ -70,6 +70,13 @@ gtag('config', 'G-Y0CS5VFCYH');
   .brand-btn.active { background:var(--ink); color:#fff; border-color:var(--ink); }
   .brand-btn:hover:not(.active) { border-color:var(--ink); color:var(--ink); }
 
+  /* Швидкий перемикач Чоловіче/Жіноче/Унісекс/Підліткове в межах бренду —
+     щоб не гортати колесиком у пошуках потрібної таблиці. */
+  .gender-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px; }
+  .gender-tab-btn { padding:8px 18px; border:1px solid var(--line); border-radius:16px; background:var(--paper); font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; cursor:pointer; color:var(--mute); transition:.15s; }
+  .gender-tab-btn.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .gender-tab-btn:hover:not(.active) { border-color:var(--ink); color:var(--ink); }
+
   .chart-section { margin-bottom:36px; }
   .chart-section h2 { font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:4px; }
   .chart-note { font-size:12.5px; color:var(--mute); margin-bottom:14px; line-height:1.5; }
@@ -515,6 +522,47 @@ fillTable('sauconyWomenTable', SAUCONY_WOMEN);
 fillTable('nikeClothesWomenTable', NIKE_CLOTHES_WOMEN);
 fillTable('nikeClothesMenTable', NIKE_CLOTHES_MEN);
 
+// ---------- швидкий перемикач Чоловіче/Жіноче/Унісекс/Підліткове в межах
+// бренду (і в межах вкладки "Одяг") — щоб не гортати колесиком у пошуках
+// потрібної таблиці. Підписи визначаються автоматично з тексту <h2> кожної
+// .chart-section — нових брендів/сіток не треба окремо реєструвати тут.
+const GENDER_TAB_KEYWORDS = [
+  { key: 'чоловіч', label: 'Чоловіче' },
+  { key: 'жіноч',   label: 'Жіноче' },
+  { key: 'унісекс', label: 'Унісекс' },
+  { key: 'підлітк', label: 'Підліткове' }
+];
+function labelForHeading(text) {
+  const t = String(text || '').toLowerCase();
+  const found = GENDER_TAB_KEYWORDS.find(g => t.includes(g.key));
+  return found ? found.label : null;
+}
+function setupGenderTabs(containerEl) {
+  if (!containerEl) return;
+  const sections = [...containerEl.querySelectorAll(':scope > .chart-section')];
+  if (sections.length < 2) return;
+  const labels = sections.map(s => labelForHeading(s.querySelector('h2')?.textContent));
+  if (labels.some(l => !l)) return; // якщо якийсь заголовок не розпізнано — краще показати все, ніж випадково сховати таблицю
+  const row = document.createElement('div');
+  row.className = 'gender-tabs';
+  labels.forEach((label, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'gender-tab-btn' + (i === 0 ? ' active' : '');
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      row.querySelectorAll('.gender-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      sections.forEach((s, j) => { s.style.display = (j === i) ? '' : 'none'; });
+    });
+    row.appendChild(btn);
+  });
+  containerEl.insertBefore(row, sections[0]);
+  sections.forEach((s, j) => { s.style.display = (j === 0) ? '' : 'none'; });
+}
+['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony'].forEach(id => setupGenderTabs(document.getElementById('brand-' + id)));
+setupGenderTabs(document.getElementById('tab-clothes'));
+
 // ---------- перемикання вкладок (Взуття / Одяг) ----------
 function selectTab(tabId) {
   const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
@@ -577,6 +625,16 @@ document.querySelectorAll('.brand-btn').forEach(btn => {
         });
       if (!heading) return;
       const section = heading.closest('.chart-section');
+      // якщо секції бренду/вкладки приховані перемикачем Чоловіче/Жіноче/…
+      // (setupGenderTabs) — спершу перемикаємось на потрібну, інакше
+      // scrollIntoView прокрутить до прихованого (display:none) блока.
+      const genderTabsRow = section.parentElement.querySelector(':scope > .gender-tabs');
+      if (genderTabsRow) {
+        const sections = [...section.parentElement.querySelectorAll(':scope > .chart-section')];
+        const idx = sections.indexOf(section);
+        const tabBtn = genderTabsRow.children[idx];
+        if (tabBtn) tabBtn.click();
+      }
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
       section.style.transition = 'box-shadow .3s';
       section.style.boxShadow = '0 0 0 3px var(--ink)';
