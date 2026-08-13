@@ -141,8 +141,14 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .site-search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--ink);}
 .site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
 
-.product-page{max-width:1320px;margin:40px auto;padding:0 24px;flex:1;}
-.product-layout{display:grid;grid-template-columns:3fr 2fr;gap:40px;align-items:start;}
+.product-page{max-width:1200px;margin:40px auto;padding:0 24px;flex:1;}
+.product-layout{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;}
+/* Квадратні/горизонтальні фото (is-square, див. fitMainImage) показуються
+   без обрізки (object-fit:contain) і тому виглядають дрібніше в стандартній
+   колонці 1:1 — для них розширюємо ліву колонку під фото. Вертикальні фото
+   (звичайний crop 4:5) лишаються в вихідних пропорціях 1fr 1fr. */
+.product-page:has(.main-image-wrap.is-square){max-width:1320px;}
+.product-layout:has(.main-image-wrap.is-square){grid-template-columns:3fr 2fr;gap:40px;}
 .product-layout > *{min-width:0;}
 
 /* Gallery */
