@@ -442,6 +442,15 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .reviews-link:hover{border-color:var(--ink);opacity:.75;}
 .reviews-link svg{width:17px;height:17px;flex-shrink:0;}
 
+/* Опис товару — раніше лежав у вузькій правій колонці й через це виглядав
+   надто довгим (багато переносів рядків). Тепер окремим блоком на всю
+   ширину сторінки, під фото й деталями. */
+.product-description{
+  margin-top:56px;padding-top:36px;border-top:1px solid var(--line);
+}
+.pd-title{font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:16px;}
+.pd-text{font-size:14px;line-height:1.75;color:var(--mute);white-space:pre-line;}
+
 /* Footer */
 footer.site-footer {
   background-color: var(--ink);
@@ -1338,14 +1347,15 @@ function renderProduct(product, sizeMap) {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
           Відгуки клієнтів в Instagram
         </a>
-
-        ${product.description ? `
-          <div style="margin-top:24px;line-height:1.6;color:var(--mute);white-space:pre-line;">
-            <strong style="color:var(--ink);">ОПИС</strong><br>${product.description}
-          </div>
-        ` : ''}
       </div>
     </div>
+
+    ${product.description ? `
+      <div class="product-description">
+        <h2 class="pd-title">Опис товару</h2>
+        <div class="pd-text">${product.description}</div>
+      </div>
+    ` : ''}
   `;
 
   document.getElementById('lightboxThumbs').innerHTML = photos.map((ph, idx) => `
