@@ -97,8 +97,10 @@ gtag('config', 'G-Y0CS5VFCYH');
   .payment-cta { background:#eef6f0; border:1px solid #cfe8d6; border-radius:var(--radius); padding:20px; margin:20px 0; text-align:left; }
   .payment-cta .pc-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:#1f5c33; margin-bottom:6px; }
   .payment-cta .pc-amount { font-size:26px; font-weight:700; color:#1f5c33; margin-bottom:14px; }
+  .payment-cta .pc-btn-group { display:flex; flex-direction:column; gap:10px; }
   .payment-cta .pc-btn { display:block; width:100%; text-align:center; padding:14px; background:#1f5c33; color:#fff; border-radius:var(--radius); font-weight:600; text-transform:uppercase; font-size:14px; }
   .payment-cta .pc-btn:hover { opacity:0.9; }
+  .payment-cta .pc-btn-mono { background:var(--ink); }
   .payment-cta .pc-note { font-size:11.5px; color:#4a7a5a; margin-top:10px; line-height:1.5; }
   .confirm-continue-btn { display:inline-block; margin-top:8px; padding:14px 28px; background:var(--ink); color:#fff; font-weight:500; border-radius:var(--radius); text-transform:uppercase; font-size:13px; }
   .confirm-continue-btn:hover { opacity:0.9; }
@@ -412,8 +414,10 @@ let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let currentUser = null;
 let lastPrepaymentTotal = 0;
 
-// Посилання на переказ (Privat24) для оплати передоплати після оформлення замовлення.
-const PAYMENT_LINK = 'https://www.privat24.ua/send/4p6ba';
+// Посилання на переказ для оплати передоплати після оформлення замовлення —
+// клієнт сам обирає, яким банком йому зручніше платити.
+const PAYMENT_LINK_PRIVAT = 'https://www.privat24.ua/send/4p6ba';
+const PAYMENT_LINK_MONO = 'https://send.monobank.ua/jar/6Lq2K1xWed';
 
 // Товари різних постачальників фізично лежать на різних складах (у різних
 // містах) і відправляються окремими накладними Новою Поштою — навіть в
@@ -616,8 +620,11 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
       <div class="payment-cta">
         <div class="pc-title">Передоплата для швидшої обробки</div>
         <div class="pc-amount">${lastPrepaymentTotal.toLocaleString()} грн</div>
-        <a href="${PAYMENT_LINK}" target="_blank" rel="noopener" class="pc-btn">Оплатити передоплату</a>
-        <div class="pc-note">Після переходу за посиланням вкажіть суму ${lastPrepaymentTotal.toLocaleString()} грн і номер замовлення №${order.id} у коментарі до переказу — це прискорить обробку.</div>
+        <div class="pc-btn-group">
+          <a href="${PAYMENT_LINK_PRIVAT}" target="_blank" rel="noopener" class="pc-btn">Оплатити через Приват24</a>
+          <a href="${PAYMENT_LINK_MONO}" target="_blank" rel="noopener" class="pc-btn pc-btn-mono">Оплатити через Monobank</a>
+        </div>
+        <div class="pc-note">Оберіть зручний банк і вкажіть суму ${lastPrepaymentTotal.toLocaleString()} грн і номер замовлення №${order.id} у коментарі до переказу — це прискорить обробку.</div>
       </div>
     `;
   } else {
