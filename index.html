@@ -295,39 +295,28 @@ gtag('config', 'G-Y0CS5VFCYH');
 
   /* ===== Картки Категорій — світлий мінімалістичний стиль ===== */
   .cats {
-    max-width: 920px;
-    margin: 50px auto 0;
-    padding: 0 32px 50px;
+    max-width: none;
+    margin: 0;
+    padding: 0;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    gap: 2px;
+    background: var(--line);
   }
 
   .cat-card {
     position: relative;
-    border-radius: var(--radius);
-    border: 1px solid var(--line);
-    background: var(--paper);
-    display: flex;
-    flex-direction: column;
-    text-decoration: none;
-    color: var(--ink);
+    display: block;
+    height: clamp(440px, 46vw, 640px);
     overflow: hidden;
-    transition: border-color 0.25s ease;
-  }
-
-  .cat-card:hover {
-    border-color: var(--ink);
+    text-decoration: none;
+    color: #fff;
+    background: var(--smoke);
   }
 
   .cat-card-media {
-    aspect-ratio: 4/3;
-    background: var(--smoke);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    border-bottom: 1px solid var(--line);
+    position: absolute;
+    inset: 0;
   }
 
   .cat-card-media img {
@@ -336,41 +325,43 @@ gtag('config', 'G-Y0CS5VFCYH');
     object-fit: cover;
     object-position: center bottom;
     filter: grayscale(100%);
-    transition: transform 0.5s cubic-bezier(.2,.7,.2,1);
+    transition: transform 0.7s cubic-bezier(.2,.7,.2,1), filter 0.6s ease;
   }
 
   .cat-card:hover .cat-card-media img {
-    transform: scale(1.05);
+    transform: scale(1.06);
+    filter: grayscale(15%);
   }
 
   .cat-card-info {
-    position: relative;
-    padding: 18px 22px 20px;
+    position: absolute;
+    inset: 0;
+    padding: 32px 36px 36px;
     display: flex;
     flex-direction: column;
-    flex: 1;
+    justify-content: space-between;
+    background: linear-gradient(to top, rgba(10,10,9,.82) 0%, rgba(10,10,9,.38) 42%, rgba(10,10,9,0) 72%);
   }
 
   .cat-card-top {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 8px;
   }
 
   .cat-index {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: .18em;
-    color: var(--mute);
+    color: rgba(255,255,255,.75);
     text-transform: uppercase;
   }
 
   .cat-arrow-btn {
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    border: 1px solid var(--line);
+    border: 1px solid rgba(255,255,255,.55);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -379,20 +370,20 @@ gtag('config', 'G-Y0CS5VFCYH');
   }
 
   .cat-arrow-btn svg {
-    width: 12px;
-    height: 12px;
-    stroke: var(--ink);
+    width: 15px;
+    height: 15px;
+    stroke: #ffffff;
     transition: stroke .25s ease;
   }
 
   .cat-card:hover .cat-arrow-btn {
-    background: var(--ink);
-    border-color: var(--ink);
+    background: #ffffff;
+    border-color: #ffffff;
     transform: rotate(45deg);
   }
 
   .cat-card:hover .cat-arrow-btn svg {
-    stroke: #ffffff;
+    stroke: var(--ink);
   }
 
   .cat-card-bottom {
@@ -400,34 +391,35 @@ gtag('config', 'G-Y0CS5VFCYH');
   }
 
   .cat-card h3 {
-    font-size: 20px;
+    font-size: clamp(26px, 3vw, 38px);
     font-weight: 600;
-    line-height: 1.15;
+    line-height: 1.1;
     letter-spacing: .01em;
     text-transform: uppercase;
-    color: var(--ink);
-    margin-bottom: 10px;
+    color: #ffffff;
+    margin-bottom: 16px;
   }
 
   .cat-link-text {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: var(--ink);
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--ink);
+    color: #ffffff;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ffffff;
     display: inline-block;
     transition: opacity .25s ease;
   }
 
   .cat-card:hover .cat-link-text {
-    opacity: .6;
+    opacity: .75;
   }
 
   @media (max-width: 640px) {
+    .cat-card { height: clamp(360px, 90vw, 480px); }
     .cat-card h3 { font-size: 24px; }
-    .cat-card-info { padding: 22px 22px 26px; }
+    .cat-card-info { padding: 24px 22px 28px; }
   }
 
   /* ===== Секція Новинки ===== */
@@ -720,7 +712,7 @@ gtag('config', 'G-Y0CS5VFCYH');
   @media (max-width: 560px) {
     .header-row { padding: 16px 20px; }
     .site-search { order: 3; min-width: 100%; max-width: 100%; }
-    .wrap, .cats, .arrivals, .foot-bottom { padding-left: 20px; padding-right: 20px; }
+    .wrap, .arrivals, .foot-bottom { padding-left: 20px; padding-right: 20px; }
     .hero-banner { min-height: 100vh; min-height: max(420px, 100svh); padding: 70px 16px 40px; }
     .hero-brand-logo { padding: 12px 20px; }
     .hero-brand-logo b { font-size: 24px; }
