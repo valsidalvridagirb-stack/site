@@ -147,6 +147,7 @@ gtag('config', 'G-Y0CS5VFCYH');
       <button class="brand-btn" data-brand="puma">Puma</button>
       <button class="brand-btn" data-brand="nb">New Balance</button>
       <button class="brand-btn" data-brand="adidas">Adidas</button>
+      <button class="brand-btn" data-brand="saucony">Saucony</button>
     </div>
 
     <div id="brand-nike">
@@ -315,6 +316,34 @@ gtag('config', 'G-Y0CS5VFCYH');
       </div>
     </div>
 
+    <div id="brand-saucony" style="display:none;">
+      <div class="chart-section">
+        <h2>Saucony — чоловіче взуття</h2>
+        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="sauconyMenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Saucony — жіноче взуття</h2>
+        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="sauconyWomenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <div class="howto">
       <h3>Як виміряти розмір ноги</h3>
       <ol>
@@ -466,6 +495,8 @@ fillTable('nbUnisexTable', NB_UNISEX);
 fillTable('nbTeenTable', NB_TEEN);
 fillTable('adidasMenTable', ADIDAS_MEN);
 fillTable('adidasWomenTable', ADIDAS_WOMEN);
+fillTable('sauconyMenTable', SAUCONY_MEN);
+fillTable('sauconyWomenTable', SAUCONY_WOMEN);
 fillTable('clothTable', CLOTH_SIZES);
 fillTable('nikeClothesWomenTable', NIKE_CLOTHES_WOMEN);
 fillTable('nikeClothesMenTable', NIKE_CLOTHES_MEN);
@@ -484,7 +515,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ---------- перемикання бренду (в межах вкладки "Взуття") ----------
-const BRAND_IDS = ['nike', 'jordan', 'puma', 'nb', 'adidas'];
+const BRAND_IDS = ['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony'];
 function selectBrand(brandId) {
   const btn = document.querySelector(`.brand-btn[data-brand="${brandId}"]`);
   if (!btn) return;
