@@ -802,7 +802,7 @@ async function drawWatermark(file, opts = {}) {
     ctx.drawImage(bitmap, 0, 0);
     bitmap.close && bitmap.close();
 
-    const fontSize = Math.max(14, Math.round(canvas.width * 0.035));
+    const fontSize = Math.max(11, Math.round(canvas.width * 0.022));
     const paddingX = Math.round(canvas.width * 0.03);
     const paddingY = Math.round(canvas.height * 0.025);
     ctx.font = `600 ${fontSize}px Arial, sans-serif`;
@@ -810,8 +810,8 @@ async function drawWatermark(file, opts = {}) {
     ctx.textAlign = 'right';
     ctx.lineJoin = 'round';
     ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.14));
-    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
-    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
     const x = canvas.width - paddingX;
     const y = canvas.height - paddingY;
     ctx.strokeText(WATERMARK_TEXT, x, y);
