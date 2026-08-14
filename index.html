@@ -214,19 +214,20 @@ gtag('config', 'G-Y0CS5VFCYH');
   .hero-bg-text span {
     display: block;
     font-family: 'Oswald', 'Manrope', sans-serif;
-    font-size: clamp(58px, 13.5vw, 190px);
+    font-size: clamp(46px, 11vw, 150px);
     font-weight: 700;
     line-height: 0.9;
-    letter-spacing: 5px;
+    letter-spacing: 6px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.09);
     white-space: nowrap;
   }
 
-  /* Кожне слово під власним кутом — для живішої, не механічної композиції */
-  .hero-bg-text span:nth-child(1) { transform: skewX(-14deg) rotate(-3deg); }
-  .hero-bg-text span:nth-child(2) { transform: skewX(-7deg) rotate(2deg); }
-  .hero-bg-text span:nth-child(3) { transform: skewX(-17deg) rotate(-2deg); }
+  /* Кожне слово розтягнуте по ширині (scaleX) і нахилене у свій, відмінний
+     від інших бік — для живішої, не механічної композиції. */
+  .hero-bg-text span:nth-child(1) { transform: scaleX(1.35) rotate(-7deg) skewX(-12deg); }
+  .hero-bg-text span:nth-child(2) { transform: scaleX(1.35) rotate(6deg) skewX(8deg); }
+  .hero-bg-text span:nth-child(3) { transform: scaleX(1.35) rotate(-4deg) skewX(-6deg); }
 
   .hero-banner-content {
     position: relative;
@@ -741,7 +742,10 @@ gtag('config', 'G-Y0CS5VFCYH');
     .hero-brand-logo b { font-size: 32px; }
     .hero-brand-logo span { font-size: 10px; letter-spacing: 8px; }
     .hero-bg-text { gap: clamp(10px, 2.6vw, 28px); }
-    .hero-bg-text span { font-size: clamp(38px, 12.5vw, 110px); letter-spacing: 3px; }
+    .hero-bg-text span { font-size: clamp(30px, 10vw, 90px); letter-spacing: 3px; }
+    .hero-bg-text span:nth-child(1) { transform: scaleX(1.2) rotate(-7deg) skewX(-12deg); }
+    .hero-bg-text span:nth-child(2) { transform: scaleX(1.2) rotate(6deg) skewX(8deg); }
+    .hero-bg-text span:nth-child(3) { transform: scaleX(1.2) rotate(-4deg) skewX(-6deg); }
     .cats { grid-template-columns: 1fr; }
     .product-grid { grid-template-columns: repeat(2, 1fr); }
     .foot-main { grid-template-columns: 1fr 1fr; }
@@ -756,7 +760,10 @@ gtag('config', 'G-Y0CS5VFCYH');
     .hero-brand-logo b { font-size: 24px; }
     .hero-brand-logo span { font-size: 9px; letter-spacing: 6px; }
     .hero-bg-text { gap: clamp(8px, 2vw, 20px); }
-    .hero-bg-text span { font-size: clamp(30px, 13vw, 80px); letter-spacing: 1px; }
+    .hero-bg-text span { font-size: clamp(24px, 11vw, 64px); letter-spacing: 1px; }
+    .hero-bg-text span:nth-child(1) { transform: scaleX(1.1) rotate(-7deg) skewX(-12deg); }
+    .hero-bg-text span:nth-child(2) { transform: scaleX(1.1) rotate(6deg) skewX(8deg); }
+    .hero-bg-text span:nth-child(3) { transform: scaleX(1.1) rotate(-4deg) skewX(-6deg); }
     .hero-search-form { flex-direction: column; background: transparent; box-shadow: none; }
     .hero-search-input { border-radius: 2px; margin-bottom: 8px; }
     .hero-search-btn { border-radius: 2px; justify-content: center; }
