@@ -211,6 +211,11 @@
         </select>
         <div class="desc-hint">Постачальник часто помиляється зі статтю товару (напр. жіночі кросівки позначені як "Чоловічі"). Тут можна вручну виправити — це змінить і фільтр Чоловіче/Жіноче на сайті, і категорію "Взуття/Кросівки/Чоловічі" ↔ "…/Жіночі". Виправлення збережеться і не перезапишеться автоматично при наступних синхронізаціях цін/залишків.</div>
       </div>
+      <div id="categoryOverrideWrap" style="display:none; margin-top:16px;">
+        <label class="name-input-label" for="categoryOverrideSelect">Категорія товару (тип)</label>
+        <select id="categoryOverrideSelect" class="name-input"></select>
+        <div class="desc-hint">Постачальник часто відносить усе взуття одним кошиком до "Кросівки", навіть якщо це насправді черевики, шльопанці чи шиповки — через що товар потрапляє не в ту вкладку каталогу. Тут можна вручну виправити. Виправлення збережеться і не перезапишеться автоматично при наступних синхронізаціях цін/залишків.</div>
+      </div>
       <div id="sizeChartGenderWrap" style="display:none; margin-top:16px;">
         <label class="name-input-label" for="sizeChartGenderSelect">Розмірна сітка на сторінці товару</label>
         <select id="sizeChartGenderSelect" class="name-input">
@@ -466,6 +471,26 @@ const GENDER_PHRASE = { 'Чоловіки':'чоловіків', 'Жінки':'�
 // "…/Жіночі" у навігації каталогу (див. normalize_category() у локальному
 // update.py) — завжди похідний від gender, тому обидва поля виправляємо разом.
 const GENDER_TO_CAT3 = { 'Чоловіки':'Чоловічі', 'Жінки':'Жіночі', 'Унісекс':'Унісекс' };
+// Варіанти category_2 для ручного перевизначення типу товару. Значення —
+// точно ті самі рядки, які catalog.html очікує в CATEGORY_2_MAP/PRODUCT_TYPE_ORDER
+// (напр. "Черевики та чоботи" — не просто "Черевики"), інакше товар не
+// потрапить у потрібну вкладку фільтра на сайті.
+const CATEGORY_2_OPTIONS = {
+  'Взуття': ['Кросівки', 'Черевики та чоботи', 'Шльопанці та сандалі', 'Шиповки'],
+  'Одяг': ['Куртки та вітровки', 'Кофти та худі', 'Штани та лосини', 'Футболки та майки',
+           'Шорти', 'Спортивні костюми', 'Тренч'],
+};
+function populateCategoryOverrideOptions(cat1, currentValue) {
+  const select = document.getElementById('categoryOverrideSelect');
+  const options = CATEGORY_2_OPTIONS[cat1] || [];
+  const values = new Set(options);
+  // Якщо поточне значення з бази/прайсу нетипове (не входить у список вище) —
+  // все одно додаємо його окремим пунктом, щоб нічого не втратити й не
+  // підмінити мовчки на щось інше при збереженні.
+  const extra = (currentValue && !values.has(currentValue)) ? [currentValue] : [];
+  select.innerHTML = [...extra, ...options].map(v => `<option value="${v}">${v}</option>`).join('');
+  select.value = currentValue && (values.has(currentValue) || extra.includes(currentValue)) ? currentValue : (options[0] || '');
+}
 function buildDescription(name, brand, cat1, gender) {
   const gp = GENDER_PHRASE[gender] || null;
   if (cat1 === 'Одяг') {
@@ -608,6 +633,7 @@ async function doSearch() {
     info.innerHTML = `<span class="pill" style="background:var(--errbg); color:var(--err);">Не знайдено в Excel-каталозі</span>`;
     document.getElementById('nameEditWrap').style.display = 'none';
     document.getElementById('genderOverrideWrap').style.display = 'none';
+    document.getElementById('categoryOverrideWrap').style.display = 'none';
     document.getElementById('photoCard').style.display = 'none';
     document.getElementById('descCard').style.display = 'none';
     document.getElementById('publishCard').style.display = 'none';
@@ -651,10 +677,17 @@ async function doSearch() {
   genderOverrideSelect.value = GENDER_TO_CAT3[currentGender] ? currentGender : 'Унісекс';
   document.getElementById('genderOverrideWrap').style.display = 'block';
 
+  const cat1Final = String(first.cat1 || first.category_1 || '').trim();
+
+  // Тип товару (category_2) — постачальники часто відносять усе взуття до
+  // "Кросівки" одним кошиком, навіть коли це черевики/шльопанці/шиповки.
+  const currentCat2 = String((existingRows.length ? existingRows[0].category_2 : (first.cat2 || first.category_2)) || '').trim();
+  populateCategoryOverrideOptions(cat1Final, currentCat2);
+  document.getElementById('categoryOverrideWrap').style.display = 'block';
+
   // Ручне перевизначення розмірної сітки має сенс лише для взуття (одяг
   // на сайті завжди показує ту саму сітку, незалежно від статі) — тому
   // ховаємо контрол для одягу, щоб не плутати.
-  const cat1Final = String(first.cat1 || first.category_1 || '').trim();
   const sizeChartGenderWrap = document.getElementById('sizeChartGenderWrap');
   const sizeChartGenderSelect = document.getElementById('sizeChartGenderSelect');
   if (cat1Final === 'Взуття') {
@@ -879,6 +912,7 @@ async function publish() {
     const sizeChartGender = sizeChartGenderWrap.style.display !== 'none' ? (sizeChartGenderSelect.value || null) : null;
     const genderOverride = document.getElementById('genderOverrideSelect').value;
     const cat3Override = GENDER_TO_CAT3[genderOverride] || genderOverride;
+    const category2Override = document.getElementById('categoryOverrideSelect').value;
     let rowsCount;
 
     if (editOnlyMode) {
@@ -888,7 +922,7 @@ async function publish() {
       const name = nameInput.value.trim() || existingRows[0]?.name || '';
       const { error: updErr } = await supabaseClient.from('products')
         .update({ name, description, photos: finalPhotos, size_chart_gender: sizeChartGender,
-                  gender: genderOverride, category_3: cat3Override })
+                  gender: genderOverride, category_2: category2Override, category_3: cat3Override })
         .eq('articul', currentArticul);
       if (updErr) throw new Error('Не вдалось зберегти товар: ' + updErr.message);
       rowsCount = existingRows.length;
@@ -911,7 +945,7 @@ async function publish() {
         brand: m.brand,
         gender: genderOverride,
         category_1: m.cat1,
-        category_2: m.cat2,
+        category_2: category2Override,
         category_3: cat3Override,
         size_chart_gender: sizeChartGender,
         description,
