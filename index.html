@@ -304,6 +304,13 @@ gtag('config', 'G-Y0CS5VFCYH');
     background: var(--line);
   }
 
+  /* Плавний перехід від темного низу карток категорій до білої секції
+     "Останні новинки" нижче — без цього був різкий шов темне/біле. */
+  .section-fade-to-paper {
+    height: clamp(40px, 6vw, 84px);
+    background: linear-gradient(to bottom, rgba(10,10,9,.88), var(--paper));
+  }
+
   .cat-card {
     position: relative;
     display: block;
@@ -340,7 +347,9 @@ gtag('config', 'G-Y0CS5VFCYH');
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background: linear-gradient(to top, rgba(10,10,9,.82) 0%, rgba(10,10,9,.38) 42%, rgba(10,10,9,0) 72%);
+    /* Легке затемнення і зверху (не тільки знизу) — щоб фото м'якше "виринало"
+       з чорного банера над ним, без різкого шва між відео і карткою. */
+    background: linear-gradient(to top, rgba(10,10,9,.82) 0%, rgba(10,10,9,.38) 42%, rgba(10,10,9,0) 65%, rgba(10,10,9,0) 84%, rgba(10,10,9,.35) 100%);
   }
 
   .cat-card-top {
@@ -906,6 +915,8 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
     </div>
   </a>
 </section>
+
+<div class="section-fade-to-paper" aria-hidden="true"></div>
 
 <section class="arrivals" id="arrivals">
   <div class="arrivals-head">
