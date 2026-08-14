@@ -141,6 +141,11 @@ gtag('config', 'G-Y0CS5VFCYH');
     background-color: var(--ink);
     color: #ffffff;
     padding: 60px 32px 30px;
+  }
+  /* Плавний перехід від білого фону сторінки до темного футера — щоб не було різкого обриву. */
+  .footer-fade {
+    height: clamp(44px, 6vw, 70px);
+    background: linear-gradient(to bottom, var(--paper), var(--ink));
     margin-top: auto;
   }
   .footer-container {
@@ -316,6 +321,8 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
   </div>
 
 </main>
+
+<div class="footer-fade" aria-hidden="true"></div>
 
 <footer class="site-footer">
   <div class="footer-container">

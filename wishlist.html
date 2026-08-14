@@ -368,7 +368,11 @@ gtag('config', 'G-Y0CS5VFCYH');
     background-color: var(--ink);
     color: #ffffff;
     padding: 60px 32px 30px;
-    margin-top: 60px;
+  }
+  /* Плавний перехід від білого фону сторінки до темного футера — щоб не було різкого обриву. */
+  .footer-fade {
+    height: clamp(44px, 6vw, 70px);
+    background: linear-gradient(to bottom, var(--paper), var(--ink));
   }
   .footer-container {
     max-width: 1240px;
@@ -600,6 +604,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
   <div class="product-grid" id="wishGrid"></div>
 </main>
 
+<div class="footer-fade" aria-hidden="true"></div>
 
 <footer class="site-footer">
   <div class="footer-container">

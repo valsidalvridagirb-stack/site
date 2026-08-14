@@ -69,7 +69,9 @@ gtag('config', 'G-Y0CS5VFCYH');
   .contact-strip { text-align:center; font-size:13.5px; color:var(--mute); padding-top:8px; border-top:1px solid var(--line); margin-top:20px; }
   .contact-strip a { color:var(--ink); font-weight:600; text-decoration:underline; }
 
-  footer.site-footer { background-color: var(--ink); color: #ffffff; padding: 60px 32px 30px; margin-top: auto; }
+  footer.site-footer { background-color: var(--ink); color: #ffffff; padding: 60px 32px 30px; }
+  /* Плавний перехід від білого фону сторінки до темного футера — щоб не було різкого обриву. */
+  .footer-fade { height: clamp(44px, 6vw, 70px); background: linear-gradient(to bottom, var(--paper), var(--ink)); margin-top: auto; }
   .footer-container { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
   .footer-col h4 { font-size: 13px; font-weight: 700; letter-spacing: 1px; color: #888888; margin-bottom: 20px; text-transform: uppercase; }
   .footer-col ul { list-style: none; padding: 0; margin: 0; }
@@ -177,6 +179,8 @@ gtag('config', 'G-Y0CS5VFCYH');
 
   <p class="contact-strip">Дякуємо, що обираєте NexxtLevelStore! Питання щодо Політики конфіденційності — у <a href="https://www.instagram.com/nexxtlevelstore/" target="_blank" rel="noopener">Instagram</a>, <a href="https://t.me/nexxtlevelstore" target="_blank" rel="noopener">Telegram</a> або на пошту <a href="mailto:nexxtlevelstore@ukr.net">nexxtlevelstore@ukr.net</a>.</p>
 </main>
+
+<div class="footer-fade" aria-hidden="true"></div>
 
 <footer class="site-footer">
   <div class="footer-container">
