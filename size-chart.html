@@ -381,11 +381,11 @@ gtag('config', 'G-Y0CS5VFCYH');
     <div id="brand-karrimor" style="display:none;">
       <div class="chart-section">
         <h2>Karrimor — чоловіче взуття</h2>
-        <p class="chart-note">Офіційна сітка виробника (karrimor.com). EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. UK — британська сітка (Karrimor — британський бренд, для нього це основна сітка).</p>
+        <p class="chart-note">Сітка з таблиці на коробці товару. EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. UK — британська сітка (Karrimor — британський бренд). CM — довжина стопи в сантиметрах.</p>
         <div class="table-scroll">
           <table class="size-table" id="karrimorMenTable">
             <thead>
-              <tr><th>EU</th><th>US</th><th>UK</th></tr>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -394,11 +394,24 @@ gtag('config', 'G-Y0CS5VFCYH');
 
       <div class="chart-section">
         <h2>Karrimor — жіноче взуття</h2>
-        <p class="chart-note">Офіційна сітка виробника (karrimor.com). EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка (Karrimor — британський бренд, для нього це основна сітка).</p>
+        <p class="chart-note">Сітка з таблиці на коробці товару. EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка (Karrimor — британський бренд). CM — довжина стопи в сантиметрах.</p>
         <div class="table-scroll">
           <table class="size-table" id="karrimorWomenTable">
             <thead>
-              <tr><th>EU</th><th>US</th><th>UK</th></tr>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Karrimor — унісекс взуття</h2>
+        <p class="chart-note">Окрема унісекс-сітка з таблиці на коробці товару (не збігається один-в-один з чоловічою чи жіночою для того самого EU). EU — розмір, вказаний на сайті та на етикетці взуття. US — унісекс розмірна сітка США. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="karrimorUnisexTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -552,6 +565,7 @@ fillTable('adidasMenTable', ADIDAS_MEN);
 fillTable('adidasWomenTable', ADIDAS_WOMEN);
 fillTable('karrimorMenTable', KARRIMOR_MEN);
 fillTable('karrimorWomenTable', KARRIMOR_WOMEN);
+fillTable('karrimorUnisexTable', KARRIMOR_UNISEX);
 fillTable('sauconyMenTable', SAUCONY_MEN);
 fillTable('sauconyWomenTable', SAUCONY_WOMEN);
 fillTable('nikeClothesWomenTable', NIKE_CLOTHES_WOMEN);
