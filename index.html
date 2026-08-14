@@ -30,7 +30,7 @@ gtag('config', 'G-Y0CS5VFCYH');
 <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   /* Стили для иконок в шапке */
@@ -196,6 +196,37 @@ gtag('config', 'G-Y0CS5VFCYH');
     background: rgba(0, 0, 0, 0.55);
     z-index: 1;
   }
+
+  /* Велика напівпрозора похила надпис-водяний знак поверх відео банера —
+     суто декоративна, тому pointer-events:none і aria-hidden в розмітці. */
+  .hero-bg-text {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(16px, 3.4vw, 44px);
+    pointer-events: none;
+  }
+
+  .hero-bg-text span {
+    display: block;
+    font-family: 'Oswald', 'Manrope', sans-serif;
+    font-size: clamp(58px, 13.5vw, 190px);
+    font-weight: 700;
+    line-height: 0.9;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.18);
+    white-space: nowrap;
+  }
+
+  /* Кожне слово під власним кутом — для живішої, не механічної композиції */
+  .hero-bg-text span:nth-child(1) { transform: skewX(-14deg) rotate(-3deg); }
+  .hero-bg-text span:nth-child(2) { transform: skewX(-7deg) rotate(2deg); }
+  .hero-bg-text span:nth-child(3) { transform: skewX(-17deg) rotate(-2deg); }
 
   .hero-banner-content {
     position: relative;
@@ -709,6 +740,8 @@ gtag('config', 'G-Y0CS5VFCYH');
     nav.main-nav { display: none; }
     .hero-brand-logo b { font-size: 32px; }
     .hero-brand-logo span { font-size: 10px; letter-spacing: 8px; }
+    .hero-bg-text { gap: clamp(10px, 2.6vw, 28px); }
+    .hero-bg-text span { font-size: clamp(38px, 12.5vw, 110px); letter-spacing: 3px; }
     .cats { grid-template-columns: 1fr; }
     .product-grid { grid-template-columns: repeat(2, 1fr); }
     .foot-main { grid-template-columns: 1fr 1fr; }
@@ -722,6 +755,8 @@ gtag('config', 'G-Y0CS5VFCYH');
     .hero-brand-logo { padding: 12px 20px; }
     .hero-brand-logo b { font-size: 24px; }
     .hero-brand-logo span { font-size: 9px; letter-spacing: 6px; }
+    .hero-bg-text { gap: clamp(8px, 2vw, 20px); }
+    .hero-bg-text span { font-size: clamp(30px, 13vw, 80px); letter-spacing: 1px; }
     .hero-search-form { flex-direction: column; background: transparent; box-shadow: none; }
     .hero-search-input { border-radius: 2px; margin-bottom: 8px; }
     .hero-search-btn { border-radius: 2px; justify-content: center; }
@@ -859,6 +894,11 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
     <source src="assets/hero-video.mp4" type="video/mp4">
   </video>
   <div class="hero-overlay"></div>
+  <div class="hero-bg-text" aria-hidden="true">
+    <span>ТВІЙ</span>
+    <span>НАСТУПНИЙ</span>
+    <span>РІВЕНЬ</span>
+  </div>
   <div class="hero-banner-content">
     <div class="hero-brand-logo">
       <b>NEXXTLEVEL</b>
