@@ -30,7 +30,7 @@ gtag('config', 'G-Y0CS5VFCYH');
 <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   /* Стили для иконок в шапке */
@@ -197,8 +197,10 @@ gtag('config', 'G-Y0CS5VFCYH');
     z-index: 1;
   }
 
-  /* Велика напівпрозора похила надпис-водяний знак поверх відео банера —
-     суто декоративна, тому pointer-events:none і aria-hidden в розмітці. */
+  /* Велика ледь помітна текстова "водяна печатка" поверх відео банера —
+     єдиний легкий нахил всього блока (не кожного слова окремо) для
+     цілісної, "дизайнерської" композиції замість хаотичного різнобою.
+     Суто декоративна, тому pointer-events:none і aria-hidden в розмітці. */
   .hero-bg-text {
     position: absolute;
     inset: 0;
@@ -207,27 +209,21 @@ gtag('config', 'G-Y0CS5VFCYH');
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: clamp(16px, 3.4vw, 44px);
+    transform: rotate(-4deg);
     pointer-events: none;
   }
 
   .hero-bg-text span {
     display: block;
-    font-family: 'Oswald', 'Manrope', sans-serif;
-    font-size: clamp(46px, 11vw, 150px);
-    font-weight: 700;
-    line-height: 0.9;
-    letter-spacing: 6px;
+    font-family: 'Bebas Neue', 'Manrope', sans-serif;
+    font-size: clamp(80px, 16vw, 260px);
+    font-weight: 400;
+    line-height: 0.82;
+    letter-spacing: 10px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.09);
+    color: rgba(255, 255, 255, 0.07);
     white-space: nowrap;
   }
-
-  /* Кожне слово розтягнуте по ширині (scaleX) і нахилене у свій, відмінний
-     від інших бік — для живішої, не механічної композиції. */
-  .hero-bg-text span:nth-child(1) { transform: scaleX(1.35) rotate(-7deg) skewX(-12deg); }
-  .hero-bg-text span:nth-child(2) { transform: scaleX(1.35) rotate(6deg) skewX(8deg); }
-  .hero-bg-text span:nth-child(3) { transform: scaleX(1.35) rotate(-4deg) skewX(-6deg); }
 
   .hero-banner-content {
     position: relative;
@@ -741,11 +737,7 @@ gtag('config', 'G-Y0CS5VFCYH');
     nav.main-nav { display: none; }
     .hero-brand-logo b { font-size: 32px; }
     .hero-brand-logo span { font-size: 10px; letter-spacing: 8px; }
-    .hero-bg-text { gap: clamp(10px, 2.6vw, 28px); }
-    .hero-bg-text span { font-size: clamp(30px, 10vw, 90px); letter-spacing: 3px; }
-    .hero-bg-text span:nth-child(1) { transform: scaleX(1.2) rotate(-7deg) skewX(-12deg); }
-    .hero-bg-text span:nth-child(2) { transform: scaleX(1.2) rotate(6deg) skewX(8deg); }
-    .hero-bg-text span:nth-child(3) { transform: scaleX(1.2) rotate(-4deg) skewX(-6deg); }
+    .hero-bg-text span { font-size: clamp(46px, 15vw, 130px); letter-spacing: 6px; }
     .cats { grid-template-columns: 1fr; }
     .product-grid { grid-template-columns: repeat(2, 1fr); }
     .foot-main { grid-template-columns: 1fr 1fr; }
@@ -759,11 +751,7 @@ gtag('config', 'G-Y0CS5VFCYH');
     .hero-brand-logo { padding: 12px 20px; }
     .hero-brand-logo b { font-size: 24px; }
     .hero-brand-logo span { font-size: 9px; letter-spacing: 6px; }
-    .hero-bg-text { gap: clamp(8px, 2vw, 20px); }
-    .hero-bg-text span { font-size: clamp(24px, 11vw, 64px); letter-spacing: 1px; }
-    .hero-bg-text span:nth-child(1) { transform: scaleX(1.1) rotate(-7deg) skewX(-12deg); }
-    .hero-bg-text span:nth-child(2) { transform: scaleX(1.1) rotate(6deg) skewX(8deg); }
-    .hero-bg-text span:nth-child(3) { transform: scaleX(1.1) rotate(-4deg) skewX(-6deg); }
+    .hero-bg-text span { font-size: clamp(36px, 16vw, 84px); letter-spacing: 4px; }
     .hero-search-form { flex-direction: column; background: transparent; box-shadow: none; }
     .hero-search-input { border-radius: 2px; margin-bottom: 8px; }
     .hero-search-btn { border-radius: 2px; justify-content: center; }
