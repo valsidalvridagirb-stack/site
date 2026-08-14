@@ -156,6 +156,7 @@ gtag('config', 'G-Y0CS5VFCYH');
       <button class="brand-btn" data-brand="adidas">Adidas</button>
       <button class="brand-btn" data-brand="saucony">Saucony</button>
       <button class="brand-btn" data-brand="karrimor">Karrimor</button>
+      <button class="brand-btn" data-brand="ua">Under Armour</button>
     </div>
 
     <div id="brand-nike">
@@ -419,6 +420,60 @@ gtag('config', 'G-Y0CS5VFCYH');
       </div>
     </div>
 
+    <div id="brand-ua" style="display:none;">
+      <div class="chart-section">
+        <h2>Under Armour — чоловіче взуття</h2>
+        <p class="chart-note">Офіційна сітка з underarmour.com. EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="uaMenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Under Armour — жіноче взуття</h2>
+        <p class="chart-note">Офіційна сітка з underarmour.com. EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="uaWomenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Under Armour — унісекс взуття</h2>
+        <p class="chart-note">Under Armour офіційно не публікує окрему унісекс-сітку взуття — це стороння таблиця (по суті чоловіча сітка з двома розширеними великими розмірами), звірена й узгоджена з офіційною чоловічою сіткою бренду. EU — розмір, вказаний на сайті та на етикетці взуття. US — умовна унісекс розмірна сітка. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="uaUnisexTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Under Armour — підліткове взуття</h2>
+        <p class="chart-note">Офіційна єдина дитяча/підліткова сітка з underarmour.com (однакова для хлопчиків і дівчаток). EU — розмір, вказаний на сайті та на етикетці взуття. US — дитяче маркування (з літерою K) з переходом на доросле від розміру 1. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="uaTeenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <div class="howto">
       <h3>Як виміряти розмір ноги</h3>
       <ol>
@@ -566,6 +621,10 @@ fillTable('adidasWomenTable', ADIDAS_WOMEN);
 fillTable('karrimorMenTable', KARRIMOR_MEN);
 fillTable('karrimorWomenTable', KARRIMOR_WOMEN);
 fillTable('karrimorUnisexTable', KARRIMOR_UNISEX);
+fillTable('uaMenTable', UA_MEN);
+fillTable('uaWomenTable', UA_WOMEN);
+fillTable('uaUnisexTable', UA_UNISEX);
+fillTable('uaTeenTable', UA_TEEN);
 fillTable('sauconyMenTable', SAUCONY_MEN);
 fillTable('sauconyWomenTable', SAUCONY_WOMEN);
 fillTable('nikeClothesWomenTable', NIKE_CLOTHES_WOMEN);
@@ -609,7 +668,7 @@ function setupGenderTabs(containerEl) {
   containerEl.insertBefore(row, sections[0]);
   sections.forEach((s, j) => { s.style.display = (j === 0) ? '' : 'none'; });
 }
-['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony', 'karrimor'].forEach(id => setupGenderTabs(document.getElementById('brand-' + id)));
+['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony', 'karrimor', 'ua'].forEach(id => setupGenderTabs(document.getElementById('brand-' + id)));
 setupGenderTabs(document.getElementById('tab-clothes'));
 
 // ---------- перемикання вкладок (Взуття / Одяг) ----------
@@ -626,7 +685,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ---------- перемикання бренду (в межах вкладки "Взуття") ----------
-const BRAND_IDS = ['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony', 'karrimor'];
+const BRAND_IDS = ['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony', 'karrimor', 'ua'];
 function selectBrand(brandId) {
   const btn = document.querySelector(`.brand-btn[data-brand="${brandId}"]`);
   if (!btn) return;
