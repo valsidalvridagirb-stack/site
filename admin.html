@@ -495,13 +495,20 @@ const CATEGORY_2_OPTIONS = {
 // category_2, що йде в назву/бейдж на сторінці товару; повний набір обраних
 // зберігається в extra_categories і визначає, у скількох вкладках каталогу
 // товар показується.
+// Стара об'єднана категорія (до розділення на "Капці"/"Сандалі") — товари з
+// таким значенням у базі більше не показуємо окремим пунктом чекбоксів,
+// а одразу підставляємо сучасний відповідник. Публікація/збереження такого
+// товару автоматично "мігрує" його на нове значення в базі.
+const LEGACY_CATEGORY_ALIASES = { 'Шльопанці та сандалі': 'Капці' };
 function populateCategoryOverrideOptions(cat1, currentValues) {
   const wrap = document.getElementById('categoryOverrideOptions');
   const options = CATEGORY_2_OPTIONS[cat1] || [];
   const values = new Set(options);
-  const current = new Set((currentValues || []).filter(Boolean));
-  // Нетипові значення з бази (не входять у список вище) — все одно додаємо
-  // окремими пунктами, щоб нічого не втратити й не підмінити мовчки.
+  const mapped = (currentValues || []).filter(Boolean).map(v => LEGACY_CATEGORY_ALIASES[v] || v);
+  const current = new Set(mapped);
+  // Нетипові значення з бази (не входять у список вище і не є відомим
+  // застарілим аліасом вище) — все одно додаємо окремими пунктами, щоб
+  // нічого не втратити й не підмінити мовчки.
   const extra = [...current].filter(v => !values.has(v));
   const allOptions = [...options, ...extra];
   const anyChecked = allOptions.some(v => current.has(v));
