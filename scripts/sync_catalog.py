@@ -50,7 +50,13 @@ REQUIRED_COLUMNS = [
 # Колонки products, які беремо з ШАБЛОННОГО (вже опублікованого) рядка того ж
 # артикулу при вставці нового розміру — вони мають бути однакові для всіх
 # розмірів одного товару (так їх завжди писала адмінка при публікації).
-TEMPLATE_FIELDS = ['name', 'description', 'photos', 'size_chart_gender']
+# gender/category_1/2/3 тут навмисно, а не з фіда постачальника: адмінка
+# дозволяє вручну виправити помилкову стать/категорію постачальника
+# (напр. жіночі кросівки, позначені постачальником як чоловічі) — без цього
+# новий розмір того ж артикулу, що з'явився пізніше, знову підхопив би
+# помилкове значення з прайсу і розійшовся б з рештою розмірів товару.
+TEMPLATE_FIELDS = ['name', 'description', 'photos', 'size_chart_gender',
+                    'gender', 'category_1', 'category_2', 'category_3']
 
 
 def parse_args():
@@ -267,10 +273,14 @@ def main():
                 'price': c['price'],
                 'quantity': c['qty'],
                 'brand': sql_str(c['brand']),
-                'gender': sql_str(c['gender']),
-                'category_1': sql_str(c['cat1']),
-                'category_2': sql_str(c['cat2']),
-                'category_3': sql_str(c['cat3']),
+                # gender/category_1/2/3 — з ШАБЛОНУ (вже опублікованого рядка
+                # цього ж артикулу), а не з фіда постачальника: адмінка могла
+                # вручну виправити помилкову стать/категорію, і новий розмір
+                # має лишатись консистентним з рештою розмірів товару.
+                'gender': sql_str(t.get('gender', c['gender'])),
+                'category_1': sql_str(t.get('category_1', c['cat1'])),
+                'category_2': sql_str(t.get('category_2', c['cat2'])),
+                'category_3': sql_str(t.get('category_3', c['cat3'])),
                 'description': sql_str(t.get('description')),
                 'photos': sql_str(t.get('photos')),
                 'supplier': sql_str(c['supplier']),
