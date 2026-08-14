@@ -94,6 +94,11 @@
   .name-input-label { display:block; font-size:12px; font-weight:600; color:var(--mute); margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em; }
   .name-input { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius); font-size:15px; font-family:inherit; outline:none; }
 
+  .category-checkboxes { display:flex; flex-wrap:wrap; gap:8px; }
+  .category-checkbox-item { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border:1px solid var(--line); border-radius:var(--radius); font-size:13px; cursor:pointer; user-select:none; }
+  .category-checkbox-item input { margin:0; cursor:pointer; }
+  .category-checkbox-item.checked { border-color:var(--ink); background:var(--smoke); font-weight:600; }
+
   .drop { border:2px dashed var(--line); border-radius:var(--radius); padding:34px 16px; text-align:center; cursor:pointer; color:var(--mute); font-size:14px; transition:.15s; }
   .drop.drag { border-color:var(--ink); color:var(--ink); background:var(--smoke); }
   .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; margin-top:16px; }
@@ -212,9 +217,9 @@
         <div class="desc-hint">Постачальник часто помиляється зі статтю товару (напр. жіночі кросівки позначені як "Чоловічі"). Тут можна вручну виправити — це змінить і фільтр Чоловіче/Жіноче на сайті, і категорію "Взуття/Кросівки/Чоловічі" ↔ "…/Жіночі". Виправлення збережеться і не перезапишеться автоматично при наступних синхронізаціях цін/залишків.</div>
       </div>
       <div id="categoryOverrideWrap" style="display:none; margin-top:16px;">
-        <label class="name-input-label" for="categoryOverrideSelect">Категорія товару (тип)</label>
-        <select id="categoryOverrideSelect" class="name-input"></select>
-        <div class="desc-hint">Постачальник часто відносить усе взуття одним кошиком до "Кросівки", навіть якщо це насправді черевики, шльопанці чи шиповки — через що товар потрапляє не в ту вкладку каталогу. Тут можна вручну виправити. Виправлення збережеться і не перезапишеться автоматично при наступних синхронізаціях цін/залишків.</div>
+        <label class="name-input-label">Категорія товару (тип)</label>
+        <div id="categoryOverrideOptions" class="category-checkboxes"></div>
+        <div class="desc-hint">Постачальник часто відносить усе взуття одним кошиком до "Кросівки", навіть якщо це насправді черевики, шльопанці чи шиповки — через що товар потрапляє не в ту вкладку каталогу. Тут можна вручну виправити, а також обрати кілька категорій одразу (напр. "Черевики" + "Кросівки" для гібридної моделі) — товар з'явиться в обох вкладках каталогу. Перша обрана категорія лишається основною (показується на сторінці товару). Виправлення збережеться і не перезапишеться автоматично при наступних синхронізаціях цін/залишків.</div>
       </div>
       <div id="sizeChartGenderWrap" style="display:none; margin-top:16px;">
         <label class="name-input-label" for="sizeChartGenderSelect">Розмірна сітка на сторінці товару</label>
@@ -471,25 +476,52 @@ const GENDER_PHRASE = { 'Чоловіки':'чоловіків', 'Жінки':'�
 // "…/Жіночі" у навігації каталогу (див. normalize_category() у локальному
 // update.py) — завжди похідний від gender, тому обидва поля виправляємо разом.
 const GENDER_TO_CAT3 = { 'Чоловіки':'Чоловічі', 'Жінки':'Жіночі', 'Унісекс':'Унісекс' };
-// Варіанти category_2 для ручного перевизначення типу товару. Значення —
-// точно ті самі рядки, які catalog.html очікує в CATEGORY_2_MAP/PRODUCT_TYPE_ORDER
-// (напр. "Черевики та чоботи" — не просто "Черевики"), інакше товар не
-// потрапить у потрібну вкладку фільтра на сайті.
+// Варіанти category_2/extra_categories для ручного перевизначення типу
+// товару. Значення — точно ті самі рядки, які catalog.html очікує в
+// CATEGORY_2_MAP/PRODUCT_TYPE_ORDER (напр. "Шльопанці та сандалі"), інакше
+// товар не потрапить у потрібну вкладку фільтра на сайті.
 const CATEGORY_2_OPTIONS = {
-  'Взуття': ['Кросівки', 'Черевики та чоботи', 'Шльопанці та сандалі', 'Шиповки'],
+  'Взуття': ['Кросівки', 'Черевики', 'Шльопанці та сандалі', 'Шиповки'],
   'Одяг': ['Куртки та вітровки', 'Кофти та худі', 'Штани та лосини', 'Футболки та майки',
            'Шорти', 'Спортивні костюми', 'Тренч'],
 };
-function populateCategoryOverrideOptions(cat1, currentValue) {
-  const select = document.getElementById('categoryOverrideSelect');
+// Рендеримо чекбокси замість select — можна обрати кілька категорій одразу
+// (напр. товар, що одночасно і черевики, і кросівки — гібридна модель типу
+// Puma). Перша ОБРАНА (за порядком у списку нижче) стає "основною" —
+// category_2, що йде в назву/бейдж на сторінці товару; повний набір обраних
+// зберігається в extra_categories і визначає, у скількох вкладках каталогу
+// товар показується.
+function populateCategoryOverrideOptions(cat1, currentValues) {
+  const wrap = document.getElementById('categoryOverrideOptions');
   const options = CATEGORY_2_OPTIONS[cat1] || [];
   const values = new Set(options);
-  // Якщо поточне значення з бази/прайсу нетипове (не входить у список вище) —
-  // все одно додаємо його окремим пунктом, щоб нічого не втратити й не
-  // підмінити мовчки на щось інше при збереженні.
-  const extra = (currentValue && !values.has(currentValue)) ? [currentValue] : [];
-  select.innerHTML = [...extra, ...options].map(v => `<option value="${v}">${v}</option>`).join('');
-  select.value = currentValue && (values.has(currentValue) || extra.includes(currentValue)) ? currentValue : (options[0] || '');
+  const current = new Set((currentValues || []).filter(Boolean));
+  // Нетипові значення з бази (не входять у список вище) — все одно додаємо
+  // окремими пунктами, щоб нічого не втратити й не підмінити мовчки.
+  const extra = [...current].filter(v => !values.has(v));
+  const allOptions = [...options, ...extra];
+  const anyChecked = allOptions.some(v => current.has(v));
+
+  wrap.innerHTML = '';
+  allOptions.forEach((v, i) => {
+    const checked = current.size ? current.has(v) : i === 0;
+    const label = document.createElement('label');
+    label.className = 'category-checkbox-item' + (checked ? ' checked' : '');
+    label.innerHTML = `<input type="checkbox" value="${v}" ${checked ? 'checked' : ''}> <span>${v}</span>`;
+    label.querySelector('input').addEventListener('change', e => {
+      label.classList.toggle('checked', e.target.checked);
+    });
+    wrap.appendChild(label);
+  });
+  if (!anyChecked && allOptions.length) {
+    wrap.querySelector('.category-checkbox-item').classList.add('checked');
+    wrap.querySelector('.category-checkbox-item input').checked = true;
+  }
+}
+// Обрані категорії в порядку списку (не в порядку кліків) — перша стає
+// "основною" (category_2), решта йдуть в extra_categories.
+function getSelectedCategories() {
+  return [...document.querySelectorAll('#categoryOverrideOptions input:checked')].map(el => el.value);
 }
 function buildDescription(name, brand, cat1, gender) {
   const gp = GENDER_PHRASE[gender] || null;
@@ -622,7 +654,7 @@ async function doSearch() {
   // чи він досі є в Excel-каталозі постачальників. Це дозволяє редагувати опис/фото
   // вже опублікованого товару, навіть якщо постачальник прибрав його з прайсу.
   const { data: existing } = await supabaseClient.from('products')
-    .select('name, brand, gender, category_1, category_2, category_3, price, quantity, size, description, photos, size_chart_gender')
+    .select('name, brand, gender, category_1, category_2, category_3, price, quantity, size, description, photos, size_chart_gender, extra_categories')
     .eq('articul', art);
   existingRows = existing || [];
 
@@ -679,10 +711,14 @@ async function doSearch() {
 
   const cat1Final = String(first.cat1 || first.category_1 || '').trim();
 
-  // Тип товару (category_2) — постачальники часто відносять усе взуття до
-  // "Кросівки" одним кошиком, навіть коли це черевики/шльопанці/шиповки.
+  // Тип(и) товару (category_2 + extra_categories) — постачальники часто
+  // відносять усе взуття до "Кросівки" одним кошиком, навіть коли це
+  // черевики/шльопанці/шиповки; тут же можна обрати одразу кілька категорій
+  // (напр. і "Черевики", і "Кросівки"), щоб товар з'явився в обох вкладках.
+  const existingExtra = existingRows.length ? (existingRows[0].extra_categories || []) : [];
   const currentCat2 = String((existingRows.length ? existingRows[0].category_2 : (first.cat2 || first.category_2)) || '').trim();
-  populateCategoryOverrideOptions(cat1Final, currentCat2);
+  const currentCategories = existingExtra.length ? existingExtra : (currentCat2 ? [currentCat2] : []);
+  populateCategoryOverrideOptions(cat1Final, currentCategories);
   document.getElementById('categoryOverrideWrap').style.display = 'block';
 
   // Ручне перевизначення розмірної сітки має сенс лише для взуття (одяг
@@ -868,6 +904,10 @@ async function publish() {
   if (!currentArticul) return;
   if (!editOnlyMode && !currentMatches.length) return;
   if (!photoItems.length) { showToast('Додайте хоча б одне фото', 'error'); return; }
+  const selectedCategories = getSelectedCategories();
+  if (!selectedCategories.length) { showToast('Оберіть хоча б одну категорію товару', 'error'); return; }
+  const category2Override = selectedCategories[0];
+  const extraCategoriesOverride = selectedCategories;
 
   const statusLine = document.getElementById('statusLine');
   const progressWrap = document.getElementById('progressWrap');
@@ -912,7 +952,6 @@ async function publish() {
     const sizeChartGender = sizeChartGenderWrap.style.display !== 'none' ? (sizeChartGenderSelect.value || null) : null;
     const genderOverride = document.getElementById('genderOverrideSelect').value;
     const cat3Override = GENDER_TO_CAT3[genderOverride] || genderOverride;
-    const category2Override = document.getElementById('categoryOverrideSelect').value;
     let rowsCount;
 
     if (editOnlyMode) {
@@ -922,7 +961,8 @@ async function publish() {
       const name = nameInput.value.trim() || existingRows[0]?.name || '';
       const { error: updErr } = await supabaseClient.from('products')
         .update({ name, description, photos: finalPhotos, size_chart_gender: sizeChartGender,
-                  gender: genderOverride, category_2: category2Override, category_3: cat3Override })
+                  gender: genderOverride, category_2: category2Override, category_3: cat3Override,
+                  extra_categories: extraCategoriesOverride })
         .eq('articul', currentArticul);
       if (updErr) throw new Error('Не вдалось зберегти товар: ' + updErr.message);
       rowsCount = existingRows.length;
@@ -947,6 +987,7 @@ async function publish() {
         category_1: m.cat1,
         category_2: category2Override,
         category_3: cat3Override,
+        extra_categories: extraCategoriesOverride,
         size_chart_gender: sizeChartGender,
         description,
         photos: finalPhotos,

@@ -26,7 +26,7 @@ update.py — цей скрипт нічого не перераховує за�
     python3 sync_catalog.py \
         --catalog-tool-result <path-to-download_file_content-json> \
         --repo <path-to-site-checkout> \
-        --current-products-json <path-to-json-[{id,articul,size,price,quantity,name,description,photos,brand,gender,category_1,category_2,category_3,supplier,size_chart_gender}]> \
+        --current-products-json <path-to-json-[{id,articul,size,price,quantity,name,description,photos,brand,gender,category_1,category_2,category_3,supplier,size_chart_gender,extra_categories}]> \
         --excluded-sizes-json <path-to-json-[{articul,size}]> \
         --sql-out <path-to-write-generated-UPDATE/INSERT-statements>
 
@@ -56,7 +56,7 @@ REQUIRED_COLUMNS = [
 # новий розмір того ж артикулу, що з'явився пізніше, знову підхопив би
 # помилкове значення з прайсу і розійшовся б з рештою розмірів товару.
 TEMPLATE_FIELDS = ['name', 'description', 'photos', 'size_chart_gender',
-                    'gender', 'category_1', 'category_2', 'category_3']
+                    'gender', 'category_1', 'category_2', 'category_3', 'extra_categories']
 
 
 def parse_args():
@@ -102,6 +102,15 @@ def sql_str(v):
     if s == '':
         return 'NULL' if s is None else "''"
     return "'" + s.replace("'", "''") + "'"
+
+
+def sql_text_array(v):
+    """SQL-літерал для колонки text[] (напр. extra_categories) — ARRAY['а','б']
+    або порожній масив '{}', якщо значення відсутнє/не список."""
+    if not v or not isinstance(v, (list, tuple)):
+        return "'{}'"
+    items = [sql_str(x) for x in v if x]
+    return 'ARRAY[' + ', '.join(items) + ']' if items else "'{}'"
 
 
 def main():
@@ -263,7 +272,7 @@ def main():
         sql_lines.append('-- нові розміри вже опублікованих товарів')
         cols = ['articul', 'name', 'size', 'price', 'quantity', 'brand', 'gender',
                 'category_1', 'category_2', 'category_3', 'description', 'photos',
-                'supplier', 'size_chart_gender']
+                'supplier', 'size_chart_gender', 'extra_categories']
         for item in new_sizes:
             c, t = item['catalog'], item['template']
             values = {
@@ -273,10 +282,12 @@ def main():
                 'price': c['price'],
                 'quantity': c['qty'],
                 'brand': sql_str(c['brand']),
-                # gender/category_1/2/3 — з ШАБЛОНУ (вже опублікованого рядка
-                # цього ж артикулу), а не з фіда постачальника: адмінка могла
-                # вручну виправити помилкову стать/категорію, і новий розмір
-                # має лишатись консистентним з рештою розмірів товару.
+                # gender/category_1/2/3/extra_categories — з ШАБЛОНУ (вже
+                # опублікованого рядка цього ж артикулу), а не з фіда
+                # постачальника: адмінка могла вручну виправити помилкову
+                # стать/категорію (в т.ч. обрати кілька категорій одразу через
+                # extra_categories), і новий розмір має лишатись консистентним
+                # з рештою розмірів товару.
                 'gender': sql_str(t.get('gender', c['gender'])),
                 'category_1': sql_str(t.get('category_1', c['cat1'])),
                 'category_2': sql_str(t.get('category_2', c['cat2'])),
@@ -285,6 +296,7 @@ def main():
                 'photos': sql_str(t.get('photos')),
                 'supplier': sql_str(c['supplier']),
                 'size_chart_gender': sql_str(t.get('size_chart_gender')),
+                'extra_categories': sql_text_array(t.get('extra_categories')),
             }
             row_sql = ', '.join(str(values[col]) for col in cols)
             sql_lines.append(

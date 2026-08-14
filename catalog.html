@@ -963,6 +963,38 @@ const PRODUCT_TYPE_ORDER = [
   'Кросівки', 'Шльопанці', 'Сандалі', 'Черевики',
   'Куртки', 'Футболки', 'Кофти', 'Штани', 'Шорти', 'Спортивні костюми'
 ];
+// Точний збіг усієї "Категорія 2" від постачальника (або обраної в адмінці
+// вручну категорії) → тип товару для вкладок каталогу. Винесено на рівень
+// модуля (а не всередину detectProductType), щоб цю саму мапу можна було
+// перевикористати і для додаткових категорій товару (extra_categories) —
+// нижче, у detectProductTypes().
+const CATEGORY_2_MAP = {
+  'кеди': 'Кросівки',
+  'крокси': 'Шльопанці',
+  "в'єтнамки": 'Шльопанці',
+  'сабо': 'Шльопанці',
+  'черевики': 'Черевики',
+  'черевики та чоботи': 'Черевики', // стара назва категорії — лишаємо для сумісності зі старими даними
+  'куртки та вітровки': 'Куртки',
+  'куртка': 'Куртки',
+  'пальто': 'Куртки',
+  'плащ': 'Куртки',
+  'тренч': 'Куртки',
+  'футболки та майки': 'Футболки',
+  'сорочки та блузи': 'Футболки',
+  'футболка': 'Футболки',
+  'кофти та худі': 'Кофти',
+  'кофта': 'Кофти',
+  'джемпер': 'Кофти',
+  'светр': 'Кофти',
+  'толстовка': 'Кофти',
+  'штани та лосини': 'Штани',
+  'бриджи': 'Штани',
+  'шорти': 'Шорти',
+  'костюм спортивний': 'Спортивні костюми',
+  'спортивні костюми': 'Спортивні костюми',
+  'комбінезон': 'Спортивні костюми',
+};
 function detectProductType(p) {
   // Дивимось лише на назву товару — category_2 у базі вже містить об'єднану
   // мітку "Шльопанці та сандалі", тож якби ми шукали ключові слова і в ній
@@ -993,32 +1025,6 @@ function detectProductType(p) {
   // постачальника (вона завжди українською). На відміну від ключових слів
   // назви, тут шукаємо ТОЧНИЙ збіг всієї категорії, а не підрядок — інакше
   // повернулась би та сама проблема, що й зі "Шльопанці та сандалі" вище.
-  const CATEGORY_2_MAP = {
-    'кеди': 'Кросівки',
-    'крокси': 'Шльопанці',
-    "в'єтнамки": 'Шльопанці',
-    'сабо': 'Шльопанці',
-    'черевики та чоботи': 'Черевики',
-    'куртки та вітровки': 'Куртки',
-    'куртка': 'Куртки',
-    'пальто': 'Куртки',
-    'плащ': 'Куртки',
-    'тренч': 'Куртки',
-    'футболки та майки': 'Футболки',
-    'сорочки та блузи': 'Футболки',
-    'футболка': 'Футболки',
-    'кофти та худі': 'Кофти',
-    'кофта': 'Кофти',
-    'джемпер': 'Кофти',
-    'светр': 'Кофти',
-    'толстовка': 'Кофти',
-    'штани та лосини': 'Штани',
-    'бриджи': 'Штани',
-    'шорти': 'Шорти',
-    'костюм спортивний': 'Спортивні костюми',
-    'спортивні костюми': 'Спортивні костюми',
-    'комбінезон': 'Спортивні костюми',
-  };
   const cat2Exact = (p.category_2 || '').trim().toLowerCase();
   if (CATEGORY_2_MAP[cat2Exact]) return CATEGORY_2_MAP[cat2Exact];
 
@@ -1029,6 +1035,37 @@ function detectProductType(p) {
   // пункту в шапці сайту.
   const cat = (p.category_2 || p.category_1 || '').trim();
   return cat || 'Інше';
+}
+
+// Перетворює одне значення (обране в адмінці для extra_categories) на назву
+// пункту фільтра — тим самим правилом, що й основна категорія: спершу пряме
+// влучення в один із відомих типів (напр. "Кросівки", "Шиповки" — своя назва,
+// якої немає в PRODUCT_TYPE_ORDER, але це нормально, як і для основної
+// категорії), потім через CATEGORY_2_MAP, і лише як останній варіант —
+// значення "як є".
+function normalizeToType(raw) {
+  const val = String(raw || '').trim();
+  if (!val) return null;
+  const directHit = PRODUCT_TYPE_ORDER.find(t => t.toLowerCase() === val.toLowerCase());
+  if (directHit) return directHit;
+  const key = val.toLowerCase();
+  if (CATEGORY_2_MAP[key]) return CATEGORY_2_MAP[key];
+  return val;
+}
+
+// Товар може належати одразу до кількох вкладок каталогу (напр. гібридна
+// модель "і черевики, і кросівки") — адмінка дозволяє вручну обрати кілька
+// категорій одразу, вони зберігаються в extra_categories. Основний тип
+// (detectProductType, за назвою/category_2) завжди присутній, додаткові —
+// лише ті, що реально вибрані в адмінці.
+function detectProductTypes(p) {
+  const primary = detectProductType(p);
+  const types = new Set([primary]);
+  (p.extra_categories || []).forEach(raw => {
+    const t = normalizeToType(raw);
+    if (t) types.add(t);
+  });
+  return Array.from(types);
 }
 
 // Категорія з посилання (наприклад "Чоловічі капці") попередньо відмічає
@@ -1112,7 +1149,7 @@ function buildBaseQuery(cat, searchTerm) {
   return () => {
     let query = supabaseClient
       .from('product_summary')
-      .select('id, articul, name, brand, gender, price, photos, sizes, site_categories, category_1, category_2')
+      .select('id, articul, name, brand, gender, price, photos, sizes, site_categories, category_1, category_2, extra_categories')
       .order('id', { ascending: false });
 
     // Категорія з шапки сайту ("Чоловічі кросівки", "Жіночі капці" тощо)
@@ -1148,8 +1185,9 @@ function populateFilterOptions() {
   const brandSet = new Set();
   const sizeSet = new Set();
   allProducts.forEach(p => {
-    p.__type = detectProductType(p);
-    typeSet.add(p.__type);
+    p.__types = detectProductTypes(p);
+    p.__type = p.__types[0];
+    p.__types.forEach(t => typeSet.add(t));
     if (p.brand) brandSet.add(p.brand);
     (p.sizes || []).forEach(s => sizeSet.add(s));
   });
@@ -1238,7 +1276,7 @@ function applyFiltersAndRender(resetPage) {
   updateFilterCountPill();
 
   filteredProducts = allProducts.filter(p => {
-    if (activeFilters.types.size > 0 && !activeFilters.types.has(p.__type)) return false;
+    if (activeFilters.types.size > 0 && !p.__types.some(t => activeFilters.types.has(t))) return false;
     if (activeFilters.brands.size > 0 && !activeFilters.brands.has(p.brand)) return false;
     if (activeFilters.sizes.size > 0) {
       const productSizes = p.sizes || [];
