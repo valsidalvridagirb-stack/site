@@ -86,6 +86,16 @@
   .pill-x { background:none; border:none; cursor:pointer; font-size:13px; line-height:1; padding:0; color:inherit; font-weight:700; }
   .pill-x:hover { opacity:.6; }
   .sizes-hint { font-size:12px; color:var(--mute); margin-top:8px; }
+  .price-override-input {
+    width:64px; font: inherit; font-size:12px; font-weight:600; color:inherit;
+    background:#fff; border:1px solid var(--line); border-radius:6px;
+    padding:1px 5px; -moz-appearance:textfield;
+  }
+  .price-override-input:focus { outline:none; border-color:var(--ink); }
+  .price-override-input::-webkit-outer-spin-button,
+  .price-override-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .pill-price-override { background:var(--okbg); color:var(--ok); border:1px solid var(--ok); }
+  .pill-price-override .price-override-input { border-color:var(--ok); }
 
   .desc-textarea { width:100%; min-height:110px; padding:12px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; font-family:inherit; line-height:1.5; outline:none; resize:vertical; }
   .desc-hint { font-size:12px; color:var(--mute); margin-top:8px; }
@@ -568,31 +578,103 @@ function renderSizesList() {
   listEl.innerHTML = '';
   let totalQty = 0, activeCount = 0;
   currentMatches.forEach(m => {
-    const isExcluded = excludedSizes.has(String(m.size));
+    const key = String(m.size);
+    const isExcluded = excludedSizes.has(key);
+    const isOverridden = priceOverrides.has(key);
+    const displayPrice = isOverridden ? priceOverrides.get(key) : m.price;
+
     const pill = document.createElement('span');
-    pill.className = 'pill ' + (isExcluded ? 'pill-excluded' : 'pill-mute');
-    const label = document.createElement('span');
-    label.textContent = `${m.size} · ${m.price}₴ · ${m.qty}шт`;
+    pill.className = 'pill ' + (isExcluded ? 'pill-excluded' : 'pill-mute') + (isOverridden ? ' pill-price-override' : '');
+
+    const sizeLabel = document.createElement('span');
+    sizeLabel.textContent = `${m.size} · `;
+    pill.appendChild(sizeLabel);
+
+    const priceInput = document.createElement('input');
+    priceInput.type = 'number';
+    priceInput.className = 'price-override-input';
+    priceInput.min = '0';
+    priceInput.step = '1';
+    priceInput.value = displayPrice;
+    priceInput.title = isOverridden
+      ? `Ціна постачальника: ${m.price}₴ (змінено вручну — не зміниться, навіть коли постачальник оновить прайс)`
+      : 'Ціна з прайсу постачальника — можна змінити вручну';
+    priceInput.addEventListener('change', () => {
+      const val = Number(priceInput.value);
+      if (!val || val <= 0) { priceInput.value = displayPrice; return; }
+      if (val === m.price) priceOverrides.delete(key);
+      else priceOverrides.set(key, val);
+      renderSizesList();
+    });
+    pill.appendChild(priceInput);
+
+    const restLabel = document.createElement('span');
+    restLabel.textContent = `₴ · ${m.qty}шт`;
+    pill.appendChild(restLabel);
+
+    if (isOverridden) {
+      const resetBtn = document.createElement('button');
+      resetBtn.type = 'button';
+      resetBtn.className = 'pill-x';
+      resetBtn.title = `Скинути до ціни постачальника (${m.price}₴)`;
+      resetBtn.textContent = '⟲';
+      resetBtn.addEventListener('click', () => { priceOverrides.delete(key); renderSizesList(); });
+      pill.appendChild(resetBtn);
+    }
+
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'pill-x';
     btn.title = isExcluded ? 'Повернути розмір' : 'Прибрати розмір назавжди';
     btn.textContent = isExcluded ? '↺' : '×';
     btn.addEventListener('click', () => {
-      const key = String(m.size);
       if (excludedSizes.has(key)) excludedSizes.delete(key);
       else excludedSizes.add(key);
       renderSizesList();
     });
-    pill.appendChild(label);
     pill.appendChild(btn);
+
     listEl.appendChild(pill);
     if (!isExcluded) { totalQty += Number(m.qty) || 0; activeCount++; }
   });
   if (summaryEl) {
     summaryEl.textContent = `Разом на складі: ${totalQty} шт · ${activeCount} розмір(ів)` +
-      (excludedSizes.size ? ` · прибрано назавжди: ${excludedSizes.size}` : '');
+      (excludedSizes.size ? ` · прибрано назавжди: ${excludedSizes.size}` : '') +
+      (priceOverrides.size ? ` · ціна змінена вручну: ${priceOverrides.size}` : '');
   }
+}
+
+// Товару вже немає в актуальному прайсі постачальників (editOnlyMode) — рядки
+// беремо напряму з уже опублікованих у Supabase, ціну теж можна поправити
+// вручну (input прив'язаний до розміру через data-size, читається в publish()).
+function renderExistingRowsList() {
+  const listEl = document.getElementById('existingRowsList');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  existingRows.forEach(m => {
+    const pill = document.createElement('span');
+    pill.className = 'pill pill-mute';
+
+    const sizeLabel = document.createElement('span');
+    sizeLabel.textContent = `${m.size} · `;
+    pill.appendChild(sizeLabel);
+
+    const priceInput = document.createElement('input');
+    priceInput.type = 'number';
+    priceInput.className = 'price-override-input';
+    priceInput.min = '0';
+    priceInput.step = '1';
+    priceInput.value = m.price;
+    priceInput.dataset.size = m.size;
+    priceInput.title = 'Ціна на сайті — можна змінити вручну';
+    pill.appendChild(priceInput);
+
+    const restLabel = document.createElement('span');
+    restLabel.textContent = `₴ · ${m.quantity}шт`;
+    pill.appendChild(restLabel);
+
+    listEl.appendChild(pill);
+  });
 }
 
 // ---------- пошук артикула ----------
@@ -603,6 +685,11 @@ let currentMatches = [];
 // публікації (навіть після оновлення каталогу постачальника) виключаються
 // з вставки, тобто більше ніколи самі не з'являться на сайті.
 let excludedSizes = new Set();
+// Ручне перевизначення ціни для конкретного розміру (Map<size, price>) — коли
+// постачальник помилково ставить не той тип/ціну. Зберігається в таблиці
+// price_overrides і, як і excludedSizes, застосовується поверх каталогу
+// постачальника при кожній наступній публікації (навіть після оновлення прайсу).
+let priceOverrides = new Map();
 // Єдиний впорядкований список фото картки — і вже завантажені (existing), і нові
 // (new, ще File-об'єкти) в одному масиві, порядок елементів = порядок на сайті.
 // { kind: 'existing', url } | { kind: 'new', file }
@@ -672,6 +759,9 @@ async function doSearch() {
   const { data: excludedRows } = await supabaseClient.from('excluded_sizes').select('size').eq('articul', art);
   excludedSizes = new Set((excludedRows || []).map(r => String(r.size)));
 
+  const { data: priceOverrideRows } = await supabaseClient.from('price_overrides').select('size, price').eq('articul', art);
+  priceOverrides = new Map((priceOverrideRows || []).map(r => [String(r.size), Number(r.price)]));
+
   if (!currentMatches.length && !existingRows.length) {
     info.innerHTML = `<span class="pill" style="background:var(--errbg); color:var(--err);">Не знайдено в Excel-каталозі</span>`;
     document.getElementById('nameEditWrap').style.display = 'none';
@@ -701,9 +791,10 @@ async function doSearch() {
     const totalQty = existingRows.reduce((s, m) => s + (Number(m.quantity) || 0), 0);
     info.innerHTML = `<div><b>${first.name}</b></div>` +
       `<div style="margin-top:4px;">${first.brand} · ${first.gender} · ${first.category_1}/${first.category_2}${first.category_3 ? '/' + first.category_3 : ''}</div>` +
-      `<div class="sizes-list">${existingRows.map(m => `<span class="pill pill-mute">${m.size} · ${m.price}₴ · ${m.quantity}шт</span>`).join('')}</div>` +
+      `<div class="sizes-list" id="existingRowsList"></div>` +
       `<div style="margin-top:8px; font-size:12px; color:var(--mute);">Разом на складі: ${totalQty} шт · ${existingRows.length} розмір(ів)</div>` +
-      `<div style="margin-top:8px;"><span class="pill" style="background:var(--errbg); color:var(--err);">Товару більше немає в каталозі постачальників — можна редагувати опис і фото, ціна/кількість/розміри залишаться без змін</span></div>`;
+      `<div style="margin-top:8px;"><span class="pill" style="background:var(--errbg); color:var(--err);">Товару більше немає в каталозі постачальників — можна редагувати опис, фото і ціну; кількість/розміри залишаться без змін</span></div>`;
+    renderExistingRowsList();
     autoDescription = buildDescription(first.name, first.brand, first.category_1, first.gender);
   }
 
@@ -966,8 +1057,8 @@ async function publish() {
     let rowsCount;
 
     if (editOnlyMode) {
-      // товару немає в актуальному Excel-каталозі — оновлюємо лише назву, опис,
-      // фото і стать/категорію; ціну/кількість/розміри в базі не чіпаємо
+      // товару немає в актуальному Excel-каталозі — оновлюємо назву, опис,
+      // фото, стать/категорію і (вручну) ціну; кількість/розміри в базі не чіпаємо
       const description = descInput.value.trim() || existingRows[0]?.description || '';
       const name = nameInput.value.trim() || existingRows[0]?.name || '';
       const { error: updErr } = await supabaseClient.from('products')
@@ -976,6 +1067,18 @@ async function publish() {
                   extra_categories: extraCategoriesOverride })
         .eq('articul', currentArticul);
       if (updErr) throw new Error('Не вдалось зберегти товар: ' + updErr.message);
+
+      // Ціна тут редагується прямо по кожному розміру (input прив'язаний до
+      // розміру через data-size) — оновлюємо окремим запитом на розмір.
+      const priceInputs = [...document.querySelectorAll('#existingRowsList .price-override-input')];
+      for (const inp of priceInputs) {
+        const size = inp.dataset.size;
+        const price = Number(inp.value);
+        if (!price || price <= 0) continue;
+        const { error: priceErr } = await supabaseClient.from('products')
+          .update({ price }).eq('articul', currentArticul).eq('size', size);
+        if (priceErr) throw new Error(`Товар збережено, але не вдалось оновити ціну для розміру ${size}: ` + priceErr.message);
+      }
       rowsCount = existingRows.length;
     } else {
       const first = currentMatches[0];
@@ -987,23 +1090,30 @@ async function publish() {
 
       await supabaseClient.from('products').delete().eq('articul', currentArticul);
 
-      const rows = matchesToPublish.map(m => ({
-        articul: currentArticul,
-        name,
-        size: m.size,
-        price: m.price,
-        quantity: m.qty,
-        brand: m.brand,
-        gender: genderOverride,
-        category_1: m.cat1,
-        category_2: category2Override,
-        category_3: cat3Override,
-        extra_categories: extraCategoriesOverride,
-        size_chart_gender: sizeChartGender,
-        description,
-        photos: finalPhotos,
-        supplier: [...m.suppliers].join(', ')
-      }));
+      const rows = matchesToPublish.map(m => {
+        const key = String(m.size);
+        // Ціна вручну (priceOverrides) має пріоритет над ціною з прайсу
+        // постачальника — саме так адмін виправляє випадки, коли постачальник
+        // помилково проставив не той тип/ціну товару.
+        const price = priceOverrides.has(key) ? priceOverrides.get(key) : m.price;
+        return {
+          articul: currentArticul,
+          name,
+          size: m.size,
+          price,
+          quantity: m.qty,
+          brand: m.brand,
+          gender: genderOverride,
+          category_1: m.cat1,
+          category_2: category2Override,
+          category_3: cat3Override,
+          extra_categories: extraCategoriesOverride,
+          size_chart_gender: sizeChartGender,
+          description,
+          photos: finalPhotos,
+          supplier: [...m.suppliers].join(', ')
+        };
+      });
       const { error: insErr } = await supabaseClient.from('products').insert(rows);
       if (insErr) throw new Error('Не вдалось зберегти товар: ' + insErr.message);
       rowsCount = rows.length;
@@ -1016,6 +1126,18 @@ async function publish() {
         const excRows = [...excludedSizes].map(size => ({ articul: currentArticul, size }));
         const { error: excErr } = await supabaseClient.from('excluded_sizes').insert(excRows);
         if (excErr) throw new Error('Товар збережено, але не вдалось зберегти список прибраних розмірів: ' + excErr.message);
+      }
+
+      // Зберігаємо ручні ціни — щоб наступна публікація (навіть після оновлення
+      // прайсу постачальника) знову підставила саме цю ціну, а не з каталогу.
+      await supabaseClient.from('price_overrides').delete().eq('articul', currentArticul);
+      const publishedSizes = new Set(matchesToPublish.map(m => String(m.size)));
+      const priceOverrideRowsToSave = [...priceOverrides.entries()]
+        .filter(([size]) => publishedSizes.has(size))
+        .map(([size, price]) => ({ articul: currentArticul, size, price }));
+      if (priceOverrideRowsToSave.length) {
+        const { error: poErr } = await supabaseClient.from('price_overrides').insert(priceOverrideRowsToSave);
+        if (poErr) throw new Error('Товар збережено, але не вдалось зберегти змінені ціни: ' + poErr.message);
       }
     }
 
