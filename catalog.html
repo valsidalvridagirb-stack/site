@@ -1477,8 +1477,15 @@ document.getElementById('resetFiltersBtn').addEventListener('click', () => {
 document.getElementById('siteSearchForm').addEventListener('submit', e => {
   e.preventDefault();
   const term = document.getElementById('siteSearchInput').value.trim();
-  const url = term ? `catalog.html?search=${encodeURIComponent(term)}` : 'catalog.html';
-  window.location.href = url;
+  // Якщо пошук виконується всередині розділу "Чоловіче"/"Жіноче" (cat=... в
+  // поточному URL) — лишаємось у цьому розділі: результати пошуку мають бути
+  // обмежені тією ж статтю, інакше (як було раніше) пошук скидав на весь
+  // каталог і показував чоловічі й жіночі моделі впереміш.
+  const params = new URLSearchParams();
+  if (categoryParam) params.set('cat', categoryParam);
+  if (term) params.set('search', term);
+  const qs = params.toString();
+  window.location.href = qs ? `catalog.html?${qs}` : 'catalog.html';
 });
 
 document.getElementById('productGrid').addEventListener('click', e => {
