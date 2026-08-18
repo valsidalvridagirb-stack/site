@@ -708,6 +708,9 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
           </div>
         </div>
       </div>
+      <div class="nav-item">
+        <a href="catalog.html?cat=Аксесуари">Аксесуари</a>
+      </div>
     </nav>
     <script>
       // Спливне меню "Чоловіче"/"Жіноче" раніше відкривалось по :hover — і
@@ -1178,11 +1181,19 @@ function buildBaseQuery(cat, searchTerm) {
     if (cat) {
       const isMale = /чоловіч/i.test(cat);
       const isFemale = /жіноч/i.test(cat);
+      // "Аксесуари" — окремий розділ у шапці сайту, не прив'язаний до статі
+      // (на відміну від "Чоловіче"/"Жіноче"): тут фільтруємо за
+      // category_1 ("Взуття"/"Одяг"/"Аксесуари", обирається в адмінці для
+      // кожного товару), а не за gender. Товар потрапляє сюди незалежно
+      // від того, чоловічий він, жіночий чи унісекс.
+      const isAccessories = /аксесуар/i.test(cat);
 
       if (isMale) {
         query = query.or('gender.ilike.%Чолов%,gender.ilike.%Унісекс%');
       } else if (isFemale) {
         query = query.or('gender.ilike.%Жін%,gender.ilike.%Унісекс%');
+      } else if (isAccessories) {
+        query = query.ilike('category_1', '%Аксесуар%');
       }
     }
 

@@ -230,10 +230,11 @@
         <input type="text" id="brandInput" class="name-input" placeholder="напр. Nike">
       </div>
       <div id="cat1OverrideWrap" style="display:none; margin-top:16px;">
-        <label class="name-input-label" for="cat1OverrideSelect">Взуття чи одяг</label>
+        <label class="name-input-label" for="cat1OverrideSelect">Взуття, одяг чи аксесуари</label>
         <select id="cat1OverrideSelect" class="name-input">
           <option value="Взуття">Взуття</option>
           <option value="Одяг">Одяг</option>
+          <option value="Аксесуари">Аксесуари</option>
         </select>
       </div>
       <div id="genderOverrideWrap" style="display:none; margin-top:16px;">
@@ -524,6 +525,11 @@ const CATEGORY_2_OPTIONS = {
   'Взуття': ['Кросівки', 'Черевики', 'Капці', 'Сандалі', 'Шиповки'],
   'Одяг': ['Куртки та вітровки', 'Кофти та худі', 'Штани та лосини', 'Футболки та майки',
            'Шорти', 'Спортивні костюми', 'Тренч'],
+  // Стартовий список для нового розділу "Аксесуари" (окремий пункт у шапці
+  // сайту, не прив'язаний до статі) — як і для Взуття/Одяг, будь-яке інше
+  // значення (нетипове) все одно можна додати окремим пунктом через "extra"
+  // у populateCategoryOverrideOptions нижче, без правок цього списку.
+  'Аксесуари': ['Шкарпетки', 'Кепки та шапки', 'Сумки та рюкзаки', 'Ремені', 'Рукавички'],
 };
 // Рендеримо чекбокси замість select — можна обрати кілька категорій одразу
 // (напр. товар, що одночасно і черевики, і кросівки — гібридна модель типу
@@ -574,6 +580,9 @@ function buildDescription(name, brand, cat1, gender) {
   const gp = GENDER_PHRASE[gender] || null;
   if (cat1 === 'Одяг') {
     return `${name} — стильний одяг від ${brand}${gp ? `, призначений для ${gp}` : ''}. Виготовлений з якісних матеріалів для максимального комфорту.`;
+  }
+  if (cat1 === 'Аксесуари') {
+    return `${name} — оригінальний аксесуар від ${brand}${gp ? `, призначений для ${gp}` : ''}. Якісні матеріали та уважна увага до деталей.`;
   }
   return `${name} — оригінальне взуття від ${brand}${gp ? `, розраховане на ${gp}` : ''}. Поєднання стилю та функціональності робить цю модель чудовим вибором для повсякденного носіння та активного способу життя.`;
 }
