@@ -86,6 +86,8 @@
   .pill-x { background:none; border:none; cursor:pointer; font-size:13px; line-height:1; padding:0; color:inherit; font-weight:700; }
   .pill-x:hover { opacity:.6; }
   .sizes-hint { font-size:12px; color:var(--mute); margin-top:8px; }
+  .sizes-suppliers { font-size:11px; color:var(--mute); margin-top:6px; line-height:1.6; }
+  .sizes-suppliers b { color:inherit; font-weight:600; }
   .price-override-input {
     width:64px; font: inherit; font-size:12px; font-weight:600; color:inherit;
     background:#fff; border:1px solid var(--line); border-radius:6px;
@@ -609,6 +611,7 @@ function groupBySize(matches) {
 function renderSizesList() {
   const listEl = document.getElementById('sizesList');
   const summaryEl = document.getElementById('sizesSummary');
+  const suppliersEl = document.getElementById('sizesSuppliers');
   if (!listEl) return;
   listEl.innerHTML = '';
   let totalQty = 0, activeCount = 0;
@@ -676,6 +679,17 @@ function renderSizesList() {
     summaryEl.textContent = `Разом на складі: ${totalQty} шт · ${activeCount} розмір(ів)` +
       (excludedSizes.size ? ` · прибрано назавжди: ${excludedSizes.size}` : '') +
       (priceOverrides.size ? ` · ціна змінена вручну: ${priceOverrides.size}` : '');
+  }
+  // Мелкий текст під розмірами: у яких постачальників знайдено кожен розмір
+  // (кілька постачальників на один розмір трапляється часто — id пар
+  // articul/postachalnyk не показуємо, лише назву постачальника з m.suppliers,
+  // зібраного в groupBySize()). Прибрані назавжди розміри не показуємо тут,
+  // бо їх все одно нема на сайті.
+  if (suppliersEl) {
+    const lines = currentMatches
+      .filter(m => !excludedSizes.has(String(m.size)))
+      .map(m => `<b>${m.size}</b>: ${[...m.suppliers].sort().join(', ')}`);
+    suppliersEl.innerHTML = lines.length ? 'Постачальники за розміром: ' + lines.join(' · ') : '';
   }
 }
 
@@ -969,6 +983,7 @@ async function doSearch() {
       `<div style="margin-top:4px;">${first.brand} · ${first.gender} · ${first.cat1}/${first.cat2}${first.cat3 ? '/' + first.cat3 : ''}</div>` +
       `<div class="sizes-list" id="sizesList"></div>` +
       `<div style="margin-top:8px; font-size:12px; color:var(--mute);" id="sizesSummary"></div>` +
+      `<div class="sizes-suppliers" id="sizesSuppliers"></div>` +
       `<div class="sizes-hint">Натисніть × на розмірі, щоб прибрати його з сайту назавжди — він більше не з'явиться, навіть якщо постачальник знову його завезе і оновиться каталог. ↺ поверне розмір назад.</div>`;
     renderSizesList();
     autoDescription = buildDescription(first.name, first.brand, first.cat1, first.gender);
