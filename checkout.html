@@ -67,7 +67,8 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
   
   .form-group { margin-bottom:14px; }
   .form-group label { display:block; font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:4px; color:var(--mute); }
-  .form-group input { width:100%; padding:10px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; outline:none; }
+  .form-group input, .form-group textarea { width:100%; padding:10px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; outline:none; font-family:inherit; }
+  .form-group textarea { resize:vertical; min-height:64px; }
   
   .cart-item { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding:10px 0; }
   .cart-item:last-child { border-bottom:none; }
@@ -301,6 +302,10 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
         <div class="form-group">
           <label>Відділення Нової Пошти</label>
           <input type="text" id="custNP" required placeholder="Відділення №1 (вул. Хрещатик, 1)">
+        </div>
+        <div class="form-group">
+          <label>Коментар до замовлення (необов'язково)</label>
+          <textarea id="custComment" placeholder="Наприклад: побажання щодо доставки, потрібен інший розмір тощо"></textarea>
         </div>
         <button type="submit" class="btn-submit">Підтвердити замовлення</button>
       </form>
@@ -651,6 +656,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   const customerPhone = document.getElementById('custPhone').value;
   const city = document.getElementById('custCity').value;
   const novaPoshtaDept = document.getElementById('custNP').value;
+  const comment = document.getElementById('custComment').value.trim();
 
   const rpcItems = cart.map(item => ({
     product_name: item.name,
@@ -671,7 +677,8 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     p_customer_phone: customerPhone,
     p_city: city,
     p_nova_poshta_dept: novaPoshtaDept,
-    p_items: rpcItems
+    p_items: rpcItems,
+    p_comment: comment || null
   });
 
   if (orderErr) {
@@ -698,6 +705,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
       customerPhone,
       city,
       novaPoshtaDept,
+      comment,
       totalPrice: order.total_price,
       items: rpcItems.map(it => ({ name: it.product_name, size: it.size, quantity: it.quantity, price: it.price }))
     })

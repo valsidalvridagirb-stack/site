@@ -1616,10 +1616,24 @@ async function loadOrders() {
   orders.forEach(o => list.appendChild(renderOrderCard(o, itemsByOrder[o.id] || [])));
 }
 
+// Коментар клієнта — вільний текст, який вводить клієнт на checkout.html,
+// тож на відміну від решти полів картки (їх заповнюють ті самі клієнтські
+// поля, але тут ризик вищий — багаторядковий вільний текст найімовірніше
+// місце для випадкового/навмисного HTML) екрануємо перед вставкою через
+// innerHTML, щоб він не міг виконатись у сесії адміна.
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
 function renderOrderCard(o, items) {
   const card = document.createElement('div');
   card.className = 'order-card';
   const itemsText = items.map(i => `${i.product_name}${i.articul ? ' · ' + String(i.articul).toUpperCase() : ''} (${i.size}) ×${i.quantity}`).join(', ');
+  const commentHtml = o.comment
+    ? `<div class="order-comment" style="margin-top:8px; padding:8px 10px; background:var(--smoke); border-radius:var(--radius); font-size:13px;"><b>Коментар:</b> ${escapeHtml(o.comment)}</div>`
+    : '';
 
   card.innerHTML = `
     <div class="order-head">
@@ -1634,6 +1648,7 @@ function renderOrderCard(o, items) {
       ${o.city}, ${o.nova_poshta_dept}<br>
       Сума: <b>${o.total_price} ₴</b>
       <div class="order-items">${itemsText}</div>
+      ${commentHtml}
     </div>
     <div class="ttn-box" id="ttnBox-${o.id}"></div>
   `;
