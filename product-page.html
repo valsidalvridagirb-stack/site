@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
+<script>(function(){try{if(localStorage.getItem('nl_theme')==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- Meta Pixel + Google Analytics (GA4) -->
@@ -71,8 +73,11 @@ gtag('config', 'G-Y0CS5VFCYH');
   --line:#e6e5e2;
   --mute:#767470;
   --accent:#c8362c;
-  --radius:2px;
-}
+  --radius:2px;--ink-solid:#111111;}
+html[data-theme="dark"]{--ink:#f0f0ee;--paper:#121212;--smoke:#1c1c1c;--line:#333331;--mute:#9c9a95;--accent:#e2453b;--ink-solid:#2a2a2a;}
+html[data-theme="dark"] input,html[data-theme="dark"] textarea,html[data-theme="dark"] select{background:var(--paper);color:var(--ink);}html[data-theme="dark"] input::placeholder,html[data-theme="dark"] textarea::placeholder{color:var(--mute);}
+html[data-theme="dark"] .nav-dropdown{background:rgba(24,24,24,.92);border-color:rgba(255,255,255,.14);}html[data-theme="dark"] header.site{background:rgba(18,18,18,.92);}.theme-toggle-btn{background:none;border:none;padding:0;margin:0;font:inherit;cursor:pointer;}.theme-toggle-btn .theme-icon-sun{display:none;}html[data-theme="dark"] .theme-toggle-btn .theme-icon-moon{display:none;}html[data-theme="dark"] .theme-toggle-btn .theme-icon-sun{display:block;}
+
 *{box-sizing:border-box;margin:0;padding:0;}
 html{overflow-x:hidden;}
 body{
@@ -128,7 +133,7 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .nav-subgroup-body a{padding:9px 20px 9px 36px;font-size:12.5px;color:var(--mute);border-radius:6px;margin:1px 8px;}
 .nav-subgroup-body a:hover{color:var(--ink);background:var(--smoke);}
 .badge-count{
-  position:absolute;top:-7px;right:-8px;background:var(--ink);color:#fff;
+  position:absolute;top:-7px;right:-8px;background:var(--ink-solid);color:#fff;
   font-size:10px;font-weight:700;width:16px;height:16px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
 }
@@ -342,7 +347,7 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
   font-size:12px;font-weight:700;color:var(--mute);cursor:pointer;transition:all .15s;
 }
 .size-modal .gender-tab-btn:hover{border-color:var(--ink);color:var(--ink);}
-.size-modal .gender-tab-btn.active{background:var(--ink);border-color:var(--ink);color:var(--paper);}
+.size-modal .gender-tab-btn.active{background:var(--ink-solid);border-color:var(--ink-solid);color:#fff;}
 .size-modal .chart-note{font-size:12.5px;color:var(--mute);margin-bottom:16px;line-height:1.5;}
 .size-modal .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:4px;margin-bottom:20px;}
 .size-modal table.size-table{width:100%;border-collapse:collapse;font-size:13px;min-width:400px;}
@@ -366,7 +371,7 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
   font-weight:700;cursor:pointer;border-radius:10px;transition:all .2s;
 }
 .size-btn:hover{border-color:var(--ink);}
-.size-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.size-btn.active{background:var(--ink-solid);color:#fff;border-color:var(--ink-solid);}
 .size-btn:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through;}
 .size-btn.unavailable{opacity:.4;text-decoration:line-through;}
 .size-btn.unavailable:hover{border-color:var(--line);}
@@ -386,8 +391,8 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 }
 .notify-input:focus{outline:none;border-color:var(--ink);}
 .notify-submit-btn{
-  width:100%;padding:13px;border:none;border-radius:6px;background:var(--ink);
-  color:var(--paper);font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+  width:100%;padding:13px;border:none;border-radius:6px;background:var(--ink-solid);
+  color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
   font-size:13px;cursor:pointer;transition:opacity .2s;
 }
 .notify-submit-btn:hover{opacity:.85;}
@@ -415,7 +420,7 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 }
 
 .add-btn{
-  width:100%;padding:18px;background:var(--ink);color:var(--paper);
+  width:100%;padding:18px;background:var(--ink-solid);color:#fff;
   font-weight:500;font-size:16px;text-transform:uppercase;letter-spacing:1px;
   border:none;border-radius:12px;cursor:pointer;margin-top:16px;
   transition:opacity .2s ease,transform .15s ease;
@@ -424,7 +429,7 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .add-btn:active{transform:scale(.98);}
 
 .buy-now-btn{
-  width:100%;padding:18px;background:var(--ink);color:var(--paper);
+  width:100%;padding:18px;background:var(--ink-solid);color:#fff;
   font-weight:500;font-size:16px;text-transform:uppercase;letter-spacing:1px;
   border:none;border-radius:12px;cursor:pointer;margin-top:10px;
   transition:opacity .2s ease,transform .15s ease;
@@ -453,14 +458,14 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 
 /* Footer */
 footer.site-footer {
-  background-color: var(--ink);
+  background-color: var(--ink-solid);
   color: #ffffff;
   padding: 60px 24px 30px;
 }
 /* Плавний перехід від білого фону сторінки до темного футера — щоб не було різкого обриву. */
 .footer-fade {
   height: clamp(44px, 6vw, 70px);
-  background: linear-gradient(to bottom, var(--paper), var(--ink));
+  background: linear-gradient(to bottom, var(--paper), var(--ink-solid));
 }
 
 /* ===== Toast-повідомлення ===== */
@@ -605,6 +610,7 @@ footer.site-footer {
    зображень товарів (повністю заблокувати збереження неможливо). */
 img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 </style>
+<script src="assets/theme.js" defer></script>
 </head>
 <body>
 
@@ -715,6 +721,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
     </form>
 
     <div class="header-icons">
+      <button class="icon-btn theme-toggle-btn" id="themeToggleBtn" type="button" title="Змінити тему" aria-label="Змінити тему"><svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
       <!-- Иконка Личного Кабинета -->
       <a href="account.html" class="icon-btn" title="Особистий кабінет" aria-label="Особистий кабінет">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -1899,9 +1906,9 @@ fetchProduct();
 }
 .social-fab-btn:hover{transform:scale(1.08);box-shadow:0 4px 14px rgba(0,0,0,.22);}
 .social-fab-btn svg{width:18px;height:18px;}
-.social-fab-btn.instagram{background:var(--ink);}
-.social-fab-btn.telegram{background:var(--ink);}
-.social-fab-btn.viber{background:var(--ink);}
+.social-fab-btn.instagram{background:var(--ink-solid);}
+.social-fab-btn.telegram{background:var(--ink-solid);}
+.social-fab-btn.viber{background:var(--ink-solid);}
 @media (max-width:640px){
   .social-fab{right:12px;bottom:12px;gap:7px;}
   .social-fab-btn{width:34px;height:34px;}

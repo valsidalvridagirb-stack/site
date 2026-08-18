@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
+<script>(function(){try{if(localStorage.getItem('nl_theme')==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- Meta Pixel + Google Analytics (GA4) -->
@@ -63,8 +65,11 @@ gtag('config', 'G-Y0CS5VFCYH');
     --line:#e6e5e2;
     --mute:#767470;
     --accent:#c8362c;
-    --radius:4px;
-  }
+    --radius:4px;--ink-solid:#111111;}
+html[data-theme="dark"]{--ink:#f0f0ee;--paper:#121212;--smoke:#1c1c1c;--line:#333331;--mute:#9c9a95;--accent:#e2453b;--ink-solid:#2a2a2a;}
+html[data-theme="dark"] input,html[data-theme="dark"] textarea,html[data-theme="dark"] select{background:var(--paper);color:var(--ink);}html[data-theme="dark"] input::placeholder,html[data-theme="dark"] textarea::placeholder{color:var(--mute);}
+html[data-theme="dark"] header.site.scrolled{--hdr-ink:#f0f0ee;--hdr-mute:#9c9a95;--hdr-line:#333331;background:rgba(18,18,18,.92);}.theme-toggle-btn{background:none;border:none;padding:0;margin:0;font:inherit;cursor:pointer;}.theme-toggle-btn .theme-icon-sun{display:none;}html[data-theme="dark"] .theme-toggle-btn .theme-icon-moon{display:none;}html[data-theme="dark"] .theme-toggle-btn .theme-icon-sun{display:block;}
+
   *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;overflow-x:hidden;}
   body{
@@ -615,7 +620,7 @@ gtag('config', 'G-Y0CS5VFCYH');
 
   /* ===== Footer ===== */
   footer {
-    background: var(--ink);
+    background: var(--ink-solid);
     color: #fff;
     padding: 56px 0 28px;
   }
@@ -623,7 +628,7 @@ gtag('config', 'G-Y0CS5VFCYH');
   /* Плавний перехід від білого фону сторінки до темного футера — щоб не було різкого обриву. */
   .footer-fade {
     height: clamp(44px, 6vw, 70px);
-    background: linear-gradient(to bottom, var(--paper), var(--ink));
+    background: linear-gradient(to bottom, var(--paper), var(--ink-solid));
   }
 
   .foot-main {
@@ -757,6 +762,7 @@ gtag('config', 'G-Y0CS5VFCYH');
    зображень товарів (повністю заблокувати збереження неможливо). */
 img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 </style>
+<script src="assets/theme.js" defer></script>
 </head>
 <body>
 
@@ -867,6 +873,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
     </form>
 
     <div class="header-icons">
+      <button class="icon-btn theme-toggle-btn" id="themeToggleBtn" type="button" title="Змінити тему" aria-label="Змінити тему"><svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
       <!-- Иконка Личного Кабинета -->
       <a href="account.html" class="icon-btn" title="Особистий кабінет" aria-label="Особистий кабінет">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -1122,9 +1129,9 @@ loadProducts();
 }
 .social-fab-btn:hover{transform:scale(1.08);box-shadow:0 4px 14px rgba(0,0,0,.22);}
 .social-fab-btn svg{width:18px;height:18px;}
-.social-fab-btn.instagram{background:var(--ink);}
-.social-fab-btn.telegram{background:var(--ink);}
-.social-fab-btn.viber{background:var(--ink);}
+.social-fab-btn.instagram{background:var(--ink-solid);}
+.social-fab-btn.telegram{background:var(--ink-solid);}
+.social-fab-btn.viber{background:var(--ink-solid);}
 @media (max-width:640px){
   .social-fab{right:12px;bottom:12px;gap:7px;}
   .social-fab-btn{width:34px;height:34px;}
