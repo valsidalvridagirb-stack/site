@@ -45,7 +45,7 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
   a { text-decoration:none; color:inherit; }
 
   header.site { position:sticky; top:0; z-index:50; background:rgba(255,255,255,.95); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
-  .header-row { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; max-width:1240px; margin:0 auto; gap:20px; }
+  .header-row { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; max-width:none; margin:0 auto; gap:20px; }
   .logo { display:flex; flex-direction:column; align-items:center; line-height:1; }
   .logo b { font-size:21px; font-weight:500; }
   .logo span { font-size:9px; letter-spacing:.32em; color:var(--mute); font-weight:600; display:block; }
@@ -103,7 +103,7 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
   footer.site-footer { background-color: var(--ink-solid); color: #ffffff; padding: 60px 32px 30px; }
   /* Плавний перехід від білого фону сторінки до темного футера — щоб не було різкого обриву. */
   .footer-fade { height: clamp(44px, 6vw, 70px); background: linear-gradient(to bottom, var(--paper), var(--ink-solid)); margin-top: auto; }
-  .footer-container { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
+  .footer-container { max-width:none; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
   .footer-col h4 { font-size: 13px; font-weight: 700; letter-spacing: 1px; color: #888888; margin-bottom: 20px; text-transform: uppercase; }
   .footer-col ul { list-style: none; padding: 0; margin: 0; }
   .footer-col ul li { margin-bottom: 12px; }
@@ -114,7 +114,7 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
   .social-icon { width: 36px; height: 36px; border-radius: 50%; background: #222222; display: flex; align-items: center; justify-content: center; color: #ffffff; text-decoration: none; transition: background 0.2s; }
   .social-icon:hover { background: #333333; }
   .footer-desc { font-size: 13px; color: #888888; line-height: 1.6; margin: 0; }
-  .footer-bottom { max-width: 1240px; margin: 40px auto 0; padding-top: 30px; border-top: 1px solid #222222; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #666666; }
+  .footer-bottom { max-width:none; margin: 40px auto 0; padding-top: 30px; border-top: 1px solid #222222; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #666666; }
   .footer-bottom-links a { color: #888888; text-decoration: none; margin-right: 20px; }
   .footer-bottom-links a:hover { color: #ffffff; }
 

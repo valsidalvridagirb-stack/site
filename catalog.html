@@ -97,7 +97,7 @@ html[data-theme="dark"] .nav-dropdown{background:rgba(24,24,24,.92);border-color
   }
   .header-row{
     display:flex;align-items:center;justify-content:space-between;gap:20px;
-    padding:20px 32px;max-width:1240px;margin:0 auto;flex-wrap:wrap;
+    padding:20px 32px;max-width:none;margin:0 auto;flex-wrap:wrap;
   }
   .logo{display:flex;flex-direction:column;align-items:center;line-height:1;flex-shrink:0;}
   .logo b{font-size:21px;letter-spacing:.02em;font-weight:500;}
@@ -151,8 +151,8 @@ html[data-theme="dark"] .nav-dropdown{background:rgba(24,24,24,.92);border-color
   .site-search svg{width:15px;height:15px;stroke:var(--mute);flex-shrink:0;}
 
   /* Main Section */
-  .catalog-container {
-    max-width: 1240px;
+  .catalog-container {width:100%;
+    max-width:none;
     margin: 40px auto;
     padding: 0 32px;
     flex: 1;
@@ -262,7 +262,7 @@ html[data-theme="dark"] .nav-dropdown{background:rgba(24,24,24,.92);border-color
   /* Product Grid */
   .product-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 44px 28px;
     min-height: 400px;
   }
@@ -539,7 +539,7 @@ html[data-theme="dark"] .nav-dropdown{background:rgba(24,24,24,.92);border-color
     background: linear-gradient(to bottom, var(--paper), var(--ink-solid));
   }
   .footer-container {
-    max-width: 1240px;
+    max-width:none;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1fr;
@@ -604,7 +604,7 @@ html[data-theme="dark"] .nav-dropdown{background:rgba(24,24,24,.92);border-color
     margin: 0;
   }
   .footer-bottom {
-    max-width: 1240px;
+    max-width:none;
     margin: 40px auto 0;
     padding-top: 30px;
     border-top: 1px solid #222222;
