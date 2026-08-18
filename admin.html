@@ -97,6 +97,14 @@
   .pill-price-override { background:var(--okbg); color:var(--ok); border:1px solid var(--ok); }
   .pill-price-override .price-override-input { border-color:var(--ok); }
 
+  .manual-size-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .manual-size-input { flex:1; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:14px; font-family:inherit; outline:none; -moz-appearance:textfield; }
+  .manual-size-input:focus { border-color:var(--ink); }
+  .manual-size-input::-webkit-outer-spin-button,
+  .manual-size-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .manual-size-row .pill-x { flex:0 0 auto; font-size:18px; padding:0 4px; }
+  .manual-add-size-btn { margin-top:2px; }
+
   .desc-textarea { width:100%; min-height:110px; padding:12px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; font-family:inherit; line-height:1.5; outline:none; resize:vertical; }
   .desc-hint { font-size:12px; color:var(--mute); margin-top:8px; }
   .desc-hint a, .desc-reset { color:var(--ink); font-weight:600; cursor:pointer; text-decoration:underline; }
@@ -217,6 +225,17 @@
         <input type="text" id="nameInput" class="name-input" placeholder="напр. Кросівки Nike Metcon 10">
         <div class="desc-hint">Для нових товарів підставляється автоматично у форматі «БРЕНД МОДЕЛЬ» (без категорії, артикулу та зайвих літер M/W з прайсу постачальника) — можна відредагувати, зміна збережеться і не перезапишеться автоматично при наступних синхронізаціях. <span class="desc-reset" id="nameResetBtn">Повернути автоматичну назву</span></div>
       </div>
+      <div id="brandInputWrap" style="display:none; margin-top:16px;">
+        <label class="name-input-label" for="brandInput">Бренд</label>
+        <input type="text" id="brandInput" class="name-input" placeholder="напр. Nike">
+      </div>
+      <div id="cat1OverrideWrap" style="display:none; margin-top:16px;">
+        <label class="name-input-label" for="cat1OverrideSelect">Взуття чи одяг</label>
+        <select id="cat1OverrideSelect" class="name-input">
+          <option value="Взуття">Взуття</option>
+          <option value="Одяг">Одяг</option>
+        </select>
+      </div>
       <div id="genderOverrideWrap" style="display:none; margin-top:16px;">
         <label class="name-input-label" for="genderOverrideSelect">Стать / категорія товару</label>
         <select id="genderOverrideSelect" class="name-input">
@@ -241,6 +260,13 @@
         </select>
         <div class="desc-hint">За замовчуванням сітка визначається за статтю з прайсу постачальника — вона часто буває переплутана. Тут можна примусово задати правильну, незалежно від статі в прайсі. Список варіантів залежить від бренду — наприклад, підліткова сітка є лише в New Balance.</div>
       </div>
+    </div>
+
+    <div class="card" id="manualSizesCard" style="display:none;">
+      <h3>Розміри, ціна, кількість</h3>
+      <div id="manualSizesList"></div>
+      <button type="button" class="btn btn-secondary manual-add-size-btn" id="manualAddSizeBtn">+ Додати розмір</button>
+      <div class="desc-hint">Товару немає в жодного постачальника — вносите розміри/ціну/кількість вручну один раз, і надалі оновлюєте так само вручну, коли забажаєте. Автоматична синхронізація цін і залишків з прайсів постачальників цей товар ніколи не чіпає і не деактивує.</div>
     </div>
 
     <div class="card" id="photoCard" style="display:none;">
@@ -700,6 +726,15 @@ let existingRows = [];
 // true, якщо товару вже немає в актуальному Excel-каталозі (постачальник прибрав
 // з прайсу) — тоді редагуємо лише опис і фото, ціну/кількість/розміри не чіпаємо.
 let editOnlyMode = false;
+// true для товару без постачальника взагалі (доданий вручну через кнопку
+// "Створити товар вручну" або вже існуючий з supplier === 'manual') — на
+// відміну від editOnlyMode, тут розміри/ціна/кількість повністю редаговані,
+// бо local_sync_catalog.py спеціально ігнорує рядки products з
+// supplier === 'manual' і ніколи їх не чіпає/не обнуляє.
+let manualMode = false;
+// [{ size, price, quantity }] — рядки ручного товару, редаговані напряму
+// (без прив'язки до жодного матчу з прайсу постачальника).
+let manualSizeRows = [];
 
 document.getElementById('artSearchBtn').addEventListener('click', doSearch);
 document.getElementById('artInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
@@ -731,6 +766,132 @@ function updateSizeChartGenderOptions(brand) {
   }
 }
 
+// ---------- ручний товар (без постачальника) ----------
+// Перемальовує список чекбоксів типу товару й перемикач розмірної сітки
+// відповідно до поточного обраного "Взуття/Одяг" і бренду — викликається і
+// при вході в ручний режим, і при зміні цих полів вручну (на відміну від
+// звичайного пошуку, тут cat1/brand не приходять готовими з прайсу чи вже
+// збереженого товару, а обираються адміном інтерактивно).
+function refreshManualCategoryUI(presetCategories) {
+  const cat1 = document.getElementById('cat1OverrideSelect').value;
+  populateCategoryOverrideOptions(cat1, presetCategories || []);
+
+  const sizeChartGenderWrap = document.getElementById('sizeChartGenderWrap');
+  const sizeChartGenderSelect = document.getElementById('sizeChartGenderSelect');
+  if (cat1 === 'Взуття') {
+    updateSizeChartGenderOptions(document.getElementById('brandInput').value);
+    sizeChartGenderWrap.style.display = 'block';
+  } else {
+    sizeChartGenderWrap.style.display = 'none';
+    sizeChartGenderSelect.value = '';
+  }
+}
+document.getElementById('cat1OverrideSelect').addEventListener('change', () => refreshManualCategoryUI());
+document.getElementById('brandInput').addEventListener('input', () => {
+  if (document.getElementById('cat1OverrideSelect').value === 'Взуття') {
+    updateSizeChartGenderOptions(document.getElementById('brandInput').value);
+  }
+});
+
+function renderManualSizeRows() {
+  const wrap = document.getElementById('manualSizesList');
+  wrap.innerHTML = '';
+  manualSizeRows.forEach((row, i) => {
+    const line = document.createElement('div');
+    line.className = 'manual-size-row';
+    line.innerHTML = `
+      <input type="text" class="manual-size-input" placeholder="Розмір, напр. 42">
+      <input type="number" class="manual-size-input" placeholder="Ціна ₴" min="0" step="1">
+      <input type="number" class="manual-size-input" placeholder="Кількість" min="0" step="1">
+      <button type="button" class="pill-x" title="Видалити розмір">×</button>`;
+    const [sizeInp, priceInp, qtyInp] = line.querySelectorAll('input');
+    sizeInp.value = row.size ?? '';
+    priceInp.value = row.price ?? '';
+    qtyInp.value = row.quantity ?? '';
+    sizeInp.addEventListener('input', () => { manualSizeRows[i].size = sizeInp.value; });
+    priceInp.addEventListener('input', () => { manualSizeRows[i].price = priceInp.value; });
+    qtyInp.addEventListener('input', () => { manualSizeRows[i].quantity = qtyInp.value; });
+    line.querySelector('.pill-x').addEventListener('click', () => {
+      manualSizeRows.splice(i, 1);
+      if (!manualSizeRows.length) manualSizeRows.push({ size: '', price: '', quantity: '' });
+      renderManualSizeRows();
+    });
+    wrap.appendChild(line);
+  });
+}
+document.getElementById('manualAddSizeBtn').addEventListener('click', () => {
+  manualSizeRows.push({ size: '', price: '', quantity: '' });
+  renderManualSizeRows();
+});
+
+// Вхід у ручний режим — і для абсолютно нового товару (existingRows порожній,
+// викликається кнопкою "Створити товар вручну" з гілки "нічого не знайдено"),
+// і для редагування вже існуючого ручного товару (existingRows заповнений
+// рядками з supplier === 'manual', викликається напряму з doSearch()).
+function enterManualMode() {
+  manualMode = true;
+  editOnlyMode = false;
+  photoItems = [];
+
+  const first = existingRows.length ? existingRows[0] : null;
+  const info = document.getElementById('matchInfo');
+  const descInput = document.getElementById('descInput');
+
+  info.innerHTML = first
+    ? `<span class="pill" style="background:var(--okbg); color:var(--ok);">Ручний товар (без постачальника) — редагування</span><div style="margin-top:4px;"><b>${first.name}</b></div>`
+    : `<span class="pill" style="background:var(--okbg); color:var(--ok);">Новий ручний товар — заповніть поля нижче</span>`;
+
+  const nameInput = document.getElementById('nameInput');
+  nameInput.value = first ? (first.name || '') : '';
+  nameInput.dataset.auto = nameInput.value;
+  document.getElementById('nameEditWrap').style.display = 'block';
+
+  document.getElementById('brandInput').value = first ? (first.brand || '') : '';
+  document.getElementById('brandInputWrap').style.display = 'block';
+
+  document.getElementById('cat1OverrideSelect').value = (first && first.category_1) || 'Взуття';
+  document.getElementById('cat1OverrideWrap').style.display = 'block';
+
+  const genderOverrideSelect = document.getElementById('genderOverrideSelect');
+  const currentGender = (first && first.gender) || '';
+  genderOverrideSelect.value = GENDER_TO_CAT3[currentGender] ? currentGender : 'Унісекс';
+  document.getElementById('genderOverrideWrap').style.display = 'block';
+
+  document.getElementById('categoryOverrideWrap').style.display = 'block';
+  const existingExtra = first ? (first.extra_categories || []) : [];
+  const currentCat2 = first ? String(first.category_2 || '') : '';
+  const currentCategories = existingExtra.length ? existingExtra : (currentCat2 ? [currentCat2] : []);
+  refreshManualCategoryUI(currentCategories);
+  if (first) {
+    document.getElementById('sizeChartGenderSelect').value = first.size_chart_gender || '';
+  }
+
+  manualSizeRows = existingRows.length
+    ? existingRows.map(r => ({ size: r.size, price: r.price, quantity: r.quantity }))
+    : [{ size: '', price: '', quantity: '' }];
+  document.getElementById('manualSizesCard').style.display = 'block';
+  renderManualSizeRows();
+
+  const autoDescription = first ? (first.description || '') : '';
+  descInput.value = autoDescription;
+  descInput.dataset.auto = autoDescription;
+
+  if (first && first.photos) {
+    const existingPhotos = first.photos.split(/[;,]/).map(s => s.trim()).filter(Boolean);
+    photoItems = existingPhotos.map(url => ({ kind: 'existing', url }));
+  }
+  document.getElementById('unpublishBtn').style.display = existingRows.length ? 'inline-block' : 'none';
+  document.getElementById('existingNote').textContent = existingRows.length
+    ? 'Ручний товар — нижче поточні фото, можна видалити, додати нові або перетягнути, щоб змінити порядок.'
+    : '';
+
+  document.getElementById('descCard').style.display = 'block';
+  document.getElementById('photoCard').style.display = 'block';
+  document.getElementById('publishCard').style.display = 'block';
+  document.getElementById('statusLine').textContent = '';
+  renderPhotoGrid();
+}
+
 async function doSearch() {
   const art = document.getElementById('artInput').value.trim();
   if (!art) return;
@@ -744,6 +905,7 @@ async function doSearch() {
   currentMatches = groupBySize(findByArticul(art));
   photoItems = [];
   editOnlyMode = false;
+  manualMode = false;
 
   const info = document.getElementById('matchInfo');
   const descInput = document.getElementById('descInput');
@@ -752,7 +914,7 @@ async function doSearch() {
   // чи він досі є в Excel-каталозі постачальників. Це дозволяє редагувати опис/фото
   // вже опублікованого товару, навіть якщо постачальник прибрав його з прайсу.
   const { data: existing } = await supabaseClient.from('products')
-    .select('name, brand, gender, category_1, category_2, category_3, price, quantity, size, description, photos, size_chart_gender, extra_categories')
+    .select('name, brand, gender, category_1, category_2, category_3, price, quantity, size, description, photos, size_chart_gender, extra_categories, supplier')
     .eq('articul', art);
   existingRows = existing || [];
 
@@ -763,13 +925,31 @@ async function doSearch() {
   priceOverrides = new Map((priceOverrideRows || []).map(r => [String(r.size), Number(r.price)]));
 
   if (!currentMatches.length && !existingRows.length) {
-    info.innerHTML = `<span class="pill" style="background:var(--errbg); color:var(--err);">Не знайдено в Excel-каталозі</span>`;
+    info.innerHTML = `<span class="pill" style="background:var(--errbg); color:var(--err);">Не знайдено в Excel-каталозі постачальників</span>` +
+      `<div style="margin-top:12px;"><button type="button" class="btn btn-secondary" id="manualCreateBtn">+ Створити товар вручну (без постачальника)</button></div>` +
+      `<div class="desc-hint" style="margin-top:8px;">Для товару, якого нема у жодного постачальника — розміри, ціну і кількість вносите вручну один раз, і потім оновлюєте самі коли завгодно. Автоматична синхронізація цін/залишків з прайсів постачальників його ніколи не чіпає й не деактивує.</div>`;
     document.getElementById('nameEditWrap').style.display = 'none';
+    document.getElementById('brandInputWrap').style.display = 'none';
+    document.getElementById('cat1OverrideWrap').style.display = 'none';
     document.getElementById('genderOverrideWrap').style.display = 'none';
     document.getElementById('categoryOverrideWrap').style.display = 'none';
+    document.getElementById('sizeChartGenderWrap').style.display = 'none';
+    document.getElementById('manualSizesCard').style.display = 'none';
     document.getElementById('photoCard').style.display = 'none';
     document.getElementById('descCard').style.display = 'none';
     document.getElementById('publishCard').style.display = 'none';
+    document.getElementById('manualCreateBtn').addEventListener('click', enterManualMode);
+    return;
+  }
+
+  // Товар уже опубліковано, у прайсі жодного постачальника його немає, і
+  // додавали його свого часу саме через "Створити товар вручну" (supplier
+  // === 'manual') — редагуємо в тому ж повністю ручному режимі (розміри/ціна/
+  // кількість вільно редаговані), а не в обмеженому editOnlyMode нижче (той
+  // призначений для товару, що ТИМЧАСОВО зник із прайсу постачальника і має
+  // повернутись — там свідомо заблоковані зміни розмірів/кількості).
+  if (!currentMatches.length && existingRows.length && existingRows[0].supplier === 'manual') {
+    enterManualMode();
     return;
   }
 
@@ -1004,12 +1184,18 @@ async function drawWatermark(file, opts = {}) {
 
 async function publish() {
   if (!currentArticul) return;
-  if (!editOnlyMode && !currentMatches.length) return;
+  if (!manualMode && !editOnlyMode && !currentMatches.length) return;
   if (!photoItems.length) { showToast('Додайте хоча б одне фото', 'error'); return; }
   const selectedCategories = getSelectedCategories();
   if (!selectedCategories.length) { showToast('Оберіть хоча б одну категорію товару', 'error'); return; }
   const category2Override = selectedCategories[0];
   const extraCategoriesOverride = selectedCategories;
+  if (manualMode) {
+    if (!document.getElementById('nameInput').value.trim()) { showToast('Вкажіть назву товару', 'error'); return; }
+    if (!document.getElementById('brandInput').value.trim()) { showToast('Вкажіть бренд', 'error'); return; }
+    const hasValidSize = manualSizeRows.some(r => String(r.size || '').trim() && Number(r.price) > 0);
+    if (!hasValidSize) { showToast('Додайте хоча б один розмір з ціною', 'error'); return; }
+  }
 
   const statusLine = document.getElementById('statusLine');
   const progressWrap = document.getElementById('progressWrap');
@@ -1056,7 +1242,52 @@ async function publish() {
     const cat3Override = GENDER_TO_CAT3[genderOverride] || genderOverride;
     let rowsCount;
 
-    if (editOnlyMode) {
+    if (manualMode) {
+      // Товар без постачальника: повністю ручний articul/name/brand/розміри/
+      // ціна/кількість. Як і у звичайній публікації нижче — видаляємо старі
+      // рядки цього артикулу і вставляємо заново з поточного стану форми,
+      // тільки джерело даних тут не прайс постачальника, а manualSizeRows.
+      // supplier === 'manual' — саме за цим значенням local_sync_catalog.py
+      // (скрипт автооновлення на комп'ютері) розпізнає такі товари і НІКОЛИ
+      // їх не чіпає: не оновлює ціну/кількість і не обнуляє, якщо їх немає
+      // в жодному прайсі постачальників (а їх і не може там бути).
+      const brand = document.getElementById('brandInput').value.trim();
+      const cat1 = document.getElementById('cat1OverrideSelect').value;
+      const name = nameInput.value.trim();
+      const description = descInput.value.trim();
+
+      const validSizeRows = manualSizeRows
+        .map(r => ({
+          size: String(r.size || '').trim(),
+          price: Number(r.price),
+          quantity: Math.max(0, parseInt(r.quantity, 10) || 0),
+        }))
+        .filter(r => r.size && r.price > 0);
+      if (!validSizeRows.length) throw new Error('Додайте хоча б один розмір з ціною');
+
+      await supabaseClient.from('products').delete().eq('articul', currentArticul);
+
+      const rows = validSizeRows.map(r => ({
+        articul: currentArticul,
+        name,
+        size: r.size,
+        price: r.price,
+        quantity: r.quantity,
+        brand,
+        gender: genderOverride,
+        category_1: cat1,
+        category_2: category2Override,
+        category_3: cat3Override,
+        extra_categories: extraCategoriesOverride,
+        size_chart_gender: sizeChartGender,
+        description,
+        photos: finalPhotos,
+        supplier: 'manual',
+      }));
+      const { error: insErr } = await supabaseClient.from('products').insert(rows);
+      if (insErr) throw new Error('Не вдалось зберегти товар: ' + insErr.message);
+      rowsCount = rows.length;
+    } else if (editOnlyMode) {
       // товару немає в актуальному Excel-каталозі — оновлюємо назву, опис,
       // фото, стать/категорію і (вручну) ціну; кількість/розміри в базі не чіпаємо
       const description = descInput.value.trim() || existingRows[0]?.description || '';
