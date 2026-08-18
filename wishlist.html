@@ -566,9 +566,25 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
           const item = toggle.closest('.nav-item');
           const wasOpen = item.classList.contains('open');
           document.querySelectorAll('.nav-item.open').forEach(el => el.classList.remove('open'));
-          if (!wasOpen) item.classList.add('open');
+          if (!wasOpen) { item.classList.add('open'); positionNavDropdown(item); }
         });
       });
+      // На вузьких екранах випадашка, відцентрована відносно пункту меню,
+      // могла вилазити за межі екрана (текст обрізався зліва/справа) —
+      // після відкриття підправляємо зсув, щоб вона завжди вміщалась.
+      function positionNavDropdown(item) {
+        const dropdown = item.querySelector('.nav-dropdown');
+        if (!dropdown) return;
+        dropdown.style.transform = 'translate(-50%,4px)';
+        requestAnimationFrame(() => {
+          const margin = 12;
+          const rect = dropdown.getBoundingClientRect();
+          let shift = 0;
+          if (rect.right > window.innerWidth - margin) shift = (window.innerWidth - margin) - rect.right;
+          else if (rect.left < margin) shift = margin - rect.left;
+          if (shift) dropdown.style.transform = `translate(calc(-50% + ${shift}px),4px)`;
+        });
+      }
       document.querySelectorAll('.nav-subgroup-toggle').forEach(btn => {
         btn.addEventListener('click', e => {
           e.preventDefault();
