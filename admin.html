@@ -1619,7 +1619,7 @@ async function loadOrders() {
 function renderOrderCard(o, items) {
   const card = document.createElement('div');
   card.className = 'order-card';
-  const itemsText = items.map(i => `${i.product_name} (${i.size}) ×${i.quantity}`).join(', ');
+  const itemsText = items.map(i => `${i.product_name}${i.articul ? ' · ' + String(i.articul).toUpperCase() : ''} (${i.size}) ×${i.quantity}`).join(', ');
 
   card.innerHTML = `
     <div class="order-head">
