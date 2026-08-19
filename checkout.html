@@ -69,7 +69,21 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
   .form-group label { display:block; font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:4px; color:var(--mute); }
   .form-group input, .form-group textarea { width:100%; padding:10px; border:1px solid var(--line); border-radius:var(--radius); font-size:14px; outline:none; font-family:inherit; }
   .form-group textarea { resize:vertical; min-height:64px; }
-  
+
+  .ac-wrap { position:relative; }
+  .ac-list {
+    position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:50;
+    background:var(--paper, #fff); border:1px solid var(--line); border-radius:var(--radius);
+    max-height:240px; overflow-y:auto; box-shadow:0 8px 24px rgba(0,0,0,0.12);
+    display:none;
+  }
+  .ac-list.open { display:block; }
+  .ac-item { padding:10px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--line); }
+  .ac-item:last-child { border-bottom:none; }
+  .ac-item:hover, .ac-item.active { background:var(--smoke); }
+  .ac-item .ac-sub { font-size:11px; color:var(--mute); margin-top:2px; }
+  .ac-empty { padding:10px 12px; font-size:12px; color:var(--mute); }
+
   .cart-item { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding:10px 0; }
   .cart-item:last-child { border-bottom:none; }
   .cart-item-warehouse { display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--mute); background:var(--smoke); border-radius:10px; padding:2px 8px; margin-top:4px; }
@@ -295,13 +309,15 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
           <label>Телефон</label>
           <input type="tel" id="custPhone" required placeholder="+380931234567">
         </div>
-        <div class="form-group">
+        <div class="form-group ac-wrap">
           <label>Місто</label>
-          <input type="text" id="custCity" required placeholder="Київ">
+          <input type="text" id="custCity" required placeholder="Київ" autocomplete="off">
+          <div class="ac-list" id="cityAcList"></div>
         </div>
-        <div class="form-group">
+        <div class="form-group ac-wrap">
           <label>Відділення Нової Пошти</label>
-          <input type="text" id="custNP" required placeholder="Відділення №1 (вул. Хрещатик, 1)">
+          <input type="text" id="custNP" required placeholder="Відділення №1 (вул. Хрещатик, 1)" autocomplete="off">
+          <div class="ac-list" id="npAcList"></div>
         </div>
         <div class="form-group">
           <label>Коментар до замовлення (необов'язково)</label>
@@ -433,6 +449,105 @@ function showToast(message, type = "info") {
     setTimeout(() => toast.remove(), 250);
   }, 4000);
 }
+
+// Підказки міст/відділень Нової Пошти при оформленні замовлення. Це лише
+// UX-помічник поверх звичайних текстових полів (custCity/custNP) — база
+// зберігає їх як простий текст без прив'язки до довідника НП, тому клієнт
+// завжди може ввести свій варіант вручну, не вибираючи зі списку.
+(function initNovaPoshtaAutocomplete() {
+  const cityInput = document.getElementById('custCity');
+  const npInput = document.getElementById('custNP');
+  const cityList = document.getElementById('cityAcList');
+  const npList = document.getElementById('npAcList');
+  let selectedCityRef = null;
+  let cityDebounce, npDebounce;
+  let activeCityAbort, activeNpAbort;
+
+  function closeList(list) {
+    list.classList.remove('open');
+    list.innerHTML = '';
+  }
+
+  function renderList(list, items, onPick, renderItem) {
+    list.innerHTML = '';
+    if (!items.length) {
+      const empty = document.createElement('div');
+      empty.className = 'ac-empty';
+      empty.textContent = 'Нічого не знайдено — можна ввести вручну';
+      list.appendChild(empty);
+      list.classList.add('open');
+      return;
+    }
+    items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'ac-item';
+      el.innerHTML = renderItem(item);
+      el.addEventListener('mousedown', (e) => {
+        // mousedown, а не click — щоб спрацювало ДО blur інпуту
+        e.preventDefault();
+        onPick(item);
+        closeList(list);
+      });
+      list.appendChild(el);
+    });
+    list.classList.add('open');
+  }
+
+  cityInput.addEventListener('input', () => {
+    const q = cityInput.value.trim();
+    selectedCityRef = null;
+    npInput.value = '';
+    clearTimeout(cityDebounce);
+    if (q.length < 2) { closeList(cityList); return; }
+    cityDebounce = setTimeout(async () => {
+      try {
+        if (activeCityAbort) activeCityAbort.abort();
+        activeCityAbort = new AbortController();
+        const r = await fetch(`/api/np-address?type=cities&q=${encodeURIComponent(q)}`, { signal: activeCityAbort.signal });
+        const data = await r.json();
+        renderList(cityList, data.items || [], (item) => {
+          cityInput.value = item.name;
+          selectedCityRef = item.ref;
+        }, (item) => `${item.name}${item.area ? `<div class="ac-sub">${item.area}</div>` : ''}`);
+      } catch (e) {
+        // мережа/НП недоступні — просто не показуємо підказки, поле лишається звичайним текстовим
+      }
+    }, 280);
+  });
+
+  npInput.addEventListener('input', () => {
+    const q = npInput.value.trim();
+    clearTimeout(npDebounce);
+    if (!selectedCityRef) { closeList(npList); return; }
+    npDebounce = setTimeout(async () => {
+      try {
+        if (activeNpAbort) activeNpAbort.abort();
+        activeNpAbort = new AbortController();
+        const r = await fetch(`/api/np-address?type=warehouses&cityRef=${encodeURIComponent(selectedCityRef)}&q=${encodeURIComponent(q)}`, { signal: activeNpAbort.signal });
+        const data = await r.json();
+        renderList(npList, data.items || [], (item) => {
+          npInput.value = item.name;
+        }, (item) => `${item.isPostomat ? '📮 ' : '🏢 '}${item.name}`);
+      } catch (e) {
+        // якщо не вдалось отримати список — клієнт просто вписує адресу вручну
+      }
+    }, 280);
+  });
+
+  npInput.addEventListener('focus', () => {
+    if (selectedCityRef && !npInput.value.trim()) {
+      npInput.dispatchEvent(new Event('input'));
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!cityInput.contains(e.target) && !cityList.contains(e.target)) closeList(cityList);
+    if (!npInput.contains(e.target) && !npList.contains(e.target)) closeList(npList);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeList(cityList); closeList(npList); }
+  });
+})();
 
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
