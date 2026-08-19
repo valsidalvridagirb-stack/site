@@ -41,6 +41,9 @@
     },
     "api/product.js": {
       "includeFiles": "product-page.html"
+    },
+    "api/np-address.js": {
+      "maxDuration": 15
     }
   }
 }
