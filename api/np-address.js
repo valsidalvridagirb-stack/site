@@ -32,15 +32,28 @@ async function handleWarehouses(url, res) {
     res.status(200).json({ items: [] });
     return;
   }
-  const props = { CityRef: cityRef, Limit: q ? '100' : '50' };
+  // Limit '500' — максимум, який приймає Нова Пошта за один запит. Без цього
+  // (з дефолтним лімітом API) великі міста типу Дніпра/Києва повертали лише
+  // перші кілька десятків відділень У ДОВІЛЬНОМУ порядку (не по номеру), і
+  // здавалось, що в місті всього ~50 відділень, хоча насправді їх сотні.
+  const props = { CityRef: cityRef, Limit: '500' };
   if (q) props.FindByString = q;
   const data = await npCall('Address', 'getWarehouses', props);
   const items = (data || []).map(w => ({
     ref: w.Ref,
     name: w.Description,
-    number: w.Number || '',
+    number: w.Number ? parseInt(w.Number, 10) : null,
     isPostomat: w.CategoryOfWarehouse === 'Postomat' || /поштомат/i.test(w.TypeOfWarehouse || '') || /поштомат/i.test(w.Description || '')
   }));
+  // Сортуємо: спершу звичайні відділення за зростанням номера, потім поштомати —
+  // щоб великий список було зручно гортати, а не бачити хаотичний порядок від API.
+  items.sort((a, b) => {
+    if (a.isPostomat !== b.isPostomat) return a.isPostomat ? 1 : -1;
+    if (a.number == null && b.number == null) return 0;
+    if (a.number == null) return 1;
+    if (b.number == null) return -1;
+    return a.number - b.number;
+  });
   res.status(200).json({ items });
 }
 
