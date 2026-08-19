@@ -459,13 +459,31 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .reviews-link svg{width:17px;height:17px;flex-shrink:0;}
 
 /* Опис товару — раніше лежав у вузькій правій колонці й через це виглядав
-   надто довгим (багато переносів рядків). Тепер окремим блоком на всю
-   ширину сторінки, під фото й деталями. */
+   надто довгим (багато переносів рядків), потім став окремим блоком на всю
+   ширину сторінки — але на широких екранах (сайт full-bleed, без max-width)
+   суцільний текст розтягувався на всю ширину вікна і виглядав як випадковий
+   "довісок" знизу сторінки. Тепер: обмежена ширина для комфортного читання,
+   і характеристики товару ("Матеріал: ...", "Розміри: ..." тощо) показані
+   не суцільним текстом з жирними підписами всередині рядка, а акуратним
+   списком рядків "назва — значення" (формат виглядає як специфікація товару
+   в преміальних магазинах), решта тексту — звичайним вступним абзацом.*/
 .product-description{
   margin-top:56px;padding-top:36px;border-top:1px solid var(--line);
+  max-width:760px;
 }
-.pd-title{font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:16px;color:var(--ink);}
-.pd-text{font-size:15px;line-height:1.7;font-weight:400;color:#4a4846;white-space:pre-line;}
+.pd-title{font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:18px;color:var(--ink);}
+.pd-intro{font-size:15px;line-height:1.75;font-weight:400;color:#4a4846;margin:0 0 22px;}
+.pd-specs{margin:0;border-top:1px solid var(--line);}
+.pd-spec-row{
+  display:grid;grid-template-columns:150px 1fr;gap:20px;
+  padding:14px 0;border-bottom:1px solid var(--line);
+}
+.pd-spec-row dt{margin:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);}
+.pd-spec-row dd{margin:0;font-size:14px;line-height:1.6;color:var(--ink);}
+@media (max-width:640px){
+  .pd-spec-row{grid-template-columns:1fr;gap:4px;padding:12px 0;}
+  .pd-spec-row dt{margin-bottom:0;}
+}
 
 /* Footer */
 footer.site-footer {
@@ -1216,8 +1234,24 @@ function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
+// Розбиває опис на вступний текст (рядки без формату "Назва: значення") і
+// характеристики (рядки, що йому відповідають — "Матеріал: ...", "Розміри:
+// ..." тощо), щоб показати їх акуратним списком "назва — значення" замість
+// суцільного тексту з жирними підписами всередині рядка.
 function formatDescriptionHtml(desc) {
-  return escapeHtml(desc).replace(/^([^\n:]{2,40}):(\s)/gm, '<strong>$1:</strong>$2');
+  const specRe = /^([^\n:]{2,40}):\s+(.+)$/;
+  const lines = escapeHtml(desc).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const introLines = [];
+  const specRows = [];
+  lines.forEach(line => {
+    const m = line.match(specRe);
+    if (m) specRows.push(`<div class="pd-spec-row"><dt>${m[1]}</dt><dd>${m[2]}</dd></div>`);
+    else introLines.push(line);
+  });
+  let html = '';
+  if (introLines.length) html += `<p class="pd-intro">${introLines.join('<br>')}</p>`;
+  if (specRows.length) html += `<dl class="pd-specs">${specRows.join('')}</dl>`;
+  return html;
 }
 
 function cleanModelName(product) {
@@ -1413,7 +1447,7 @@ function renderProduct(product, sizeMap) {
     ${product.description ? `
       <div class="product-description">
         <h2 class="pd-title">Опис товару</h2>
-        <div class="pd-text">${formatDescriptionHtml(product.description)}</div>
+        ${formatDescriptionHtml(product.description)}
       </div>
     ` : ''}
   `;
