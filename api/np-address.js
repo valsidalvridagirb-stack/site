@@ -32,14 +32,24 @@ async function handleWarehouses(url, res) {
     res.status(200).json({ items: [] });
     return;
   }
-  // Limit '500' — максимум, який приймає Нова Пошта за один запит. Без цього
-  // (з дефолтним лімітом API) великі міста типу Дніпра/Києва повертали лише
-  // перші кілька десятків відділень У ДОВІЛЬНОМУ порядку (не по номеру), і
-  // здавалось, що в місті всього ~50 відділень, хоча насправді їх сотні.
-  const props = { CityRef: cityRef, Limit: '500' };
-  if (q) props.FindByString = q;
-  const data = await npCall('Address', 'getWarehouses', props);
-  const items = (data || []).map(w => ({
+  // '500' — максимум відділень за ОДИН виклик, який приймає Нова Пошта.
+  // Великі міста (Київ, Харків, Одеса, Дніпро) мають більше 500 точок разом
+  // із поштоматами, тому одного виклику замало — гортаємо сторінки (Page),
+  // поки НП не поверне менше за Limit (це і є ознака останньої сторінки).
+  // Обмеження в 5 сторінок (=2500 точок) — з запасом покриває навіть Київ
+  // (найбільше місто за кількістю відділень+поштоматів в Україні), і водночас
+  // не дає запиту "зависнути", гортаючи сторінки в нескінченність.
+  const MAX_PAGES = 5;
+  let all = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const props = { CityRef: cityRef, Limit: '500', Page: String(page) };
+    if (q) props.FindByString = q;
+    const chunk = await npCall('Address', 'getWarehouses', props);
+    if (!chunk || !chunk.length) break;
+    all = all.concat(chunk);
+    if (chunk.length < 500) break; // остання сторінка
+  }
+  const items = all.map(w => ({
     ref: w.Ref,
     name: w.Description,
     number: w.Number ? parseInt(w.Number, 10) : null,
