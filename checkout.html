@@ -462,14 +462,24 @@ function showToast(message, type = "info") {
   let selectedCityRef = null;
   let cityDebounce, npDebounce;
   let activeCityAbort, activeNpAbort;
+  let lastCityItems = [];
+  let activeIndex = -1; // підсвічений клавіатурою пункт у списку, що зараз відкритий
 
   function closeList(list) {
     list.classList.remove('open');
     list.innerHTML = '';
+    activeIndex = -1;
+  }
+
+  function highlight(list, idx) {
+    const items = list.querySelectorAll('.ac-item');
+    items.forEach((el, i) => el.classList.toggle('active', i === idx));
+    if (items[idx]) items[idx].scrollIntoView({ block: 'nearest' });
   }
 
   function renderList(list, items, onPick, renderItem) {
     list.innerHTML = '';
+    activeIndex = -1;
     if (!items.length) {
       const empty = document.createElement('div');
       empty.className = 'ac-empty';
@@ -491,6 +501,37 @@ function showToast(message, type = "info") {
       list.appendChild(el);
     });
     list.classList.add('open');
+    list._items = items;
+    list._onPick = onPick;
+  }
+
+  // Якщо клієнт ввів місто, але так і не клікнув варіант зі списку (набрав і
+  // одразу натиснув Tab, або браузер підставив значення автозаповненням) —
+  // без цього поле "Відділення" мовчки лишалось заблокованим: воно працює
+  // лише коли відомий CityRef. Тому при виході з поля міста пробуємо
+  // підібрати точний збіг за назвою — спершу серед уже завантажених
+  // підказок, а якщо їх нема, окремим швидким запитом.
+  async function resolveCityIfNeeded() {
+    if (selectedCityRef) return;
+    const typed = cityInput.value.trim();
+    if (typed.length < 2) return;
+    const norm = typed.toLowerCase();
+    let match = lastCityItems.find(c => c.name.toLowerCase() === norm);
+    if (!match) {
+      try {
+        const r = await fetch(`/api/np-address?type=cities&q=${encodeURIComponent(typed)}`);
+        const data = await r.json();
+        lastCityItems = data.items || [];
+        match = lastCityItems.find(c => c.name.toLowerCase() === norm) ||
+                (lastCityItems.length === 1 ? lastCityItems[0] : null);
+      } catch (e) {
+        // офлайн/збій НП — просто лишаємо поле текстовим, без автопідбору
+      }
+    }
+    if (match) {
+      cityInput.value = match.name;
+      selectedCityRef = match.ref;
+    }
   }
 
   cityInput.addEventListener('input', () => {
@@ -505,7 +546,8 @@ function showToast(message, type = "info") {
         activeCityAbort = new AbortController();
         const r = await fetch(`/api/np-address?type=cities&q=${encodeURIComponent(q)}`, { signal: activeCityAbort.signal });
         const data = await r.json();
-        renderList(cityList, data.items || [], (item) => {
+        lastCityItems = data.items || [];
+        renderList(cityList, lastCityItems, (item) => {
           cityInput.value = item.name;
           selectedCityRef = item.ref;
         }, (item) => `${item.name}${item.area ? `<div class="ac-sub">${item.area}</div>` : ''}`);
@@ -513,6 +555,12 @@ function showToast(message, type = "info") {
         // мережа/НП недоступні — просто не показуємо підказки, поле лишається звичайним текстовим
       }
     }, 280);
+  });
+
+  cityInput.addEventListener('blur', () => {
+    // невелика затримка: якщо це був клік по варіанту списку, mousedown вже
+    // встиг спрацювати і виставити selectedCityRef ДО цього таймера
+    setTimeout(resolveCityIfNeeded, 150);
   });
 
   npInput.addEventListener('input', () => {
@@ -534,11 +582,35 @@ function showToast(message, type = "info") {
     }, 280);
   });
 
-  npInput.addEventListener('focus', () => {
+  npInput.addEventListener('focus', async () => {
+    await resolveCityIfNeeded();
     if (selectedCityRef && !npInput.value.trim()) {
       npInput.dispatchEvent(new Event('input'));
     }
   });
+
+  function handleListKeydown(e, input, list) {
+    if (!list.classList.contains('open') || !list._items || !list._items.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIndex = Math.min(activeIndex + 1, list._items.length - 1);
+      highlight(list, activeIndex);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIndex = Math.max(activeIndex - 1, 0);
+      highlight(list, activeIndex);
+    } else if (e.key === 'Enter') {
+      const pickIdx = activeIndex >= 0 ? activeIndex : 0;
+      const item = list._items[pickIdx];
+      if (item) {
+        e.preventDefault();
+        list._onPick(item);
+        closeList(list);
+      }
+    }
+  }
+  cityInput.addEventListener('keydown', (e) => handleListKeydown(e, cityInput, cityList));
+  npInput.addEventListener('keydown', (e) => handleListKeydown(e, npInput, npList));
 
   document.addEventListener('click', (e) => {
     if (!cityInput.contains(e.target) && !cityList.contains(e.target)) closeList(cityList);
