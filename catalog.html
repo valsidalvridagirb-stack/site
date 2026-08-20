@@ -1145,6 +1145,12 @@ const urlParams = new URLSearchParams(window.location.search);
 const categoryParam = urlParams.get('cat');
 const typeParam = urlParams.get('type');
 const searchParam = urlParams.get('search') || '';
+// Пошук тепер живий (шукає одразу під час набору тексту, без Enter) — тому,
+// на відміну від інших параметрів вище, значення пошуку більше не
+// зафіксоване назавжди в момент завантаження сторінки: liveSearchTerm
+// оновлюється при кожному введенні й саме воно (не searchParam) іде в
+// подальші запити до Supabase.
+let liveSearchTerm = searchParam;
 
 // Попередньо відмічаємо тип товару: якщо в посиланні є точний ?type=... —
 // довіряємо йому один-в-один (так приходять нові пункти меню Взуття/Одяг).
@@ -1447,12 +1453,20 @@ function renderPagination(totalItems, page) {
   paginationEl.innerHTML = html;
 }
 
+// Лічильник версії запиту — при швидкому наборі тексту попередній (ще не
+// завершений) запит до Supabase міг би прийти ПІСЛЯ новішого і затерти його
+// результат застарілими даними. Кожен виклик loadCatalog() бере свій номер;
+// відповідь застосовується, лише якщо це досі останній запущений запит.
+let catalogRequestSeq = 0;
+
 async function loadCatalog() {
   const grid = document.getElementById('productGrid');
   const countEl = document.getElementById('resultsCount');
   countEl.textContent = 'Завантаження товарів...';
 
-  const { data, error } = await fetchAllRows(buildBaseQuery(categoryParam, searchParam));
+  const seq = ++catalogRequestSeq;
+  const { data, error } = await fetchAllRows(buildBaseQuery(categoryParam, liveSearchTerm));
+  if (seq !== catalogRequestSeq) return; // прийшла застаріла відповідь — ігноруємо
 
   if (error) {
     console.error('Помилка Supabase:', error);
@@ -1523,18 +1537,51 @@ document.getElementById('resetFiltersBtn').addEventListener('click', () => {
   applyFiltersAndRender(true);
 });
 
-document.getElementById('siteSearchForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const term = document.getElementById('siteSearchInput').value.trim();
+// Живий пошук — застосовує новий пошуковий запит без перезавантаження
+// сторінки: оновлює заголовок, адресний рядок (щоб посилання й далі можна
+// було скопіювати/оновити сторінку з тим самим результатом) і перезапускає
+// loadCatalog() з новим текстом.
+function runLiveSearch(term) {
+  liveSearchTerm = term;
+
   // Якщо пошук виконується всередині розділу "Чоловіче"/"Жіноче" (cat=... в
   // поточному URL) — лишаємось у цьому розділі: результати пошуку мають бути
-  // обмежені тією ж статтю, інакше (як було раніше) пошук скидав на весь
-  // каталог і показував чоловічі й жіночі моделі впереміш.
+  // обмежені тією ж статтю, інакше пошук показував би чоловічі й жіночі
+  // моделі впереміш.
   const params = new URLSearchParams();
   if (categoryParam) params.set('cat', categoryParam);
   if (term) params.set('search', term);
   const qs = params.toString();
-  window.location.href = qs ? `catalog.html?${qs}` : 'catalog.html';
+  history.replaceState(null, '', qs ? `catalog.html?${qs}` : 'catalog.html');
+
+  if (categoryParam) {
+    document.getElementById('pageTitle').textContent = typeParam ? `${categoryParam} — ${typeParam}` : categoryParam;
+  } else if (typeParam) {
+    document.getElementById('pageTitle').textContent = typeParam;
+  } else {
+    document.getElementById('pageTitle').textContent = term ? `Пошук: "${term}"` : 'Каталог';
+  }
+
+  loadCatalog();
+}
+
+// Дебаунс ~350мс — шукає одразу під час набору тексту (без Enter), але не на
+// кожну окрему літеру: чекає коротку паузу в наборі, щоб не засипати
+// Supabase запитом на кожне натискання клавіші.
+let liveSearchDebounce;
+document.getElementById('siteSearchInput').addEventListener('input', e => {
+  clearTimeout(liveSearchDebounce);
+  const term = e.target.value.trim();
+  liveSearchDebounce = setTimeout(() => runLiveSearch(term), 350);
+});
+
+document.getElementById('siteSearchForm').addEventListener('submit', e => {
+  e.preventDefault();
+  // Enter (або "Пошук" на мобільній клавіатурі) — застосовуємо одразу, не
+  // чекаючи дебаунс.
+  clearTimeout(liveSearchDebounce);
+  const term = document.getElementById('siteSearchInput').value.trim();
+  runLiveSearch(term);
 });
 
 document.getElementById('productGrid').addEventListener('click', e => {
