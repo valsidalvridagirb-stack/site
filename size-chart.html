@@ -167,6 +167,7 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
       <button class="brand-btn" data-brand="saucony">Saucony</button>
       <button class="brand-btn" data-brand="karrimor">Karrimor</button>
       <button class="brand-btn" data-brand="ua">Under Armour</button>
+      <button class="brand-btn" data-brand="converse">Converse</button>
     </div>
 
     <div id="brand-nike">
@@ -497,6 +498,34 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
       </div>
     </div>
 
+    <div id="brand-converse" style="display:none;">
+      <div class="chart-section">
+        <h2>Converse — чоловіче взуття</h2>
+        <p class="chart-note">Офіційна сітка з converse.com. EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. UK — власна британська нумерація Converse (на відміну від інших брендів тут UK збігається з US, це не помилка). CM — довжина устілки в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="converseMenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Converse — жіноче взуття</h2>
+        <p class="chart-note">Офіційна сітка з converse.com. EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="converseWomenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <div class="howto">
       <h3>Як виміряти розмір ноги</h3>
       <ol>
@@ -652,6 +681,8 @@ fillTable('uaMenTable', UA_MEN);
 fillTable('uaWomenTable', UA_WOMEN);
 fillTable('uaUnisexTable', UA_UNISEX);
 fillTable('uaTeenTable', UA_TEEN);
+fillTable('converseMenTable', CONVERSE_MEN);
+fillTable('converseWomenTable', CONVERSE_WOMEN);
 fillTable('sauconyMenTable', SAUCONY_MEN);
 fillTable('sauconyWomenTable', SAUCONY_WOMEN);
 fillTable('nikeClothesWomenTable', NIKE_CLOTHES_WOMEN);
@@ -695,7 +726,7 @@ function setupGenderTabs(containerEl) {
   containerEl.insertBefore(row, sections[0]);
   sections.forEach((s, j) => { s.style.display = (j === 0) ? '' : 'none'; });
 }
-['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony', 'karrimor', 'ua'].forEach(id => setupGenderTabs(document.getElementById('brand-' + id)));
+['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony', 'karrimor', 'ua', 'converse'].forEach(id => setupGenderTabs(document.getElementById('brand-' + id)));
 setupGenderTabs(document.getElementById('tab-clothes'));
 
 // ---------- перемикання вкладок (Взуття / Одяг) ----------
@@ -712,7 +743,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ---------- перемикання бренду (в межах вкладки "Взуття") ----------
-const BRAND_IDS = ['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony', 'karrimor', 'ua'];
+const BRAND_IDS = ['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony', 'karrimor', 'ua', 'converse'];
 function selectBrand(brandId) {
   const btn = document.querySelector(`.brand-btn[data-brand="${brandId}"]`);
   if (!btn) return;
