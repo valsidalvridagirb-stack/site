@@ -410,6 +410,45 @@ nav.main-nav{display:flex;gap:24px;font-size:14px;font-weight:600;flex-shrink:0;
 .notify-submit-btn:hover{opacity:.85;}
 .notify-submit-btn:disabled{opacity:.5;cursor:not-allowed;}
 
+/* ===== Відгуки ===== */
+.reviews-section{padding:56px 0;border-top:1px solid var(--line);margin-top:40px;}
+.reviews-container{max-width:none;margin:0 auto;padding:0 24px;}
+.reviews-title{font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:20px;}
+.reviews-summary{display:none;align-items:center;gap:12px;margin-bottom:28px;}
+.reviews-summary-score{font-size:32px;font-weight:700;line-height:1;}
+.reviews-summary-stars{letter-spacing:2px;font-size:18px;}
+.reviews-summary-count{color:var(--mute);font-size:13px;}
+.reviews-list{display:flex;flex-direction:column;gap:20px;margin-bottom:32px;max-width:720px;}
+.reviews-empty{color:var(--mute);font-size:14px;margin-bottom:28px;}
+.review-card{border:1px solid var(--line);border-radius:8px;padding:18px 20px;}
+.review-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:12px;}
+.review-card-name{font-weight:600;font-size:14px;}
+.review-card-date{font-size:12px;color:var(--mute);white-space:nowrap;}
+.review-card-stars{margin-bottom:8px;font-size:14px;letter-spacing:1px;}
+.review-card-text{font-size:14px;line-height:1.6;color:var(--ink);white-space:pre-wrap;word-break:break-word;}
+.review-card-actions{margin-top:10px;display:flex;gap:14px;}
+.review-card-actions button{background:none;border:none;padding:0;font-size:12px;color:var(--mute);cursor:pointer;text-decoration:underline;}
+.review-card-actions button:hover{color:var(--ink);}
+.review-form{max-width:480px;border:1px solid var(--line);border-radius:8px;padding:20px;}
+.review-form-title{font-weight:600;font-size:14px;margin-bottom:14px;}
+.review-star-picker{display:flex;gap:4px;margin-bottom:14px;}
+.review-star-picker button{background:none;border:none;padding:2px;cursor:pointer;font-size:24px;line-height:1;color:var(--line);transition:color .15s;}
+.review-star-picker button.active{color:#f5a623;}
+.review-name-input,.review-text-input{
+  width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:6px;
+  font-family:inherit;font-size:14px;margin-bottom:12px;background:var(--paper);color:var(--ink);
+}
+.review-text-input{resize:vertical;min-height:90px;}
+.review-submit-btn{
+  padding:12px 22px;border:none;border-radius:6px;background:var(--ink-solid);
+  color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+  font-size:13px;cursor:pointer;transition:opacity .2s;
+}
+.review-submit-btn:hover{opacity:.85;}
+.review-submit-btn:disabled{opacity:.5;cursor:not-allowed;}
+.reviews-gate-msg{font-size:14px;color:var(--mute);line-height:1.5;border:1px dashed var(--line);border-radius:8px;padding:18px 20px;max-width:480px;}
+.reviews-gate-msg a{color:var(--ink);font-weight:600;}
+
 .recently-viewed-section{padding:56px 0;border-top:1px solid var(--line);margin-top:40px;}
 .rv-container{max-width:none;margin:0 auto;padding:0 24px;}
 .rv-title{font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:24px;}
@@ -771,6 +810,15 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
 <main class="product-page" id="productContainer">
   <div style="text-align:center;padding:48px;">Завантаження товару...</div>
 </main>
+
+<section class="reviews-section" id="reviewsSection">
+  <div class="reviews-container">
+    <h2 class="reviews-title">Відгуки</h2>
+    <div class="reviews-summary" id="reviewsSummary"></div>
+    <div class="reviews-list" id="reviewsList"></div>
+    <div class="reviews-form-wrap" id="reviewsFormWrap"></div>
+  </div>
+</section>
 
 <section class="recently-viewed-section" id="recentlyViewedSection" style="display:none;">
   <div class="rv-container">
@@ -1317,6 +1365,271 @@ function updateProductSeoTags(product, label, articul, price, photos, inStock) {
   ldEl.textContent = JSON.stringify(jsonLd);
 }
 
+function updateAggregateRating(avg, count) {
+  const ldEl = document.getElementById('productJsonLd');
+  if (!ldEl) return;
+  try {
+    const data = JSON.parse(ldEl.textContent);
+    if (count > 0) {
+      data.aggregateRating = {
+        '@type': 'AggregateRating',
+        ratingValue: Number(avg.toFixed(1)),
+        reviewCount: count
+      };
+    } else {
+      delete data.aggregateRating;
+    }
+    ldEl.textContent = JSON.stringify(data);
+  } catch (e) {
+    // JSON-LD ще не вставлено або пошкоджено — рейтинг просто не додаємо,
+    // на відображення відгуків це не впливає.
+  }
+}
+
+// ===== Відгуки =====
+// Left review can be written ONLY by a logged-in user who has actually
+// bought this exact articul — the check that matters is enforced server-side
+// via RLS (INSERT policy on public.reviews, see migration create_reviews_table),
+// not by this client code. Everything here is just UX: hiding the form when
+// we already know it would be rejected, and giving a clear message why.
+let reviewsCurrentUser = null;
+let reviewsExistingOwn = null;
+let selectedReviewRating = 0;
+
+function pluralReviewsUk(n) {
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'відгук';
+  if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return 'відгуки';
+  return 'відгуків';
+}
+
+function starsHtml(rating, size) {
+  size = size || 14;
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    html += `<span style="color:${i <= rating ? '#f5a623' : 'var(--line)'};font-size:${size}px;">★</span>`;
+  }
+  return html;
+}
+
+async function loadReviews(articul) {
+  const listEl = document.getElementById('reviewsList');
+  if (!listEl || !articul) return;
+  listEl.innerHTML = '<p class="reviews-empty">Завантаження відгуків…</p>';
+
+  const [reviewsRes, userRes] = await Promise.all([
+    supabaseClient.from('reviews')
+      .select('id,user_id,reviewer_name,rating,review_text,created_at')
+      .eq('articul', articul)
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false }),
+    supabaseClient.auth.getUser()
+  ]);
+
+  reviewsCurrentUser = (userRes && userRes.data && userRes.data.user) || null;
+
+  if (reviewsRes.error) {
+    listEl.innerHTML = '<p class="reviews-empty">Не вдалось завантажити відгуки.</p>';
+    return;
+  }
+
+  const reviews = reviewsRes.data || [];
+  reviewsExistingOwn = reviewsCurrentUser
+    ? reviews.find(r => r.user_id === reviewsCurrentUser.id) || null
+    : null;
+
+  renderReviewsSummary(reviews);
+  renderReviewsList(reviews);
+  await renderReviewsForm(articul);
+}
+
+function renderReviewsSummary(reviews) {
+  const summaryEl = document.getElementById('reviewsSummary');
+  if (!reviews.length) {
+    summaryEl.style.display = 'none';
+    updateAggregateRating(0, 0);
+    return;
+  }
+  const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+  summaryEl.style.display = 'flex';
+  summaryEl.innerHTML = `
+    <span class="reviews-summary-score">${avg.toFixed(1)}</span>
+    <span class="reviews-summary-stars">${starsHtml(Math.round(avg), 18)}</span>
+    <span class="reviews-summary-count">${reviews.length} ${pluralReviewsUk(reviews.length)}</span>
+  `;
+  updateAggregateRating(avg, reviews.length);
+}
+
+function renderReviewsList(reviews) {
+  const listEl = document.getElementById('reviewsList');
+  if (!reviews.length) {
+    listEl.innerHTML = '<p class="reviews-empty">Поки що немає відгуків. Будьте першими!</p>';
+    return;
+  }
+  listEl.innerHTML = reviews.map(r => `
+    <div class="review-card" data-review-id="${r.id}">
+      <div class="review-card-head">
+        <span class="review-card-name">${escapeHtml(r.reviewer_name)}</span>
+        <span class="review-card-date">${new Date(r.created_at).toLocaleDateString('uk-UA')}</span>
+      </div>
+      <div class="review-card-stars">${starsHtml(r.rating)}</div>
+      <div class="review-card-text">${escapeHtml(r.review_text)}</div>
+      ${reviewsCurrentUser && r.user_id === reviewsCurrentUser.id ? `
+      <div class="review-card-actions">
+        <button type="button" onclick="startEditReview(${r.id})">Редагувати</button>
+        <button type="button" onclick="deleteReview(${r.id})">Видалити</button>
+      </div>` : ''}
+    </div>
+  `).join('');
+}
+
+async function checkPurchaseEligibility(articul) {
+  // order_items має RLS "видно лише позиції власних замовлень" — тож цей
+  // запит і без жодних додаткових фільтрів по user_id поверне рядки лише
+  // з ЗАМОВЛЕНЬ ПОТОЧНОГО користувача. Є хоч один рядок з таким articul — купував.
+  const { data, error } = await supabaseClient
+    .from('order_items')
+    .select('id')
+    .eq('articul', articul)
+    .limit(1);
+  if (error) return false;
+  return !!(data && data.length);
+}
+
+async function renderReviewsForm(articul) {
+  const formWrapEl = document.getElementById('reviewsFormWrap');
+  if (!formWrapEl) return;
+
+  if (!reviewsCurrentUser) {
+    formWrapEl.innerHTML = `<div class="reviews-gate-msg">Щоб залишити відгук, <a href="account.html">увійдіть у кабінет</a> — це можуть зробити лише покупці цього товару.</div>`;
+    return;
+  }
+
+  if (reviewsExistingOwn) {
+    formWrapEl.innerHTML = `<div class="reviews-gate-msg">Дякуємо за ваш відгук! За потреби його можна відредагувати або видалити вище.</div>`;
+    return;
+  }
+
+  const eligible = await checkPurchaseEligibility(articul);
+  if (!eligible) {
+    formWrapEl.innerHTML = `<div class="reviews-gate-msg">Залишити відгук можуть лише покупці цього товару — після покупки тут з'явиться форма.</div>`;
+    return;
+  }
+
+  let prefillName = '';
+  try {
+    const { data: profile } = await supabaseClient.from('profiles').select('full_name').eq('id', reviewsCurrentUser.id).single();
+    prefillName = (profile && profile.full_name) || '';
+  } catch (e) {
+    // немає профілю або поле порожнє — лишаємо поле імені пустим, користувач впише сам
+  }
+
+  selectedReviewRating = 0;
+  formWrapEl.innerHTML = `
+    <form class="review-form" id="reviewForm">
+      <div class="review-form-title">Залишити відгук</div>
+      <div class="review-star-picker" id="reviewStarPicker">
+        ${[1, 2, 3, 4, 5].map(i => `<button type="button" data-star="${i}" onclick="setReviewRating(${i})">★</button>`).join('')}
+      </div>
+      <input class="review-name-input" id="reviewNameInput" type="text" maxlength="60" placeholder="Ваше ім'я" value="${escapeHtml(prefillName)}" required>
+      <textarea class="review-text-input" id="reviewTextInput" maxlength="2000" placeholder="Поділіться враженням про товар…" required></textarea>
+      <button type="submit" class="review-submit-btn" id="reviewSubmitBtn">Опублікувати відгук</button>
+    </form>
+  `;
+  document.getElementById('reviewForm').addEventListener('submit', onSubmitReview);
+}
+
+function setReviewRating(n) {
+  selectedReviewRating = n;
+  document.querySelectorAll('#reviewStarPicker button').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.star) <= n);
+  });
+}
+
+async function onSubmitReview(e) {
+  e.preventDefault();
+  if (!selectedReviewRating) { showToast('Оберіть оцінку від 1 до 5 зірок', 'error'); return; }
+  const name = document.getElementById('reviewNameInput').value.trim();
+  const text = document.getElementById('reviewTextInput').value.trim();
+  if (!name) { showToast("Вкажіть ваше ім'я", 'error'); return; }
+  if (!text) { showToast('Напишіть текст відгуку', 'error'); return; }
+
+  const btn = document.getElementById('reviewSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Публікуємо…';
+
+  const { error } = await supabaseClient.from('reviews').insert({
+    articul: currentProductArticul,
+    user_id: reviewsCurrentUser.id,
+    reviewer_name: name,
+    rating: selectedReviewRating,
+    review_text: text
+  });
+
+  if (error) {
+    showToast('Не вдалось опублікувати відгук: ' + (error.message || 'помилка'), 'error');
+    btn.disabled = false;
+    btn.textContent = 'Опублікувати відгук';
+    return;
+  }
+
+  showToast('Дякуємо за відгук!', 'success');
+  await loadReviews(currentProductArticul);
+}
+
+function startEditReview(id) {
+  const own = reviewsExistingOwn;
+  if (!own || own.id !== id) return;
+  const formWrapEl = document.getElementById('reviewsFormWrap');
+  selectedReviewRating = own.rating;
+  formWrapEl.innerHTML = `
+    <form class="review-form" id="reviewForm">
+      <div class="review-form-title">Редагувати відгук</div>
+      <div class="review-star-picker" id="reviewStarPicker">
+        ${[1, 2, 3, 4, 5].map(i => `<button type="button" data-star="${i}" onclick="setReviewRating(${i})" class="${i <= own.rating ? 'active' : ''}">★</button>`).join('')}
+      </div>
+      <input class="review-name-input" id="reviewNameInput" type="text" maxlength="60" value="${escapeHtml(own.reviewer_name)}" required>
+      <textarea class="review-text-input" id="reviewTextInput" maxlength="2000" required>${escapeHtml(own.review_text)}</textarea>
+      <button type="submit" class="review-submit-btn" id="reviewSubmitBtn">Зберегти зміни</button>
+    </form>
+  `;
+  document.getElementById('reviewForm').addEventListener('submit', onSubmitEditReview);
+  formWrapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function onSubmitEditReview(e) {
+  e.preventDefault();
+  if (!selectedReviewRating) { showToast('Оберіть оцінку від 1 до 5 зірок', 'error'); return; }
+  const name = document.getElementById('reviewNameInput').value.trim();
+  const text = document.getElementById('reviewTextInput').value.trim();
+  if (!name || !text) { showToast("Заповніть ім'я та текст відгуку", 'error'); return; }
+
+  const btn = document.getElementById('reviewSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Зберігаємо…';
+
+  const { error } = await supabaseClient.from('reviews')
+    .update({ reviewer_name: name, rating: selectedReviewRating, review_text: text, updated_at: new Date().toISOString() })
+    .eq('id', reviewsExistingOwn.id);
+
+  if (error) {
+    showToast('Не вдалось зберегти зміни: ' + (error.message || 'помилка'), 'error');
+    btn.disabled = false;
+    btn.textContent = 'Зберегти зміни';
+    return;
+  }
+  showToast('Відгук оновлено', 'success');
+  await loadReviews(currentProductArticul);
+}
+
+async function deleteReview(id) {
+  if (!confirm('Видалити ваш відгук?')) return;
+  const { error } = await supabaseClient.from('reviews').delete().eq('id', id);
+  if (error) { showToast('Не вдалось видалити відгук: ' + (error.message || 'помилка'), 'error'); return; }
+  showToast('Відгук видалено', 'success');
+  await loadReviews(currentProductArticul);
+}
+
 function renderProduct(product, sizeMap) {
   const rawString = product.photos || product.image_url || '';
 
@@ -1370,6 +1683,7 @@ function renderProduct(product, sizeMap) {
 
   const anyInStock = Object.values(sizeMap).some(v => v.available);
   updateProductSeoTags(product, currentProductLabel, currentProductArticul, initialPrice, photos, anyInStock);
+  loadReviews(currentProductArticul);
 
   recordRecentlyViewed({
     id: product.id,
