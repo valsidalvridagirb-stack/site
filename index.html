@@ -1051,6 +1051,19 @@ function placeholderSVG(){
   </svg>`;
 }
 
+// Літерні розміри одягу (XS/S/M/L/XL/2XL і т.д.) не мають цифр (крім 2XL/3XL,
+// де цифра плутала б їх із номерами взуття) — тому спершу шукаємо точний
+// збіг у цьому списку, і лише якщо його нема, повертаємось до старої
+// цифрової логіки для розмірів взуття (38, 38.5, "41-42" тощо).
+const CLOTHING_SIZE_ORDER = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', 'XXXL', '3XL', '4XL', '5XL'];
+function sizeSortKey(sz) {
+  const s = String(sz).trim().toUpperCase();
+  const idx = CLOTHING_SIZE_ORDER.indexOf(s);
+  if (idx !== -1) return 1000 + idx;
+  const m = s.match(/[\d.]+/);
+  return m ? parseFloat(m[0]) : 9999;
+}
+
 async function loadProducts(){
   const grid = document.getElementById('productGrid');
   grid.innerHTML = '<p style="grid-column:1/-1;color:var(--mute);font-size:13px;padding:20px 0;">Завантаження товарів...</p>';
@@ -1075,7 +1088,7 @@ async function loadProducts(){
       else if (rawPhoto.startsWith('//')) rawPhoto = 'https:' + rawPhoto;
       photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}` : rawPhoto;
     }
-    const sizes = Array.isArray(p.sizes) ? p.sizes : [];
+    const sizes = (Array.isArray(p.sizes) ? p.sizes : []).slice().sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
     const isWished = wishlist.has(p.articul);
 
     const card = document.createElement('a');
