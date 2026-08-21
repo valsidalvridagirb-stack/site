@@ -3,8 +3,6 @@
 <head>
 <script>(function(){try{if(localStorage.getItem('nl_theme')==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
 
-<script>(function(){try{if(localStorage.getItem('nl_theme')==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- Meta Pixel + Google Analytics (GA4) -->
@@ -31,11 +29,45 @@ gtag('config', 'G-Y0CS5VFCYH');
 
 <title>NEXXTLEVEL STORE — Оригінальний одяг, взуття та аксесуари із США</title>
 <meta name="description" content="Оригінальні кросівки, одяг та аксесуари з США та Європи. Чоловіча та жіноча колекція, доставка Новою поштою по всій Україні.">
+<link rel="canonical" href="https://nexxtlevel.store/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="NEXXTLEVEL STORE — Оригінальний одяг, взуття та аксесуари із США">
+<meta property="og:description" content="Оригінальні кросівки, одяг та аксесуари з США та Європи. Чоловіча та жіноча колекція, доставка Новою поштою по всій Україні.">
+<meta property="og:image" content="https://nexxtlevel.store/assets/logo.jpg">
+<meta property="og:url" content="https://nexxtlevel.store/">
+<meta property="og:site_name" content="NEXXTLEVEL STORE">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "NEXXTLEVEL STORE",
+  "url": "https://nexxtlevel.store/",
+  "logo": "https://nexxtlevel.store/assets/logo.jpg",
+  "telephone": "+380934382093",
+  "sameAs": [
+    "https://www.instagram.com/nexxtlevelstore/",
+    "https://t.me/nexxtlevelstore"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "NEXXTLEVEL STORE",
+  "url": "https://nexxtlevel.store/",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://nexxtlevel.store/catalog?search={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
 <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   /* Стили для иконок в шапке */
 .header-icons {
@@ -765,7 +797,6 @@ html[data-theme="dark"] header.site.scrolled{--hdr-ink:#f0f0ee;--hdr-mute:#9c9a9
 img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 </style>
 <script src="assets/theme.js" defer></script>
-<script src="assets/theme.js" defer></script>
 </head>
 <body>
 
@@ -1027,6 +1058,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
@@ -1086,7 +1118,7 @@ async function loadProducts(){
     if (rawPhoto) {
       if (rawPhoto.startsWith('http://')) rawPhoto = rawPhoto.replace('http://', 'https://');
       else if (rawPhoto.startsWith('//')) rawPhoto = 'https:' + rawPhoto;
-      photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}` : rawPhoto;
+      photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}&w=600&q=80&output=webp` : rawPhoto;
     }
     const sizes = (Array.isArray(p.sizes) ? p.sizes : []).slice().sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
     const isWished = wishlist.has(p.articul);

@@ -32,9 +32,6 @@ gtag('config', 'G-Y0CS5VFCYH');
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   /* Стили для иконок в шапке */
 .header-icons {
@@ -223,7 +220,7 @@ html[data-theme="dark"] .nav-dropdown{background:rgba(24,24,24,.92);border-color
   /* Product Grid */
   .product-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 44px 28px;
     min-height: 400px;
   }
@@ -702,6 +699,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
 </footer>
 
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
@@ -780,7 +778,7 @@ async function loadWishlist(){
     if (rawPhoto) {
       if (rawPhoto.startsWith('http://')) rawPhoto = rawPhoto.replace('http://', 'https://');
       else if (rawPhoto.startsWith('//')) rawPhoto = 'https:' + rawPhoto;
-      photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}` : rawPhoto;
+      photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}&w=600&q=80&output=webp` : rawPhoto;
     }
 
     const card = document.createElement('a');

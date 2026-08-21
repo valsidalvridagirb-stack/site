@@ -29,11 +29,17 @@ gtag('config', 'G-Y0CS5VFCYH');
 
 <title>Каталог — NEXXTLEVEL STORE</title>
 <meta name="description" content="Каталог оригінальних кросівок та одягу NEXXTLEVEL STORE — чоловіча та жіноча колекція з США та Європи.">
+<link rel="canonical" href="https://nexxtlevel.store/catalog" id="canonicalLink">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Каталог — NEXXTLEVEL STORE">
+<meta property="og:description" content="Каталог оригінальних кросівок та одягу NEXXTLEVEL STORE — чоловіча та жіноча колекція з США та Європи.">
+<meta property="og:image" content="https://nexxtlevel.store/assets/logo.jpg">
+<meta property="og:site_name" content="NEXXTLEVEL STORE">
+<meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   /* Стили для иконок в шапке */
 .header-icons {
@@ -859,6 +865,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
         </button>
         <select class="sort-select" id="sortSelect">
           <option value="default">Сортування: за замовчуванням</option>
+          <option value="newest">Спочатку нові</option>
           <option value="price_asc">Спочатку дешевші</option>
           <option value="price_desc">Спочатку дорожчі</option>
         </select>
@@ -948,6 +955,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
@@ -1151,6 +1159,33 @@ const searchParam = urlParams.get('search') || '';
 // оновлюється при кожному введенні й саме воно (не searchParam) іде в
 // подальші запити до Supabase.
 let liveSearchTerm = searchParam;
+
+// Canonical-посилання та <title> підлаштовуємо під конкретну категорію
+// (?cat=/?type=), бо це самостійні "посадкові" сторінки, які варто
+// індексувати окремо (наприклад "Каталог: Взуття"). А от ?search= і
+// сортування/пагінацію в canonical НЕ включаємо — це дії користувача над
+// тим самим списком, а не окрема сторінка, і дублювання таких варіантів
+// в індексі Google лише шкодить.
+(function updateCatalogSeoTags() {
+  const label = typeParam || categoryParam;
+  const canonicalParams = new URLSearchParams();
+  if (categoryParam) canonicalParams.set('cat', categoryParam);
+  if (typeParam) canonicalParams.set('type', typeParam);
+  const qs = canonicalParams.toString();
+  const canonicalUrl = 'https://nexxtlevel.store/catalog' + (qs ? '?' + qs : '');
+
+  const linkEl = document.getElementById('canonicalLink');
+  if (linkEl) linkEl.setAttribute('href', canonicalUrl);
+
+  if (label) {
+    const title = `${label} — Каталог — NEXXTLEVEL STORE`;
+    document.title = title;
+    const descEl = document.querySelector('meta[name="description"]');
+    if (descEl) descEl.setAttribute('content', `${label} — каталог оригінальних товарів NEXXTLEVEL STORE. Чоловіча та жіноча колекція з США та Європи.`);
+    const ogTitleEl = document.querySelector('meta[property="og:title"]');
+    if (ogTitleEl) ogTitleEl.setAttribute('content', title);
+  }
+})();
 
 // Попередньо відмічаємо тип товару: якщо в посиланні є точний ?type=... —
 // довіряємо йому один-в-один (так приходять нові пункти меню Взуття/Одяг).
@@ -1363,6 +1398,12 @@ function applyFiltersAndRender(resetPage) {
     filteredProducts.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
   } else if (activeFilters.sort === 'price_desc') {
     filteredProducts.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+  } else if (activeFilters.sort === 'newest') {
+    // id — мінімальний id рядка серед розмірів-варіантів товару (product_summary
+    // GROUP BY articul); id зростає послідовно при додаванні товарів, тож більший
+    // id = товар доданий пізніше. Той самий принцип вже використовує головна
+    // сторінка (.order('id', {ascending:false})) для блоку "новинки".
+    filteredProducts.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
   }
 
   if (resetPage) currentPage = 1;
@@ -1399,7 +1440,7 @@ function renderPage(page) {
     if (rawPhoto) {
       if (rawPhoto.startsWith('http://')) rawPhoto = rawPhoto.replace('http://', 'https://');
       else if (rawPhoto.startsWith('//')) rawPhoto = 'https:' + rawPhoto;
-      photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}` : rawPhoto;
+      photo = rawPhoto.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(rawPhoto)}&w=600&q=80&output=webp` : rawPhoto;
     }
     const isWished = wishlist.has(String(p.articul));
 

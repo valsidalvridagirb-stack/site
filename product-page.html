@@ -30,6 +30,7 @@ gtag('config', 'G-Y0CS5VFCYH');
 
 <title>Товар — NEXXTLEVEL STORE</title>
 <meta name="description" content="Оригінальні кросівки та одяг з США та Європи. Дивіться фото, ціну та наявні розміри.">
+<link rel="canonical" href="https://nexxtlevel.store/product" id="canonicalLink">
 <meta property="og:type" content="product">
 <meta property="og:title" content="NEXXTLEVEL STORE">
 <meta property="og:description" content="Оригінальні кросівки та одяг з США та Європи.">
@@ -1249,6 +1250,73 @@ function cleanModelName(product) {
   return looksValid ? n : original;
 }
 
+// Соцмережевим ботам (Facebook/Telegram/...) og-теги з конкретним товаром
+// вже віддає /api/product.js на рівні сервера (вони JS не виконують). А ось
+// Google JS виконує і бачить сторінку вже після рендеру — тому тут окремо
+// підлаштовуємо <title>/description/canonical/og-теги під живого відвідувача
+// й Googlebot, плюс додаємо JSON-LD Product/Offer для розширених сніпетів
+// у пошуковій видачі (ціна, наявність тощо).
+function updateProductSeoTags(product, label, articul, price, photos, inStock) {
+  const title = `${label} — NEXXTLEVEL STORE`;
+  document.title = title;
+
+  const rawDesc = String(product.description || '').replace(/\s+/g, ' ').trim();
+  const priceLine = price ? `${Math.round(price)} грн.` : '';
+  const description = [priceLine, rawDesc].filter(Boolean).join(' ').slice(0, 200).trim()
+    || 'Оригінальні кросівки та одяг з США та Європи. Дивіться фото, ціну та наявні розміри.';
+
+  const canonicalUrl = articul
+    ? `https://nexxtlevel.store/product?articul=${encodeURIComponent(articul)}`
+    : 'https://nexxtlevel.store/product';
+  const image = photos && photos[0] ? photos[0] : 'https://nexxtlevel.store/assets/logo.jpg';
+
+  const setMeta = (selector, attr, value) => {
+    const el = document.querySelector(selector);
+    if (el) el.setAttribute(attr, value);
+  };
+  setMeta('meta[name="description"]', 'content', description);
+  setMeta('#canonicalLink', 'href', canonicalUrl);
+  setMeta('meta[property="og:title"]', 'content', title);
+  setMeta('meta[property="og:description"]', 'content', description);
+  setMeta('meta[property="og:image"]', 'content', image);
+  setMeta('meta[name="twitter:title"]', 'content', title);
+  setMeta('meta[name="twitter:description"]', 'content', description);
+  setMeta('meta[name="twitter:image"]', 'content', image);
+  let ogUrlEl = document.querySelector('meta[property="og:url"]');
+  if (!ogUrlEl) {
+    ogUrlEl = document.createElement('meta');
+    ogUrlEl.setAttribute('property', 'og:url');
+    document.head.appendChild(ogUrlEl);
+  }
+  ogUrlEl.setAttribute('content', canonicalUrl);
+
+  const jsonLd = {
+    '@context': 'https://schema.org/',
+    '@type': 'Product',
+    name: label,
+    image: photos && photos.length ? photos : [image],
+    description: description,
+    sku: articul || undefined,
+    brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+    offers: {
+      '@type': 'Offer',
+      url: canonicalUrl,
+      priceCurrency: 'UAH',
+      price: price ? Number(price).toFixed(2) : undefined,
+      availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition'
+    }
+  };
+  let ldEl = document.getElementById('productJsonLd');
+  if (!ldEl) {
+    ldEl = document.createElement('script');
+    ldEl.type = 'application/ld+json';
+    ldEl.id = 'productJsonLd';
+    document.head.appendChild(ldEl);
+  }
+  ldEl.textContent = JSON.stringify(jsonLd);
+}
+
 function renderProduct(product, sizeMap) {
   const rawString = product.photos || product.image_url || '';
 
@@ -1299,6 +1367,9 @@ function renderProduct(product, sizeMap) {
   currentSizeMap = sizeMap;
   currentProductId = product.id;
   currentProductSupplier = String(product.supplier || '').trim();
+
+  const anyInStock = Object.values(sizeMap).some(v => v.available);
+  updateProductSeoTags(product, currentProductLabel, currentProductArticul, initialPrice, photos, anyInStock);
 
   recordRecentlyViewed({
     id: product.id,
