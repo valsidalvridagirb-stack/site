@@ -97,7 +97,7 @@ GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 CATALOG_JSON_PATH = "api/_data/excel-catalog.json"
 
 REQUIRED_COLUMNS = [
-    "Артикул", "Назва", "Розмір", "Роздрібна ціна (грн)", "Кількість",
+    "Артикул", "Назва", "Розмір", "Дроп ціна (грн)", "Роздрібна ціна (грн)", "Кількість",
     "Бренд", "Стать", "Категорія 1", "Категорія 2", "Категорія 3", "Постачальник",
 ]
 
@@ -151,6 +151,7 @@ def parse_catalog_xlsx(path):
 
         name = str(r[idx["Назва"]] or "").strip()
         price_raw = r[idx["Роздрібна ціна (грн)"]]
+        drop_price_raw = r[idx["Дроп ціна (грн)"]]
         qty_raw = r[idx["Кількість"]]
         brand = str(r[idx["Бренд"]] or "").strip()
         gender = str(r[idx["Стать"]] or "").strip()
@@ -170,13 +171,20 @@ def parse_catalog_xlsx(path):
             skipped_bad += 1
             continue
 
+        # Дроп (закупівельна) ціна — не блокує публікацію товару, якщо
+        # порожня/бита: просто не потрапить в product_costs цим рядком.
+        try:
+            drop_price_n = float(drop_price_raw) if drop_price_raw not in (None, "") else None
+        except (TypeError, ValueError):
+            drop_price_n = None
+
         key = (art.lower(), size)
         if key in seen:
             skipped_dupe += 1
             continue
         seen.add(key)
 
-        catalog_rows.append([art, size, name, price_n, qty_n, brand, gender, cat1, cat2, cat3, supplier])
+        catalog_rows.append([art, size, name, price_n, qty_n, brand, gender, cat1, cat2, cat3, supplier, drop_price_n])
 
     log(f"Розпарсено {len(catalog_rows)} рядків (пропущено {skipped_dupe} дублів, {skipped_bad} биті рядки)")
     return catalog_rows
@@ -263,6 +271,30 @@ def insert_new_sizes(rows):
     return len(rows)
 
 
+def upsert_product_costs(cost_rows):
+    # Дроп (закупівельна) ціна -> ОКРЕМА таблиця product_costs, не products —
+    # вона недоступна анонімному ключу сайту, тільки сервісному (яким і
+    # виконується цей запит). upsert по (articul, size) через
+    # Prefer: resolution=merge-duplicates + on_conflict.
+    if not cost_rows:
+        return 0
+    url = f"{SUPABASE_URL}/rest/v1/product_costs"
+    params = {"on_conflict": "articul,size"}
+    chunk_size = 500
+    ok = 0
+    for i in range(0, len(cost_rows), chunk_size):
+        chunk = cost_rows[i:i + chunk_size]
+        r = requests.post(
+            url, headers=supa_headers({"Prefer": "resolution=merge-duplicates,return=minimal"}),
+            params=params, json=chunk, timeout=30,
+        )
+        if not r.ok:
+            log(f"  ! не вдалось оновити дроп-ціни (чанк {i}-{i + len(chunk)}): {r.status_code} {r.text[:300]}")
+            continue
+        ok += len(chunk)
+    return ok
+
+
 # ---------------------------------------------------------------------------
 # 3. GitHub Contents API (без git, напряму по HTTPS)
 # ---------------------------------------------------------------------------
@@ -308,16 +340,23 @@ def main():
     xlsx_path = find_latest_catalog_file()
     catalog_rows = parse_catalog_xlsx(xlsx_path)
 
+    # УВАГА: catalog_rows тепер має 12-й елемент (drop_price) — у публічний
+    # excel-catalog.json (доступний зі звичайного браузера через адмінку)
+    # він потрапляти НЕ повинен, тому явно обрізаємо до перших 11 полів.
     catalog_json = {
         "cols": ["art", "size", "name", "price", "qty", "brand", "gender", "cat1", "cat2", "cat3", "supplier"],
-        "rows": catalog_rows,
+        "rows": [row[:11] for row in catalog_rows],
     }
     catalog_json_str = json.dumps(catalog_json, ensure_ascii=False, separators=(",", ":"))
 
     lookup = {}
+    cost_rows = []
     for row in catalog_rows:
         art, size, _name, price_n, qty_n = row[0], row[1], row[2], row[3], row[4]
         lookup[(art.lower(), str(size))] = (price_n, qty_n)
+        drop_price_n = row[11]
+        if drop_price_n is not None:
+            cost_rows.append({"articul": art, "size": size, "drop_price": drop_price_n})
 
     current_products = fetch_current_products()
     log(f"У Supabase зараз опубліковано {len(current_products)} позицій")
@@ -423,7 +462,7 @@ def main():
     new_size_labels = []
     skipped_excluded = []
     for row in catalog_rows:
-        art, size, _name, price_n, qty_n, brand, gender, cat1, cat2, cat3, supplier = row
+        art, size, _name, price_n, qty_n, brand, gender, cat1, cat2, cat3, supplier, _drop_price = row
         key = (art.lower(), str(size))
         if key in existing_keys:
             continue  # вже опублікований розмір — покривається апдейтом ціни/залишку вище
@@ -470,6 +509,12 @@ def main():
         log(f"Пропущено як вручну прибрані (excluded_sizes): {len(skipped_excluded)} ({sample})")
 
     push_catalog_json_to_github(catalog_json_str)
+
+    if cost_rows:
+        ok = upsert_product_costs(cost_rows)
+        log(f"Дроп-цін оновлено в product_costs: {ok}/{len(cost_rows)}")
+    else:
+        log("Дроп-цін у файлі не знайдено — product_costs не чіпаю.")
 
     log("Готово.")
 

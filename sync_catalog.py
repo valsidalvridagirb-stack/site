@@ -43,7 +43,7 @@ from datetime import datetime, timezone
 import openpyxl
 
 REQUIRED_COLUMNS = [
-    'Артикул', 'Назва', 'Розмір', 'Роздрібна ціна (грн)', 'Кількість',
+    'Артикул', 'Назва', 'Розмір', 'Дроп ціна (грн)', 'Роздрібна ціна (грн)', 'Кількість',
     'Бренд', 'Стать', 'Категорія 1', 'Категорія 2', 'Категорія 3', 'Постачальник',
 ]
 
@@ -136,6 +136,7 @@ def main():
 
         name = str(r[idx['Назва']] or '').strip()
         price_raw = r[idx['Роздрібна ціна (грн)']]
+        drop_price_raw = r[idx['Дроп ціна (грн)']]
         qty_raw = r[idx['Кількість']]
         brand = str(r[idx['Бренд']] or '').strip()
         gender = str(r[idx['Стать']] or '').strip()
@@ -155,6 +156,14 @@ def main():
             skipped_bad += 1
             continue
 
+        # Дроп (закупівельна) ціна — НЕ впливає на публікацію товару: якщо
+        # порожня/бита, просто не синхронізуємо її окремо (product_costs),
+        # рештою рядка (products/каталог) це не блокуємо.
+        try:
+            drop_price_n = float(drop_price_raw) if drop_price_raw not in (None, '') else None
+        except (TypeError, ValueError):
+            drop_price_n = None
+
         key = (art.lower(), size)
         if key in seen:
             skipped_dupe += 1
@@ -164,7 +173,7 @@ def main():
         catalog_rows.append({
             'art': art, 'size': size, 'name': name, 'price': price_n, 'qty': qty_n,
             'brand': brand, 'gender': gender, 'cat1': cat1, 'cat2': cat2, 'cat3': cat3,
-            'supplier': supplier,
+            'supplier': supplier, 'drop_price': drop_price_n,
         })
 
     print(f'[sync] Розпарсено {len(catalog_rows)} рядків каталогу '
@@ -290,6 +299,29 @@ def main():
             sql_lines.append(
                 f"INSERT INTO products ({', '.join(cols)}) VALUES ({row_sql});"
             )
+
+    # --- 4. Дроп (закупівельна) ціна -> окрема таблиця product_costs ---
+    # НІКОЛИ не в products (там публічний anon-ключ читає все, а дроп-ціну
+    # ніхто, крім власника, бачити не повинен). Upsert по (articul, size) —
+    # завжди для всього розпарсеного каталогу, незалежно від того, чи
+    # змінювались price/quantity вище.
+    cost_rows = [c for c in catalog_rows if c['drop_price'] is not None]
+    if cost_rows:
+        sql_lines.append('-- дроп (закупівельна) ціна -> product_costs (upsert)')
+        chunk_size = 500
+        for i in range(0, len(cost_rows), chunk_size):
+            chunk = cost_rows[i:i + chunk_size]
+            values_sql = ', '.join(
+                f"({sql_str(c['art'])}, {sql_str(c['size'])}, {c['drop_price']}, now())"
+                for c in chunk
+            )
+            sql_lines.append(
+                f"INSERT INTO product_costs (articul, size, drop_price, updated_at) VALUES {values_sql} "
+                f"ON CONFLICT (articul, size) DO UPDATE SET drop_price = EXCLUDED.drop_price, "
+                f"updated_at = EXCLUDED.updated_at;"
+            )
+        print(f'[sync] {len(cost_rows)} дроп-цін буде записано в product_costs '
+              f'(окремо від products, недоступно анонімному ключу)')
 
     with open(args.sql_out, 'w', encoding='utf-8') as f:
         f.write('\n'.join(sql_lines) + ('\n' if sql_lines else ''))
