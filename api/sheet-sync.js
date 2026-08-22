@@ -72,7 +72,7 @@ async function lookupDropPriceTotal(items) {
 
 function buildProductLabel(items) {
   return items
-    .map(it => `${it.name || it.product_name || '-'} (${it.size || '-'}) x${it.quantity || 1}`)
+    .map(it => `${it.articul || it.name || it.product_name || '-'} (${it.size || '-'}) x${it.quantity || 1}`)
     .join('; ');
 }
 
