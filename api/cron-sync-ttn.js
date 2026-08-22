@@ -12,6 +12,26 @@ const { npCall } = require('./_lib/np');
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const CRON_SECRET = process.env.CRON_SECRET;
+const SHEET_WEBAPP_URL = process.env.SHEET_WEBAPP_URL;
+const SHEET_WEBAPP_SECRET = process.env.SHEET_WEBAPP_SECRET;
+
+// Статус ТТН змінюється тут повністю автоматично (без адміна) — тож і рядок
+// CRM-таблиці підтягуємо напряму, сервер-сервер, без /api/sheet-sync (той
+// вимагає admin-токен, якого в цьому крон-джобі просто немає). Якщо таблиця
+// не налаштована (немає env) — просто пропускаємо, це не критична дія.
+async function syncStatusToSheet(orderId, status) {
+  if (!SHEET_WEBAPP_URL || !SHEET_WEBAPP_SECRET) return;
+  try {
+    await fetch(SHEET_WEBAPP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: SHEET_WEBAPP_SECRET, action: 'update', id: orderId, status })
+    });
+  } catch (e) {
+    // не критично — рядок в таблиці просто не оновиться цього разу,
+    // наступний прогін крона спробує ще раз
+  }
+}
 
 // Не тягнемо статус для замовлень старших за це — щоб список активних замовлень
 // не ріс нескінченно з часом (Нова пошта однаково не змінить статус давно виданої посилки).
@@ -74,6 +94,7 @@ module.exports = async (req, res) => {
             method: 'PATCH',
             body: JSON.stringify({ ttn_status: newStatus, ttn_status_updated_at: new Date().toISOString() })
           });
+          await syncStatusToSheet(order.id, newStatus);
           updated++;
         } else if (newStatus) {
           // статус не змінився — все одно фіксуємо час перевірки
