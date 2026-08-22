@@ -186,11 +186,6 @@ html[data-theme="dark"] header.site.scrolled{--hdr-ink:#f0f0ee;--hdr-mute:#9c9a9
   .nav-subgroup-body .nav-subgroup-toggle{padding:9px 20px 9px 36px;font-size:12.5px;color:rgba(255,255,255,.7);}
   .nav-subgroup-body .nav-subgroup-toggle:hover{color:#ffffff;}
   .nav-subgroup-body .nav-subgroup-body a{padding:8px 20px 8px 52px;font-size:12px;}
-  /* Плоский блок-підкатегорія (Кофти/Футболки/Штани/Шорти/Спортивні
-     костюми) — без власного заголовка-розкривашки, лише візуально
-     відокремлений тонкою лінією від "Верхній одяг" вище. */
-  .nav-subgroup-plain{border-top:1px solid rgba(255,255,255,.14);margin:4px 8px 0;padding-top:4px;}
-  .nav-subgroup-plain a{margin:1px 0;}
   .header-icons{display:flex;align-items:center;gap:22px;}
   .icon-btn{position:relative;display:flex;}
   .icon-btn svg{width:19px;height:19px;stroke:var(--hdr-ink);transition:stroke .35s ease;}
@@ -853,13 +848,29 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                   <a href="catalog.html?cat=Чоловіче&amp;type=Парки">Парки</a>
                 </div>
               </div>
-              <div class="nav-subgroup-plain">
-                <a href="catalog.html?cat=Чоловіче&amp;type=Кофти">Кофти</a>
-                <a href="catalog.html?cat=Чоловіче&amp;type=Футболки">Футболки</a>
-                <a href="catalog.html?cat=Чоловіче&amp;type=Штани">Штани</a>
-                <a href="catalog.html?cat=Чоловіче&amp;type=Шорти">Шорти</a>
-                <a href="catalog.html?cat=Чоловіче&amp;type=Спортивні костюми">Спортивні костюми</a>
+              <div class="nav-subgroup">
+                <button type="button" class="nav-subgroup-toggle">Кофти
+                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="nav-subgroup-body">
+                  <a href="catalog.html?cat=Чоловіче&amp;type=Світшоти">Cвітшоти</a>
+                  <a href="catalog.html?cat=Чоловіче&amp;type=Худі">Худі</a>
+                  <a href="catalog.html?cat=Чоловіче&amp;type=Zip-Худі">Zip-Худі</a>
+                </div>
               </div>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Футболки">Футболки</a>
+              <div class="nav-subgroup">
+                <button type="button" class="nav-subgroup-toggle">Штани
+                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="nav-subgroup-body">
+                  <a href="catalog.html?cat=Чоловіче&amp;type=Спортивні штани">Спортивні штани</a>
+                  <a href="catalog.html?cat=Чоловіче&amp;type=Джинси">Джинси</a>
+                  <a href="catalog.html?cat=Чоловіче&amp;type=Брюки, класичні">Брюки, класичні</a>
+                </div>
+              </div>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Шорти">Шорти</a>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Спортивні костюми">Спортивні костюми</a>
             </div>
           </div>
         </div>
@@ -894,13 +905,29 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                   <a href="catalog.html?cat=Жіноче&amp;type=Парки">Парки</a>
                 </div>
               </div>
-              <div class="nav-subgroup-plain">
-                <a href="catalog.html?cat=Жіноче&amp;type=Кофти">Кофти</a>
-                <a href="catalog.html?cat=Жіноче&amp;type=Футболки">Футболки</a>
-                <a href="catalog.html?cat=Жіноче&amp;type=Штани">Штани</a>
-                <a href="catalog.html?cat=Жіноче&amp;type=Шорти">Шорти</a>
-                <a href="catalog.html?cat=Жіноче&amp;type=Спортивні костюми">Спортивні костюми</a>
+              <div class="nav-subgroup">
+                <button type="button" class="nav-subgroup-toggle">Кофти
+                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="nav-subgroup-body">
+                  <a href="catalog.html?cat=Жіноче&amp;type=Світшоти">Cвітшоти</a>
+                  <a href="catalog.html?cat=Жіноче&amp;type=Худі">Худі</a>
+                  <a href="catalog.html?cat=Жіноче&amp;type=Zip-Худі">Zip-Худі</a>
+                </div>
               </div>
+              <a href="catalog.html?cat=Жіноче&amp;type=Футболки">Футболки</a>
+              <div class="nav-subgroup">
+                <button type="button" class="nav-subgroup-toggle">Штани
+                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="nav-subgroup-body">
+                  <a href="catalog.html?cat=Жіноче&amp;type=Спортивні штани">Спортивні штани</a>
+                  <a href="catalog.html?cat=Жіноче&amp;type=Джинси">Джинси</a>
+                  <a href="catalog.html?cat=Жіноче&amp;type=Брюки, класичні">Брюки, класичні</a>
+                </div>
+              </div>
+              <a href="catalog.html?cat=Жіноче&amp;type=Шорти">Шорти</a>
+              <a href="catalog.html?cat=Жіноче&amp;type=Спортивні костюми">Спортивні костюми</a>
             </div>
           </div>
         </div>
