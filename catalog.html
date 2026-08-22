@@ -136,16 +136,16 @@ html[data-theme="dark"] .nav-dropdown{background:rgba(24,24,24,.92);border-color
   .nav-subgroup-toggle:hover{background:var(--smoke);}
   .nav-subgroup-toggle .chevron{width:12px;height:12px;stroke:currentColor;flex-shrink:0;transition:transform .2s;}
   /* ">" (прямий нащадок), а не пробіл — інакше розкритий батьківський
-     розділ ("Одяг") хибно розгортав би й ще закриті вкладені підрозділи
-     ("Верхній одяг"/"Штани"/"Кофти") та їхні шеврони, бо звичайний
-     нащадок-селектор не розрізняє рівень вкладеності. */
+     розділ ("Одяг") хибно розгортав би й ще закритий вкладений підрозділ
+     ("Верхній одяг") та його шеврон, бо звичайний нащадок-селектор не
+     розрізняє рівень вкладеності. */
   .nav-subgroup.open > .nav-subgroup-toggle .chevron{transform:rotate(180deg);}
   .nav-subgroup-body{display:none;padding:2px 0 6px;}
   .nav-subgroup.open > .nav-subgroup-body{display:block;}
   .nav-subgroup-body a{padding:9px 20px 9px 36px;font-size:12.5px;color:var(--mute);border-radius:6px;margin:1px 8px;}
   .nav-subgroup-body a:hover{color:var(--ink);background:var(--smoke);}
-  /* Третій рівень (Верхній одяг/Штани/Кофти всередині Одягу) — глибший
-     відступ, щоб ієрархія була видна візуально. */
+  /* Третій рівень (посилання всередині "Верхній одяг") — глибший відступ,
+     щоб ієрархія була видна візуально. */
   .nav-subgroup-body .nav-subgroup-toggle{padding:9px 20px 9px 36px;font-size:12.5px;color:var(--mute);}
   .nav-subgroup-body .nav-subgroup-toggle:hover{color:var(--ink);}
   .nav-subgroup-body .nav-subgroup-body a{padding:8px 20px 8px 52px;font-size:12px;}
@@ -700,29 +700,9 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                   <a href="catalog.html?cat=Чоловіче&amp;type=Парки">Парки</a>
                 </div>
               </div>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Кофти">Кофти</a>
               <a href="catalog.html?cat=Чоловіче&amp;type=Футболки">Футболки</a>
-              <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Кофти
-                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div class="nav-subgroup-body">
-                  <a href="catalog.html?cat=Чоловіче&amp;type=Худі">Худі</a>
-                  <a href="catalog.html?cat=Чоловіче&amp;type=Світшоти">Світшоти</a>
-                  <a href="catalog.html?cat=Чоловіче&amp;type=Светри, джемпери">Светри, джемпери</a>
-                  <a href="catalog.html?cat=Чоловіче&amp;type=Кофти">Кофти</a>
-                </div>
-              </div>
-              <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Штани
-                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div class="nav-subgroup-body">
-                  <a href="catalog.html?cat=Чоловіче&amp;type=Джинси">Джинси</a>
-                  <a href="catalog.html?cat=Чоловіче&amp;type=Спортивні штани">Спортивні штани</a>
-                  <a href="catalog.html?cat=Чоловіче&amp;type=Легінси">Легінси</a>
-                  <a href="catalog.html?cat=Чоловіче&amp;type=Штани">Штани</a>
-                </div>
-              </div>
+              <a href="catalog.html?cat=Чоловіче&amp;type=Штани">Штани</a>
               <a href="catalog.html?cat=Чоловіче&amp;type=Шорти">Шорти</a>
               <a href="catalog.html?cat=Чоловіче&amp;type=Спортивні костюми">Спортивні костюми</a>
             </div>
@@ -759,29 +739,9 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                   <a href="catalog.html?cat=Жіноче&amp;type=Парки">Парки</a>
                 </div>
               </div>
+              <a href="catalog.html?cat=Жіноче&amp;type=Кофти">Кофти</a>
               <a href="catalog.html?cat=Жіноче&amp;type=Футболки">Футболки</a>
-              <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Кофти
-                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div class="nav-subgroup-body">
-                  <a href="catalog.html?cat=Жіноче&amp;type=Худі">Худі</a>
-                  <a href="catalog.html?cat=Жіноче&amp;type=Світшоти">Світшоти</a>
-                  <a href="catalog.html?cat=Жіноче&amp;type=Светри, джемпери">Светри, джемпери</a>
-                  <a href="catalog.html?cat=Жіноче&amp;type=Кофти">Кофти</a>
-                </div>
-              </div>
-              <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Штани
-                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div class="nav-subgroup-body">
-                  <a href="catalog.html?cat=Жіноче&amp;type=Джинси">Джинси</a>
-                  <a href="catalog.html?cat=Жіноче&amp;type=Спортивні штани">Спортивні штани</a>
-                  <a href="catalog.html?cat=Жіноче&amp;type=Легінси">Легінси</a>
-                  <a href="catalog.html?cat=Жіноче&amp;type=Штани">Штани</a>
-                </div>
-              </div>
+              <a href="catalog.html?cat=Жіноче&amp;type=Штани">Штани</a>
               <a href="catalog.html?cat=Жіноче&amp;type=Шорти">Шорти</a>
               <a href="catalog.html?cat=Жіноче&amp;type=Спортивні костюми">Спортивні костюми</a>
             </div>
@@ -1073,10 +1033,7 @@ let activeFilters = {
 // цьому списку, самі стануть пунктом фільтра, без правок коду.
 const PRODUCT_TYPE_ORDER = [
   'Кросівки', 'Капці', 'Сандалі', 'Черевики',
-  'Куртки', 'Парки', 'Вітровки, жилетки, плащі', 'Футболки',
-  'Худі', 'Світшоти', 'Светри, джемпери', 'Кофти',
-  'Джинси', 'Спортивні штани', 'Легінси', 'Штани',
-  'Шорти', 'Спортивні костюми',
+  'Куртки', 'Парки', 'Вітровки, жилетки, плащі', 'Кофти', 'Футболки', 'Штани', 'Шорти', 'Спортивні костюми',
   'Рюкзаки', 'Спортивні сумки', 'Жіночі сумки', 'Сумки на пояс, плече', 'Месенджери', 'Кепки та шапки', 'Шкарпетки', 'Ремені', 'Рукавички'
 ];
 // Точний збіг усієї "Категорія 2" від постачальника (або обраної в адмінці
@@ -1107,16 +1064,11 @@ const CATEGORY_2_MAP = {
   'футболка': 'Футболки',
   'кофти та худі': 'Кофти',
   'кофта': 'Кофти',
-  'худі': 'Худі',
-  'світшот': 'Світшоти',
-  'толстовка': 'Світшоти',
-  'джемпер': 'Светри, джемпери',
-  'светр': 'Светри, джемпери',
+  'джемпер': 'Кофти',
+  'светр': 'Кофти',
+  'толстовка': 'Кофти',
   'штани та лосини': 'Штани',
   'бриджи': 'Штани',
-  'джинси': 'Джинси',
-  'лосини': 'Легінси',
-  'спортивні штани': 'Спортивні штани',
   'шорти': 'Шорти',
   'костюм спортивний': 'Спортивні костюми',
   'спортивні костюми': 'Спортивні костюми',
@@ -1162,19 +1114,8 @@ function detectProductType(p) {
   if (/вітр[іо]вк|жилет|плащ|windbreaker|vest|gilet|raincoat/.test(name)) return 'Вітровки, жилетки, плащі';
   if (/куртк|пуховик|пальто|тренч|jacket|coat/.test(name)) return 'Куртки';
   if (/футболк|сорочк|блуз|лонгслів|майк|t-?shirt|polo|blouse/.test(name)) return 'Футболки';
-  // Кофти розбиті на Худі/Світшоти/Светри,джемпери/загальні Кофти — за
-  // тим самим принципом, що й Куртки/Парки/Вітровки вище: специфічні
-  // ключові слова перевіряємо ПЕРШИМИ, загальне "кофт" — останнім.
-  if (/худі|hoodie/.test(name)) return 'Худі';
-  if (/світшот|толстовк|sweatshirt/.test(name)) return 'Світшоти';
-  if (/джемпер|светр|sweater|jumper/.test(name)) return 'Светри, джемпери';
-  if (/кофт/.test(name)) return 'Кофти';
-  // Штани розбиті на Джинси/Спортивні штани/Легінси/загальні Штани —
-  // так само.
-  if (/джинси|jeans/.test(name)) return 'Джинси';
-  if (/джогер|jogger/.test(name)) return 'Спортивні штани';
-  if (/легінс|лосин|тайтс|leggings?/.test(name)) return 'Легінси';
-  if (/штани|бриджи|брюки|pants?|trousers?/.test(name)) return 'Штани';
+  if (/кофт|худі|світшот|джемпер|светр|толстовк|hoodie|sweatshirt|sweater|jumper/.test(name)) return 'Кофти';
+  if (/штани|лосин|тайтс|бриджи|джинси|брюки|pants?|trousers?|leggings?|jeans|joggers?/.test(name)) return 'Штани';
   if (/шорти|shorts?/.test(name)) return 'Шорти';
   if (/костюм|комбінезон|tracksuit|jumpsuit/.test(name)) return 'Спортивні костюми';
 
