@@ -51,6 +51,9 @@
     },
     "api/feed.js": {
       "maxDuration": 30
+    },
+    "api/sitemap.js": {
+      "maxDuration": 30
     }
   }
 }
