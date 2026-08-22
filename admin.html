@@ -1698,6 +1698,18 @@ async function saveTtnManual(o) {
   o.status = 'Відправлено';
   showToast('ТТН збережено', 'success');
   loadOrders();
+
+  // Той самий ТТН — у рядок CRM-таблиці (Google Sheets). Не блокує адмінку,
+  // якщо не спрацює: рядок і так вже створено при оформленні, це лише
+  // підтягування ТТН/статусу в нього.
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    fetch('/api/sheet-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+      body: JSON.stringify({ action: 'update', orderId: o.id, ttn, status: 'Нова' })
+    }).catch(() => {});
+  } catch (e) { /* не критично — просто не оновиться в таблиці цього разу */ }
 }
 
 async function deleteOrder(o, card) {

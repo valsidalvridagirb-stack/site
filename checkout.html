@@ -898,6 +898,25 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     })
   }).catch(() => {});
 
+  // Рядок у CRM-таблиці (Google Sheets) — так само не блокує оформлення,
+  // якщо не спрацює (наприклад, таблиця тимчасово недоступна).
+  fetch('/api/sheet-sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'create',
+      orderId: order.id,
+      customerName,
+      customerPhone,
+      totalPrice: order.total_price,
+      createdAt: new Date().toISOString(),
+      items: rpcItems.map(it => ({
+        name: it.product_name, articul: it.articul, size: it.size,
+        quantity: it.quantity, price: it.price
+      }))
+    })
+  }).catch(() => {});
+
   // Показуємо підтвердження замовлення на цій же сторінці (замість миттєвого
   // редіректу) — щоб клієнт встиг побачити суму передоплати і оплатити її
   // за посиланням, не поспішаючи.
