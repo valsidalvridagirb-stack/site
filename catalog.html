@@ -1376,9 +1376,13 @@ function buildBaseQuery(cat, searchTerm) {
       const isAccessories = /аксесуар/i.test(cat);
 
       if (isMale) {
-        query = query.or('gender.ilike.%Чолов%,gender.ilike.%Унісекс%');
+        // Аксесуари (рюкзаки, сумки тощо) навмисно виключаємо тут — вони
+        // мають gender="Чоловіче"/"Унісекс" так само, як і взуття/одяг, і
+        // без цього виключення потрапляли б у "Чоловіче"/"Жіноче" впереміш
+        // з основним асортиментом. Свій розділ для них — "Аксесуари" нижче.
+        query = query.or('gender.ilike.%Чолов%,gender.ilike.%Унісекс%').not('category_1', 'ilike', '%Аксесуар%');
       } else if (isFemale) {
-        query = query.or('gender.ilike.%Жін%,gender.ilike.%Унісекс%');
+        query = query.or('gender.ilike.%Жін%,gender.ilike.%Унісекс%').not('category_1', 'ilike', '%Аксесуар%');
       } else if (isAccessories) {
         query = query.ilike('category_1', '%Аксесуар%');
       }
