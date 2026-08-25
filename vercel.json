@@ -41,7 +41,8 @@
       "maxDuration": 60
     },
     "api/catalog.js": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "api/_data/excel-catalog.json"
     },
     "api/product.js": {
       "includeFiles": "product-page.html"
