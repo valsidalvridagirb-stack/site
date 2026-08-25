@@ -58,6 +58,9 @@ const CRON_ACTIONS = {
     url: 'https://drop.yesoriginal.com.ua/price/drop.xml',
     parse: parseDropyesoriginalXml,
     minExpectedRows: 100,
+    // Їхній хостинг 403-ить запити без Referer з того ж домену (bot-детект
+    // на IP-рівні Vercel-датацентру, з браузера той самий фід доступний).
+    fetchOptions: { headers: { Referer: 'https://drop.yesoriginal.com.ua/' } },
   }),
   ultrasport: makeCatalogCronHandler({
     supplier: 'ultrasport',
