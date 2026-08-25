@@ -22,13 +22,25 @@ update.py — цей скрипт нічого не перераховує за�
 - Розмір, який зник із прайсу постачальника, НЕ видаляється і не ховається —
   лишається на сайті як є (тільки попередження в підсумку).
 
+--only-suppliers (ДОДАНО): з моменту, як ideasport/ultrasport/tcross/olxandery
+переїхали на окрему хмарну синхронізацію (GitHub Actions + api/catalog.js,
+раз на годину, напряму з фідів постачальників), цей скрипт більше НЕ повинен
+чіпати price/quantity/нові розміри для цих чотирьох — інакше два незалежні
+механізми писали б в одні й ті самі рядки products і затирали б одне одного.
+Прапорець обмежує кроки 2a/2b (оновлення ціни/залишку + нові розміри) лише
+постачальниками зі списку (порівняння без урахування регістру). Крок 1
+(перезбірка excel-catalog.json для пошуку в адмінці) СВІДОМО не фільтрується
+— пошук має лишатись повним, по всіх постачальниках, незалежно від того, який
+саме механізм зараз відповідає за оновлення цін для кожного з них.
+
 Використання:
     python3 sync_catalog.py \
         --catalog-tool-result <path-to-download_file_content-json> \
         --repo <path-to-site-checkout> \
         --current-products-json <path-to-json-[{id,articul,size,price,quantity,name,description,photos,brand,gender,category_1,category_2,category_3,supplier,size_chart_gender,extra_categories}]> \
         --excluded-sizes-json <path-to-json-[{articul,size}]> \
-        --sql-out <path-to-write-generated-UPDATE/INSERT-statements>
+        --sql-out <path-to-write-generated-UPDATE/INSERT-statements> \
+        --only-suppliers "7dreamsport,dropyesoriginal"
 
 Виводить у stdout короткий текстовий підсумок (кількість рядків, кількість
 оновлень, кількість доданих розмірів) — саме це агент показує користувачу.
@@ -74,6 +86,12 @@ def parse_args():
     p.add_argument('--sql-out', required=True,
                     help='Куди записати згенеровані UPDATE/INSERT-запити (порожній файл, якщо нічого робити)')
     p.add_argument('--tmp-xlsx', default='/tmp/_sync_catalog_source.xlsx')
+    p.add_argument('--only-suppliers', default=None,
+                    help='Через кому — постачальники (як у колонці "Постачальник"), для яких '
+                         'застосовувати оновлення price/quantity та нові розміри (кроки 2a/2b). '
+                         'Порівняння без урахування регістру. Якщо не задано — обробляються ВСІ '
+                         'постачальники з файлу каталогу (стара поведінка). excel-catalog.json '
+                         '(пошук в адмінці) завжди перезбирається з усіх рядків незалежно від цього.')
     return p.parse_args()
 
 
@@ -180,6 +198,8 @@ def main():
           f'(пропущено {skipped_dupe} дублів, {skipped_bad} биті рядки)')
 
     # --- 1. Перезбираємо excel-catalog.json (каталог для пошуку в адмінці) ---
+    # Свідомо з УСІХ catalog_rows, без --only-suppliers — пошук в адмінці має
+    # лишатись повним по всіх постачальниках.
     catalog_json = {
         'cols': ['art', 'size', 'name', 'price', 'qty', 'brand', 'gender', 'cat1', 'cat2', 'cat3', 'supplier'],
         'rows': [[c['art'], c['size'], c['name'], c['price'], c['qty'], c['brand'], c['gender'],
@@ -194,12 +214,33 @@ def main():
     current_products = load_json(args.current_products_json)
     excluded_sizes = load_json(args.excluded_sizes_json)
 
-    lookup = {(c['art'].lower(), str(c['size'])): c for c in catalog_rows}
+    # --only-suppliers обмежує ЛИШЕ кроки 2a/2b (оновлення ціни/залишку +
+    # нові розміри) — і з боку каталогу постачальників (sync_catalog_rows), і
+    # з боку вже опублікованих товарів (sync_products), щоб товари інших
+    # постачальників навіть не потрапляли в порівняння і не позначались як
+    # "зниклі з прайсу" лише тому, що їх немає у відфільтрованому наборі.
+    only_suppliers = None
+    if args.only_suppliers:
+        only_suppliers = {s.strip().lower() for s in args.only_suppliers.split(',') if s.strip()}
+
+    if only_suppliers is not None:
+        sync_catalog_rows = [c for c in catalog_rows if c['supplier'].strip().lower() in only_suppliers]
+        sync_products = [p for p in current_products
+                          if str(p.get('supplier', '') or '').strip().lower() in only_suppliers]
+        print(f'[sync] --only-suppliers={sorted(only_suppliers)}: '
+              f'{len(sync_catalog_rows)}/{len(catalog_rows)} рядків каталогу, '
+              f'{len(sync_products)}/{len(current_products)} опублікованих товарів беремо до уваги '
+              f'для оновлень (решта постачальників — поза цим скриптом)')
+    else:
+        sync_catalog_rows = catalog_rows
+        sync_products = current_products
+
+    lookup = {(c['art'].lower(), str(c['size'])): c for c in sync_catalog_rows}
 
     existing_keys = set()
     existing_articuls = set()
     template_by_articul = {}
-    for p in current_products:
+    for p in sync_products:
         art_l = str(p['articul']).lower()
         existing_keys.add((art_l, str(p['size'])))
         existing_articuls.add(art_l)
@@ -208,10 +249,10 @@ def main():
 
     excluded_keys = {(str(e['articul']).lower(), str(e['size'])) for e in excluded_sizes}
 
-    # --- 2a. Ціна/залишок для розмірів, які вже опубліковані ---
+    # --- 2a. Ціна/залишок для розмірів, які вже опуліковані ---
     updates = []
     gone = []
-    for p in current_products:
+    for p in sync_products:
         key = (str(p['articul']).lower(), str(p['size']))
         c = lookup.get(key)
         if c is None:
@@ -228,7 +269,7 @@ def main():
             })
 
     print(f'[sync] {len(updates)} товарів потребують оновлення ціни/залишку '
-          f'з {len(current_products)} опублікованих')
+          f'з {len(sync_products)} опублікованих')
     if gone:
         print(f'[sync] УВАГА: {len(gone)} опублікованих товарів більше немає в каталозі '
               f'постачальників (ціну/залишок НЕ чіпаємо, товар лишається на сайті як є): '
@@ -238,7 +279,7 @@ def main():
     # --- 2b. Нові розміри для вже опублікованих артикулів ---
     new_sizes = []
     skipped_excluded = []
-    for c in catalog_rows:
+    for c in sync_catalog_rows:
         key = (c['art'].lower(), c['size'])
         if key in existing_keys:
             continue  # вже опублікований розмір — покривається апдейтом ціни/залишку вище
@@ -311,11 +352,12 @@ def main():
         'timestamp': datetime.now(timezone.utc).isoformat(),
         'source_file': title,
         'catalog_rows': len(catalog_rows),
-        'products_checked': len(current_products),
+        'products_checked': len(sync_products),
         'updates': len(updates),
         'new_sizes_added': len(new_sizes),
         'skipped_excluded': len(skipped_excluded),
         'no_longer_available': len(gone),
+        'only_suppliers': sorted(only_suppliers) if only_suppliers is not None else None,
     }
     print('[sync] SUMMARY_JSON: ' + json.dumps(summary, ensure_ascii=False))
     if new_sizes:
