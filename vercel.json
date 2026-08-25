@@ -37,8 +37,32 @@
     "api/scan-dimensions.js": {
       "maxDuration": 60
     },
+    "api/scan-external-dimensions.js": {
+      "maxDuration": 60
+    },
     "api/cron-sync-ttn.js": {
       "maxDuration": 60
+    },
+    "api/cron-catalog-ideasport.js": {
+      "maxDuration": 60
+    },
+    "api/cron-catalog-dropyesoriginal.js": {
+      "maxDuration": 60
+    },
+    "api/cron-catalog-ultrasport.js": {
+      "maxDuration": 60
+    },
+    "api/cron-catalog-tcross.js": {
+      "maxDuration": 60
+    },
+    "api/cron-catalog-olxandery.js": {
+      "maxDuration": 60
+    },
+    "api/cron-catalog-sync.js": {
+      "maxDuration": 60
+    },
+    "api/catalog.js": {
+      "maxDuration": 30
     },
     "api/product.js": {
       "includeFiles": "product-page.html"
