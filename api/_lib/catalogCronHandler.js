@@ -21,6 +21,38 @@ const CRON_SECRET = process.env.CRON_SECRET;
 const UPSERT_BATCH_SIZE = 500;
 const UPSERT_CONCURRENCY = 4;
 
+// Деякі постачальники (напр. drop.yesoriginal.com.ua) віддають 403 на запит
+// без "браузерного" User-Agent — типовий bot-detection на боці хостингу
+// фіда. Fetch() у Node/Vercel за замовчуванням шле generic/порожній UA.
+const DEFAULT_FEED_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  Accept: '*/*',
+};
+
+// Дедублікація В МЕЖАХ одного постачальника — те саме, що робив merge_all()
+// у update.py (ключ — (sku, size) у ВЕРХНЬОМУ регістрі, лишаємо рядок з
+// найменшою drop_price, а при рівній ціні — з більшою кількістю). Це не
+// заміна supplier_catalog_merged (та в'юха дедублікує МІЖ постачальниками
+// на READ), а обов'язковий крок ПЕРЕД bulk-upsert: сам фід постачальника
+// (напр. tcross) може містити кілька офферів з однаковим (sku, size) —
+// а один SQL-запит на upsert не може зачепити той самий рядок (той самий
+// on_conflict-ключ) двічі, інакше Postgres падає з
+// "ON CONFLICT DO UPDATE command cannot affect row a second time".
+function dedupeWithinSupplier(rows) {
+  const bySkuSize = new Map();
+  for (const r of rows) {
+    const k = `${String(r.sku).trim().toUpperCase()}::${String(r.size).trim().toUpperCase()}`;
+    const existing = bySkuSize.get(k);
+    if (!existing) {
+      bySkuSize.set(k, r);
+    } else if (r.drop_price < existing.drop_price
+      || (r.drop_price === existing.drop_price && r.qty > existing.qty)) {
+      bySkuSize.set(k, r);
+    }
+  }
+  return [...bySkuSize.values()];
+}
+
 function toUpsertRow(r, runStart) {
   return {
     sku: r.sku,
@@ -97,14 +129,19 @@ function makeCatalogCronHandler(opts) {
 
       const runStart = new Date().toISOString();
 
-      const feedRes = await fetch(url, fetchOptions || {});
+      const mergedFetchOptions = {
+        ...(fetchOptions || {}),
+        headers: { ...DEFAULT_FEED_HEADERS, ...((fetchOptions && fetchOptions.headers) || {}) },
+      };
+      const feedRes = await fetch(url, mergedFetchOptions);
       if (!feedRes.ok) {
         throw new Error(`Не вдалось завантажити фід ${url}: ${feedRes.status}`);
       }
       const feedText = await feedRes.text();
 
       const rawRows = parse(feedText);
-      const processed = rawRows.map(processRow).filter(Boolean);
+      const processedRaw = rawRows.map(processRow).filter(Boolean);
+      const processed = dedupeWithinSupplier(processedRaw);
 
       if (processed.length < minExpectedRows) {
         res.status(200).json({
@@ -142,7 +179,8 @@ function makeCatalogCronHandler(opts) {
         ok: errors.length === 0,
         supplier,
         fetched: rawRows.length,
-        processed: processed.length,
+        processed: processedRaw.length,
+        duplicatesRemoved: processedRaw.length - processed.length,
         upserted,
         staleCleanupOk,
         errors,
