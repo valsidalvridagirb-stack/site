@@ -20,6 +20,34 @@
     {
       "source": "/feed.xml",
       "destination": "/api/feed"
+    },
+    {
+      "source": "/cron/ttn",
+      "destination": "/api/cron-sync-ttn"
+    },
+    {
+      "source": "/cron/catalog-ideasport",
+      "destination": "/api/catalog?action=ideasport"
+    },
+    {
+      "source": "/cron/catalog-dropyesoriginal",
+      "destination": "/api/catalog?action=dropyesoriginal"
+    },
+    {
+      "source": "/cron/catalog-ultrasport",
+      "destination": "/api/catalog?action=ultrasport"
+    },
+    {
+      "source": "/cron/catalog-tcross",
+      "destination": "/api/catalog?action=tcross"
+    },
+    {
+      "source": "/cron/catalog-olxandery",
+      "destination": "/api/catalog?action=olxandery"
+    },
+    {
+      "source": "/cron/catalog-sync",
+      "destination": "/api/catalog?action=sync"
     }
   ],
   "headers": [
