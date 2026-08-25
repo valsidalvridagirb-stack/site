@@ -49,6 +49,36 @@ async function writeBatches(rows, path, headers) {
   return { written, errors };
 }
 
+// products.id — GENERATED ALWAYS AS IDENTITY: Postgres refuses ANY INSERT
+// that supplies an explicit id, even one whose only real purpose is to hit
+// an ON CONFLICT DO UPDATE branch ("cannot insert a non-DEFAULT value into
+// column \"id\""), so the usual bulk-upsert-by-primary-key trick used
+// elsewhere in this project (see catalogSyncToProducts's insert step below,
+// and catalogCronHandler.js) doesn't work here. A set-based UPDATE has no
+// such restriction, so price/qty changes go through a small SQL function
+// (see migration bulk_update_product_price_qty_fn) that does
+// `UPDATE products ... FROM jsonb_array_elements($1)` in one round trip
+// per batch instead.
+async function applyPriceQtyUpdates(updateRows) {
+  let written = 0;
+  const errors = [];
+  for (let i = 0; i < updateRows.length; i += WRITE_BATCH_SIZE) {
+    const chunk = updateRows.slice(i, i + WRITE_BATCH_SIZE).map((u) => ({
+      id: u.id, price: u.price, quantity: u.quantity,
+    }));
+    try {
+      await supaService('rpc/bulk_update_product_price_qty', {
+        method: 'POST',
+        body: JSON.stringify({ updates: chunk }),
+      });
+      written += chunk.length;
+    } catch (err) {
+      errors.push(String((err && err.message) || err));
+    }
+  }
+  return { written, errors };
+}
+
 module.exports = async (req, res) => {
   try {
     const reqUrl = new URL(req.url, 'http://internal');
@@ -131,12 +161,9 @@ module.exports = async (req, res) => {
       newSizes.push({ catalog: c, template: templateByArticul.get(artL) });
     }
 
-    // --- застосовуємо: bulk upsert по id для оновлень ціни/залишку ---
-    const updateRows = updates.map((u) => ({
-      id: u.id, articul: u.articul, name: u.name, size: u.size, price: u.price, quantity: u.quantity,
-    }));
-    const updateResult = updateRows.length
-      ? await writeBatches(updateRows, 'products?on_conflict=id', { Prefer: 'resolution=merge-duplicates,return=minimal' })
+    // --- застосовуємо: bulk SET-based update ціни/залишку через RPC ---
+    const updateResult = updates.length
+      ? await applyPriceQtyUpdates(updates)
       : { written: 0, errors: [] };
 
     // --- застосовуємо: звичайний insert нових розмірів ---
