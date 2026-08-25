@@ -165,6 +165,46 @@ async function upsertBatches(batches) {
   return { upserted, errors };
 }
 
+// Постачальники з великими фідами (ideasport ~3000 рядків, ultrasport ще
+// більше) не встигають вкластись у короткий read-timeout, який WebFetch
+// (інструмент, яким щогодинне завдання дзвонить на ці урли) сам собі ставить
+// на HTTP-запит — емпірично перевірено: коли WebFetch репортує "Read timeout",
+// Vercel ДІЙСНО обриває виконання функції на середині (supplier_catalog.
+// updated_at після цього не зрушується), це не хибне спрацювання таймауту, а
+// реальний обрив роботи. Тому вся синхронізація тепер "fire-and-forget":
+// хендлер одразу відповідає (не чекаючи фіда/апсертів) і продовжує роботу
+// ПІСЛЯ відповіді — Vercel не вбиває інвокейшн, доки не завершиться сам
+// async-хендлер (просто відправлений res не блокує подальший код). Результат
+// пишеться в sync_runs (started_at/finished_at/ok/summary) — той, хто
+// запустив синхронізацію, перевіряє результат окремим запитом до цієї
+// таблиці замість очікування у самому HTTP-виклику.
+async function logRunStart(action) {
+  if (!SERVICE_KEY) return null;
+  try {
+    const rows = await supaService('sync_runs', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify([{ action }]),
+    });
+    return rows && rows[0] ? rows[0].id : null;
+  } catch (err) {
+    console.error(`[sync_runs] insert failed for ${action}:`, err);
+    return null;
+  }
+}
+
+async function logRunFinish(runId, ok, summary) {
+  if (!runId) return;
+  try {
+    await supaService(`sync_runs?id=eq.${runId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ finished_at: new Date().toISOString(), ok, summary }),
+    });
+  } catch (err) {
+    console.error(`[sync_runs] update failed for run ${runId}:`, err);
+  }
+}
+
 // opts:
 //   supplier      — string, must match the `supplier` value processRow() sets
 //   url           — feed URL to fetch
@@ -181,20 +221,29 @@ function makeCatalogCronHandler(opts) {
   } = opts;
 
   return async (req, res) => {
+    const reqUrl = new URL(req.url, 'http://internal');
+    const secret = reqUrl.searchParams.get('secret');
+    if (!CRON_SECRET || secret !== CRON_SECRET) {
+      res.status(401).json({ error: 'unauthorized' });
+      return;
+    }
+    if (!SERVICE_KEY) {
+      res.status(500).json({ error: 'no_service_key', message: 'SUPABASE_SERVICE_ROLE_KEY не налаштовано на сервері' });
+      return;
+    }
+
+    const runStart = new Date().toISOString();
+    const runId = await logRunStart(supplier);
+
+    // Клієнт (WebFetch у сценарії щогодинного завдання) отримує швидку
+    // квитанцію і йде далі — фактична синхронізація триває нижче, вже після
+    // res.status().json(). Дальші помилки НЕ можна віддати через res (заголовки
+    // вже відправлені) — тільки в sync_runs.summary/console.error.
+    res.status(202).json({
+      ok: true, accepted: true, supplier, runId, startedAt: runStart,
+    });
+
     try {
-      const reqUrl = new URL(req.url, 'http://internal');
-      const secret = reqUrl.searchParams.get('secret');
-      if (!CRON_SECRET || secret !== CRON_SECRET) {
-        res.status(401).json({ error: 'unauthorized' });
-        return;
-      }
-      if (!SERVICE_KEY) {
-        res.status(500).json({ error: 'no_service_key', message: 'SUPABASE_SERVICE_ROLE_KEY не налаштовано на сервері' });
-        return;
-      }
-
-      const runStart = new Date().toISOString();
-
       const mergedFetchOptions = {
         ...(fetchOptions || {}),
         headers: { ...DEFAULT_FEED_HEADERS, ...((fetchOptions && fetchOptions.headers) || {}) },
@@ -206,8 +255,7 @@ function makeCatalogCronHandler(opts) {
       const processed = dedupeWithinSupplier(processedRaw);
 
       if (processed.length < minExpectedRows) {
-        res.status(200).json({
-          ok: false,
+        await logRunFinish(runId, false, {
           supplier,
           fetched: rawRows.length,
           processed: processed.length,
@@ -239,8 +287,7 @@ function makeCatalogCronHandler(opts) {
         errors.push(`stale_cleanup: ${String((err && err.message) || err)}`);
       }
 
-      res.status(200).json({
-        ok: errors.length === 0,
+      await logRunFinish(runId, errors.length === 0, {
         supplier,
         fetched: rawRows.length,
         processed: processedRaw.length,
@@ -252,8 +299,9 @@ function makeCatalogCronHandler(opts) {
         errors,
       });
     } catch (err) {
-      res.status(500).json({
-        error: 'server_error', supplier, message: String((err && err.message) || err),
+      console.error(`[catalog:${supplier}] background run failed:`, err);
+      await logRunFinish(runId, false, {
+        supplier, error: String((err && err.message) || err),
       });
     }
   };

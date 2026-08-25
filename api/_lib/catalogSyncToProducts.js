@@ -34,6 +34,37 @@ function key(art, size) {
   return `${String(art).toLowerCase()}${String(size)}`;
 }
 
+// Той самий fire-and-forget патерн, що й у catalogCronHandler.js: цей крок
+// читає ВСІ products (13k+ рядків) і supplier_catalog_merged (20k+) та пише
+// пачками — довше, ніж short read-timeout WebFetch-виклику щогодинного
+// завдання. Відповідаємо одразу, реальна робота триває після res.json(),
+// результат — в sync_runs (action='sync').
+async function logRunStart() {
+  try {
+    const rows = await supaService('sync_runs', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify([{ action: 'sync' }]),
+    });
+    return rows && rows[0] ? rows[0].id : null;
+  } catch (err) {
+    console.error('[sync_runs] insert failed for sync:', err);
+    return null;
+  }
+}
+
+async function logRunFinish(runId, ok, summary) {
+  if (!runId) return;
+  try {
+    await supaService(`sync_runs?id=eq.${runId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ finished_at: new Date().toISOString(), ok, summary }),
+    });
+  } catch (err) {
+    console.error(`[sync_runs] update failed for run ${runId}:`, err);
+  }
+}
+
 async function writeBatches(rows, path, headers) {
   let written = 0;
   const errors = [];
@@ -80,14 +111,17 @@ async function applyPriceQtyUpdates(updateRows) {
 }
 
 module.exports = async (req, res) => {
-  try {
-    const reqUrl = new URL(req.url, 'http://internal');
-    const secret = reqUrl.searchParams.get('secret');
-    if (!CRON_SECRET || secret !== CRON_SECRET) {
-      res.status(401).json({ error: 'unauthorized' });
-      return;
-    }
+  const reqUrl = new URL(req.url, 'http://internal');
+  const secret = reqUrl.searchParams.get('secret');
+  if (!CRON_SECRET || secret !== CRON_SECRET) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
 
+  const runId = await logRunStart();
+  res.status(202).json({ ok: true, accepted: true, action: 'sync', runId, startedAt: new Date().toISOString() });
+
+  try {
     const [mergedRaw, products, excludedSizes] = await Promise.all([
       supaServiceAll('supplier_catalog_merged?select=sku,size,retail_price,qty,brand,gender,category_1,category_2,category_3,supplier'),
       supaServiceAll('products?select=id,articul,name,size,price,quantity,brand,gender,category_1,category_2,category_3,description,photos,supplier,size_chart_gender,extra_categories&order=id.asc'),
@@ -196,8 +230,7 @@ module.exports = async (req, res) => {
 
     const errors = [...updateResult.errors, ...insertResult.errors];
 
-    res.status(200).json({
-      ok: errors.length === 0,
+    await logRunFinish(runId, errors.length === 0, {
       timestamp: new Date().toISOString(),
       source: 'supplier_catalog_merged',
       catalog_rows: catalogRows.length,
@@ -215,6 +248,7 @@ module.exports = async (req, res) => {
       errors,
     });
   } catch (err) {
-    res.status(500).json({ error: 'server_error', message: String((err && err.message) || err) });
+    console.error('[catalog:sync] background run failed:', err);
+    await logRunFinish(runId, false, { error: String((err && err.message) || err) });
   }
 };
