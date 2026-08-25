@@ -661,6 +661,126 @@ html[data-theme="dark"] header.site.scrolled{--hdr-ink:#f0f0ee;--hdr-mute:#9c9a9
     font-weight: 700;
   }
 
+  /* ===== Секція Instagram ===== */
+  .insta-feed {
+    max-width: none;
+    margin: 0 auto;
+    padding: 20px 32px 80px;
+  }
+
+  .insta-feed-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 28px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .insta-feed-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .insta-feed-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .insta-feed-icon svg { width: 19px; height: 19px; stroke: currentColor; }
+
+  .insta-feed-title h2 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: .04em;
+  }
+
+  .insta-feed-title p {
+    font-size: 13px;
+    color: var(--mute);
+    margin-top: 2px;
+  }
+
+  .insta-feed-head > a {
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  .insta-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+  }
+
+  .insta-tile {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--smoke);
+  }
+
+  .insta-tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform .35s ease;
+  }
+
+  .insta-tile:hover img { transform: scale(1.06); }
+
+  .insta-tile::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0);
+    transition: background .2s ease;
+  }
+
+  .insta-tile:hover::after { background: rgba(0,0,0,.18); }
+
+  .insta-tile svg {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 18px;
+    height: 18px;
+    stroke: #fff;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,.5));
+    opacity: 0;
+    transition: opacity .2s ease;
+  }
+
+  .insta-tile:hover svg { opacity: 1; }
+
+  @media (max-width: 980px) {
+    .insta-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 560px) {
+    .insta-feed { padding-left: 20px; padding-right: 20px; }
+    .insta-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  }
+
   /* ===== Footer ===== */
   footer {
     background: var(--ink-solid);
@@ -1070,6 +1190,26 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
   <div class="product-grid" id="productGrid"></div>
 </section>
 
+<!-- Instagram-стрічка — підтягує 6 останніх постів через /api/instagram-feed
+     (сам ендпоінт ходить у Instagram Graph API кешовано). Якщо токен ще не
+     налаштований на Vercel або Instagram недоступний — секція просто не
+     показується (без битих плашок і помилок на сторінці). -->
+<section class="insta-feed" id="instaFeed" style="display:none">
+  <div class="insta-feed-head">
+    <div class="insta-feed-title">
+      <span class="insta-feed-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+      </span>
+      <div>
+        <h2>@NEXXTLEVELSTORE</h2>
+        <p>Новинки, образи та актуальні знижки — в Instagram.</p>
+      </div>
+    </div>
+    <a href="https://www.instagram.com/nexxtlevelstore/" target="_blank" rel="noopener">Підписатися <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  </div>
+  <div class="insta-grid" id="instaGrid"></div>
+</section>
+
 <div class="footer-fade" aria-hidden="true"></div>
 
 <footer>
@@ -1227,6 +1367,31 @@ async function loadProducts(){
 
 updateWishBadge();
 loadProducts();
+
+// Instagram-стрічка на головній — 6 останніх постів з /api/instagram-feed.
+// Якщо ендпоінт ще не налаштований (немає токена на Vercel) або Instagram
+// недоступний — секція просто лишається прихованою, без жодних помилок.
+async function loadInstagramFeed(){
+  try {
+    const r = await fetch('/api/instagram-feed');
+    if (!r.ok) return;
+    const posts = await r.json();
+    if (!Array.isArray(posts) || !posts.length) return;
+
+    const grid = document.getElementById('instaGrid');
+    grid.innerHTML = posts.slice(0, 6).map(p => `
+      <a class="insta-tile" href="${p.permalink}" target="_blank" rel="noopener">
+        <img src="${p.thumbnail || p.image}" alt="Instagram-публікація NEXXTLEVEL STORE" loading="lazy">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+      </a>
+    `).join('');
+
+    document.getElementById('instaFeed').style.display = '';
+  } catch (e) {
+    // тихо ігноруємо — секція лишається прихованою
+  }
+}
+loadInstagramFeed();
 
 // Прозора шапка поверх відео-банера, стає непрозорою при прокрутці
 (function(){
