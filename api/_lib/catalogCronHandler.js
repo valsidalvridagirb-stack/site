@@ -165,19 +165,17 @@ async function upsertBatches(batches) {
   return { upserted, errors };
 }
 
-// Постачальники з великими фідами (ideasport ~3000 рядків, ultrasport ще
-// більше) не встигають вкластись у короткий read-timeout, який WebFetch
-// (інструмент, яким щогодинне завдання дзвонить на ці урли) сам собі ставить
-// на HTTP-запит — емпірично перевірено: коли WebFetch репортує "Read timeout",
-// Vercel ДІЙСНО обриває виконання функції на середині (supplier_catalog.
-// updated_at після цього не зрушується), це не хибне спрацювання таймауту, а
-// реальний обрив роботи. Тому вся синхронізація тепер "fire-and-forget":
-// хендлер одразу відповідає (не чекаючи фіда/апсертів) і продовжує роботу
-// ПІСЛЯ відповіді — Vercel не вбиває інвокейшн, доки не завершиться сам
-// async-хендлер (просто відправлений res не блокує подальший код). Результат
-// пишеться в sync_runs (started_at/finished_at/ok/summary) — той, хто
-// запустив синхронізацію, перевіряє результат окремим запитом до цієї
-// таблиці замість очікування у самому HTTP-виклику.
+// ПРИМІТКА (перевірено емпірично): "fire-and-forget" тут НЕ працює — Vercel
+// вбиває інвокейшн одразу після res.json(), навіть якщо async-хендлер ще не
+// повернувся (жодного коду після відправленої відповіді фактично не
+// виконується, без офіційного waitUntil() з @vercel/functions, якого в цьому
+// build-free проєкті немає). Тому хендлер лишається повністю синхронним —
+// відповідає ОДНИМ res.json() у самому кінці, як і раніше. sync_runs
+// (started_at/finished_at/ok/summary) тепер лишається просто журналом
+// перебігу (для діагностики через Supabase), а не механізмом обходу
+// таймауту виклику — той вирішується на боці інструменту, яким щогодинне
+// завдання дзвонить на ці урли (не WebFetch — у нього закороткий
+// read-timeout для великих фідів, підтверджено тестами).
 async function logRunStart(action) {
   if (!SERVICE_KEY) return null;
   try {
@@ -235,14 +233,6 @@ function makeCatalogCronHandler(opts) {
     const runStart = new Date().toISOString();
     const runId = await logRunStart(supplier);
 
-    // Клієнт (WebFetch у сценарії щогодинного завдання) отримує швидку
-    // квитанцію і йде далі — фактична синхронізація триває нижче, вже після
-    // res.status().json(). Дальші помилки НЕ можна віддати через res (заголовки
-    // вже відправлені) — тільки в sync_runs.summary/console.error.
-    res.status(202).json({
-      ok: true, accepted: true, supplier, runId, startedAt: runStart,
-    });
-
     try {
       const mergedFetchOptions = {
         ...(fetchOptions || {}),
@@ -255,7 +245,7 @@ function makeCatalogCronHandler(opts) {
       const processed = dedupeWithinSupplier(processedRaw);
 
       if (processed.length < minExpectedRows) {
-        await logRunFinish(runId, false, {
+        const summary = {
           supplier,
           fetched: rawRows.length,
           processed: processed.length,
@@ -263,7 +253,9 @@ function makeCatalogCronHandler(opts) {
           usedProxy,
           directFetchDiag,
           warning: 'too_few_rows_aborted_without_writing',
-        });
+        };
+        await logRunFinish(runId, false, summary);
+        res.status(200).json({ ok: false, runId, ...summary });
         return;
       }
 
@@ -287,7 +279,7 @@ function makeCatalogCronHandler(opts) {
         errors.push(`stale_cleanup: ${String((err && err.message) || err)}`);
       }
 
-      await logRunFinish(runId, errors.length === 0, {
+      const summary = {
         supplier,
         fetched: rawRows.length,
         processed: processedRaw.length,
@@ -297,11 +289,14 @@ function makeCatalogCronHandler(opts) {
         usedProxy,
         directFetchDiag,
         errors,
-      });
+      };
+      await logRunFinish(runId, errors.length === 0, summary);
+      res.status(200).json({ ok: errors.length === 0, runId, ...summary });
     } catch (err) {
-      console.error(`[catalog:${supplier}] background run failed:`, err);
-      await logRunFinish(runId, false, {
-        supplier, error: String((err && err.message) || err),
+      const message = String((err && err.message) || err);
+      await logRunFinish(runId, false, { supplier, error: message });
+      res.status(500).json({
+        error: 'server_error', supplier, runId, message,
       });
     }
   };

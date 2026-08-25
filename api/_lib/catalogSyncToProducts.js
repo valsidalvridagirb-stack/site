@@ -34,11 +34,13 @@ function key(art, size) {
   return `${String(art).toLowerCase()}${String(size)}`;
 }
 
-// Той самий fire-and-forget патерн, що й у catalogCronHandler.js: цей крок
-// читає ВСІ products (13k+ рядків) і supplier_catalog_merged (20k+) та пише
-// пачками — довше, ніж short read-timeout WebFetch-виклику щогодинного
-// завдання. Відповідаємо одразу, реальна робота триває після res.json(),
-// результат — в sync_runs (action='sync').
+// Журнал перебігу в sync_runs (action='sync') — суто для діагностики через
+// Supabase. "fire-and-forget" (рання відповідь + продовження роботи після
+// res.json()) тут навмисно НЕ використовується — перевірено емпірично на
+// catalogCronHandler.js, що Vercel вбиває інвокейшн одразу після
+// відправленої відповіді, без офіційного waitUntil() з @vercel/functions
+// (якого в цьому build-free проєкті немає). Хендлер лишається повністю
+// синхронним.
 async function logRunStart() {
   try {
     const rows = await supaService('sync_runs', {
@@ -119,7 +121,6 @@ module.exports = async (req, res) => {
   }
 
   const runId = await logRunStart();
-  res.status(202).json({ ok: true, accepted: true, action: 'sync', runId, startedAt: new Date().toISOString() });
 
   try {
     const [mergedRaw, products, excludedSizes] = await Promise.all([
@@ -230,7 +231,7 @@ module.exports = async (req, res) => {
 
     const errors = [...updateResult.errors, ...insertResult.errors];
 
-    await logRunFinish(runId, errors.length === 0, {
+    const summary = {
       timestamp: new Date().toISOString(),
       source: 'supplier_catalog_merged',
       catalog_rows: catalogRows.length,
@@ -246,9 +247,12 @@ module.exports = async (req, res) => {
       new_sizes_sample: newSizes.slice(0, SAMPLE_LIMIT).map((i) => `${i.catalog.art}/${i.catalog.size}`),
       skipped_excluded_sample: skippedExcludedSample,
       errors,
-    });
+    };
+    await logRunFinish(runId, errors.length === 0, summary);
+    res.status(200).json({ ok: errors.length === 0, runId, ...summary });
   } catch (err) {
-    console.error('[catalog:sync] background run failed:', err);
-    await logRunFinish(runId, false, { error: String((err && err.message) || err) });
+    const message = String((err && err.message) || err);
+    await logRunFinish(runId, false, { error: message });
+    res.status(500).json({ error: 'server_error', runId, message });
   }
 };
