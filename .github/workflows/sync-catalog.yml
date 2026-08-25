@@ -1,0 +1,124 @@
+name: Sync supplier catalog
+
+# Незалежний від Claude аналог хмарної синхронізації каталогу постачальників
+# — той самий підхід, що й у sync-ttn-status.yml: просто дзвонить у вже
+# готові ендпоінти /api/catalog?action=... (уся логіка фіду/парсингу/запису
+# в Supabase живе там, на Vercel). Раз на годину, одним скоординованим
+# запуском: спершу всі 4 постачальники (кожен пише лише свої рядки в
+# supplier_catalog, тому порядок між ними не важливий), а вже ПІСЛЯ того, як
+# усі відпрацювали, — крок sync, що переносить свіжі ціни/залишки з
+# supplier_catalog_merged у products (тому sync завжди йде останнім).
+#
+# dropyesoriginal свідомо НЕ включений — постачальник блокує запити не через
+# таймаут (який тут не проблема, на відміну від WebFetch), а окремим
+# Cloudflare JS-challenge на своєму боці; це лишається ручним кроком.
+
+on:
+  schedule:
+    - cron: '0 * * * *' # щогодини о хвилині :00
+  workflow_dispatch: {} # можливість запустити вручну з вкладки Actions
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ideasport
+        id: ideasport
+        continue-on-error: true
+        run: |
+          HTTP_CODE=$(curl -sL -o response.json -w "%{http_code}" --max-time 120 \
+            "https://nexxtlevel.store/api/catalog?action=ideasport&secret=${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $HTTP_CODE"
+          cat response.json
+          echo ""
+          python3 -c "
+          import json, sys
+          d = json.load(open('response.json'))
+          if not d.get('ok'):
+              print('::error::ideasport:', d)
+              sys.exit(1)
+          print(f\"OK ideasport: upserted={d.get('upserted')} errors={d.get('errors')}\")
+          "
+
+      - name: ultrasport
+        id: ultrasport
+        continue-on-error: true
+        run: |
+          HTTP_CODE=$(curl -sL -o response.json -w "%{http_code}" --max-time 120 \
+            "https://nexxtlevel.store/api/catalog?action=ultrasport&secret=${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $HTTP_CODE"
+          cat response.json
+          echo ""
+          python3 -c "
+          import json, sys
+          d = json.load(open('response.json'))
+          if not d.get('ok'):
+              print('::error::ultrasport:', d)
+              sys.exit(1)
+          print(f\"OK ultrasport: upserted={d.get('upserted')} errors={d.get('errors')}\")
+          "
+
+      - name: tcross
+        id: tcross
+        continue-on-error: true
+        run: |
+          HTTP_CODE=$(curl -sL -o response.json -w "%{http_code}" --max-time 120 \
+            "https://nexxtlevel.store/api/catalog?action=tcross&secret=${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $HTTP_CODE"
+          cat response.json
+          echo ""
+          python3 -c "
+          import json, sys
+          d = json.load(open('response.json'))
+          if not d.get('ok'):
+              print('::error::tcross:', d)
+              sys.exit(1)
+          print(f\"OK tcross: upserted={d.get('upserted')} errors={d.get('errors')}\")
+          "
+
+      - name: olxandery
+        id: olxandery
+        continue-on-error: true
+        run: |
+          HTTP_CODE=$(curl -sL -o response.json -w "%{http_code}" --max-time 120 \
+            "https://nexxtlevel.store/api/catalog?action=olxandery&secret=${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $HTTP_CODE"
+          cat response.json
+          echo ""
+          python3 -c "
+          import json, sys
+          d = json.load(open('response.json'))
+          if not d.get('ok'):
+              print('::error::olxandery:', d)
+              sys.exit(1)
+          print(f\"OK olxandery: upserted={d.get('upserted')} errors={d.get('errors')}\")
+          "
+
+      # Завжди останній — переносить свіжі ціни/залишки з
+      # supplier_catalog_merged у products. Запускається незалежно від того,
+      # чи всі 4 постачальники вище відпрацювали успішно (часткова невдача
+      # одного постачальника не повинна блокувати застосування вже готових
+      # даних решти).
+      - name: apply to products (sync)
+        id: sync
+        continue-on-error: true
+        run: |
+          HTTP_CODE=$(curl -sL -o response.json -w "%{http_code}" --max-time 120 \
+            "https://nexxtlevel.store/api/catalog?action=sync&secret=${{ secrets.CRON_SECRET }}")
+          echo "HTTP status: $HTTP_CODE"
+          cat response.json
+          echo ""
+          python3 -c "
+          import json, sys
+          d = json.load(open('response.json'))
+          if not d.get('ok'):
+              print('::error::sync:', d)
+              sys.exit(1)
+          print(f\"OK sync: updates_applied={d.get('updates_applied')} new_sizes_applied={d.get('new_sizes_applied')} errors={d.get('errors')}\")
+          "
+
+      - name: Fail workflow if any step failed
+        if: steps.ideasport.outcome == 'failure' || steps.ultrasport.outcome == 'failure' || steps.tcross.outcome == 'failure' || steps.olxandery.outcome == 'failure' || steps.sync.outcome == 'failure'
+        run: |
+          echo "::error::Один або кілька кроків синхронізації каталогу впали — дивись логи вище."
+          exit 1
