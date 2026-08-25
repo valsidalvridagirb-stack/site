@@ -26,7 +26,8 @@ const UPSERT_CONCURRENCY = 4;
 // фіда. Fetch() у Node/Vercel за замовчуванням шле generic/порожній UA.
 const DEFAULT_FEED_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  Accept: '*/*',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'uk-UA,uk;q=0.9,ru;q=0.8,en-US;q=0.7,en;q=0.6',
 };
 
 // Дедублікація В МЕЖАХ одного постачальника — те саме, що робив merge_all()
@@ -51,6 +52,71 @@ function dedupeWithinSupplier(rows) {
     }
   }
   return [...bySkuSize.values()];
+}
+
+// Деякі постачальники (drop.yesoriginal.com.ua) 403-ять САМЕ запити з IP
+// Vercel-датацентрів, навіть з повним набором браузерних заголовків (з
+// браузера власника той самий URL відкривається без проблем) — типовий
+// WAF/Cloudflare IP-reputation блок, який заголовками не обійти. Якщо для
+// постачальника ввімкнено opts.proxyFallback, при 403/мережевій помилці
+// пробуємо ще раз через публічний CORS/raw-проксі (allorigins.win) — його
+// IP може не потрапляти під той самий блок-лист. Це не гарантоване рішення
+// (проксі теж хмарний і теж може бути заблокований), але дешевий і швидкий
+// спосіб перевірити, перш ніж визнавати постачальника недоступним для
+// автоматизації.
+async function fetchViaProxy(url) {
+  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+  const res = await fetch(proxyUrl, { headers: DEFAULT_FEED_HEADERS });
+  if (!res.ok) {
+    throw new Error(`proxy_http_${res.status}`);
+  }
+  return res.text();
+}
+
+async function describeFailedResponse(feedRes) {
+  const bodySnippet = await feedRes.text().catch(() => '');
+  return {
+    status: feedRes.status,
+    statusText: feedRes.statusText,
+    server: feedRes.headers.get('server') || '',
+    cfRay: feedRes.headers.get('cf-ray') || '',
+    cfMitigated: feedRes.headers.get('cf-mitigated') || '',
+    contentType: feedRes.headers.get('content-type') || '',
+    bodySnippet: bodySnippet.slice(0, 500),
+  };
+}
+
+// Повертає { text, usedProxy, directFetchDiag } замість голого тексту, щоб
+// у відповіді хендлера було видно, ЩО саме сталось при прямому запиті
+// (корисно для діагностики навіть коли проксі-фолбек все ж спрацював).
+async function fetchFeedText(url, mergedFetchOptions, useProxyFallback) {
+  let feedRes;
+  let directFetchDiag = null;
+  try {
+    feedRes = await fetch(url, mergedFetchOptions);
+  } catch (err) {
+    directFetchDiag = { networkError: String((err && err.message) || err) };
+    if (!useProxyFallback) throw new Error(`Мережева помилка при запиті ${url}: ${directFetchDiag.networkError}`);
+  }
+
+  if (feedRes && !feedRes.ok) {
+    directFetchDiag = await describeFailedResponse(feedRes);
+  }
+
+  if (feedRes && feedRes.ok) {
+    return { text: await feedRes.text(), usedProxy: false, directFetchDiag: null };
+  }
+
+  if (!useProxyFallback) {
+    throw new Error(`Не вдалось завантажити фід ${url}: ${JSON.stringify(directFetchDiag)}`);
+  }
+
+  try {
+    const text = await fetchViaProxy(url);
+    return { text, usedProxy: true, directFetchDiag };
+  } catch (proxyErr) {
+    throw new Error(`Пряме завантаження ${url} впало (${JSON.stringify(directFetchDiag)}), проксі-фолбек теж впав: ${String((proxyErr && proxyErr.message) || proxyErr)}`);
+  }
 }
 
 function toUpsertRow(r, runStart) {
@@ -111,7 +177,7 @@ async function upsertBatches(batches) {
 //     feed that's temporarily empty/broken silently wiping the catalog)
 function makeCatalogCronHandler(opts) {
   const {
-    supplier, url, parse, fetchOptions, minExpectedRows = 1,
+    supplier, url, parse, fetchOptions, minExpectedRows = 1, proxyFallback = false,
   } = opts;
 
   return async (req, res) => {
@@ -133,11 +199,7 @@ function makeCatalogCronHandler(opts) {
         ...(fetchOptions || {}),
         headers: { ...DEFAULT_FEED_HEADERS, ...((fetchOptions && fetchOptions.headers) || {}) },
       };
-      const feedRes = await fetch(url, mergedFetchOptions);
-      if (!feedRes.ok) {
-        throw new Error(`Не вдалось завантажити фід ${url}: ${feedRes.status}`);
-      }
-      const feedText = await feedRes.text();
+      const { text: feedText, usedProxy, directFetchDiag } = await fetchFeedText(url, mergedFetchOptions, proxyFallback);
 
       const rawRows = parse(feedText);
       const processedRaw = rawRows.map(processRow).filter(Boolean);
@@ -150,6 +212,8 @@ function makeCatalogCronHandler(opts) {
           fetched: rawRows.length,
           processed: processed.length,
           upserted: 0,
+          usedProxy,
+          directFetchDiag,
           warning: 'too_few_rows_aborted_without_writing',
         });
         return;
@@ -183,6 +247,8 @@ function makeCatalogCronHandler(opts) {
         duplicatesRemoved: processedRaw.length - processed.length,
         upserted,
         staleCleanupOk,
+        usedProxy,
+        directFetchDiag,
         errors,
       });
     } catch (err) {
