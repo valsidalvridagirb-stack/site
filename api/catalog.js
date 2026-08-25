@@ -58,9 +58,17 @@ const CRON_ACTIONS = {
     url: 'https://drop.yesoriginal.com.ua/price/drop.xml',
     parse: parseDropyesoriginalXml,
     minExpectedRows: 100,
-    // Їхній хостинг 403-ить запити без Referer з того ж домену (bot-детект
-    // на IP-рівні Vercel-датацентру, з браузера той самий фід доступний).
+    // Їхній хостинг 403-ить запити з IP Vercel-датацентру навіть з повним
+    // набором браузерних заголовків (з браузера власника той самий фід
+    // доступний) — схоже на WAF/Cloudflare IP-reputation блок, який
+    // заголовками не обійти. proxyFallback: якщо прямий запит впаде,
+    // catalogCronHandler автоматично пробує повторно через публічний
+    // raw-проксі (allorigins.win) — його IP може не потрапляти під той
+    // самий блок-лист. Якщо й це не спрацює — у відповіді буде
+    // directFetchDiag з точною причиною прямої відмови (статус,
+    // сервер-заголовки, уривок тіла) для подальшої діагностики.
     fetchOptions: { headers: { Referer: 'https://drop.yesoriginal.com.ua/' } },
+    proxyFallback: true,
   }),
   ultrasport: makeCatalogCronHandler({
     supplier: 'ultrasport',
