@@ -15,28 +15,38 @@
 //    користувача з браузера (Authorization: Bearer <access_token>) через
 //    Supabase REST з тим самим токеном — RLS-політика на profiles сама
 //    гарантує, що повернеться рядок лише цього користувача.
-//    РАНІШЕ читав статичний закомічений у git файл
-//    api/_data/excel-catalog.json (генерував його scripts/sync_catalog.py з
-//    xlsx, що збирав локальний update.py на комп'ютері власника — а отже
-//    каталог не оновлювався, поки ноутбук вимкнений). Тепер натомість читає
-//    SQL-в'юху supplier_catalog_merged напряму з Supabase — дані завжди
-//    свіжі, незалежно від того, чи увімкнений ноутбук.
+//    ВИПРАВЛЕНО (25.08.2026): короткий час читав SQL-в'юху
+//    supplier_catalog_merged напряму з Supabase замість статичного файлу —
+//    здавалось логічним, бо ті дані "завжди свіжі". Але supplier_catalog
+//    наповнюють ЛИШЕ хмарні крон-завдання для 4 постачальників
+//    (ideasport/ultrasport/tcross/olxandery) — для 7dreamsport і
+//    dropyesoriginal такого крону взагалі нема (7dreamsport за логіном,
+//    dropyesoriginal за Cloudflare-блоком), тому їх там НІКОЛИ не було, і
+//    адмінка помилково писала "товару більше немає в каталозі
+//    постачальників" для товарів, які насправді є. Повернуто назад: читає
+//    статичний закомічений у git файл api/_data/excel-catalog.json — його
+//    щогодини (незалежно від Claude) оновлює скрипт local_sync_catalog.py на
+//    ПК власника, з ПОВНОГО каталогу всіх 6 постачальників одразу (у нього
+//    вже локально лежать фіди всіх шести — включно з 7dreamsport і
+//    dropyesoriginal, для яких хмарного шляху нема).
 //
 // 2) ?action=ideasport|dropyesoriginal|ultrasport|tcross|olxandery&secret=...
 //    — хмарна синхронізація каталогу ОДНОГО постачальника (фід -> парсинг
 //    -> catalogPipeline.processRow() -> Supabase supplier_catalog). Захищено
 //    CRON_SECRET (той самий, що й в api/cron-sync-ttn.js), не токеном
-//    користувача.
+//    користувача. Наразі розклад (GitHub Actions) вимкнено — лишається
+//    ручний запуск, дивись .github/workflows/sync-catalog.yml.
 //
 // 3) ?action=sync&secret=... — переносить свіжі ціни/залишки з
 //    supplier_catalog_merged у products (заміна scripts/sync_catalog.py,
 //    без git). Деталі — api/_lib/catalogSyncToProducts.js.
+const fs = require('fs');
+const path = require('path');
 const { makeCatalogCronHandler } = require('./_lib/catalogCronHandler');
 const {
   parseIdeasportXml, parseDropyesoriginalXml, parseUltrasportXml, parseTcrossXml, parseOlxanderyCsv,
 } = require('./_lib/catalogParsers');
 const syncToProductsHandler = require('./_lib/catalogSyncToProducts');
-const { supaServiceAll } = require('./_lib/supabaseService');
 
 const SUPABASE_URL = 'https://jkwppbriklmxbivndxeq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprd3BwYnJpa2xteGJpdm5keGVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0OTIyMDUsImV4cCI6MjEwMTA2ODIwNX0.z1URg0dT6DsBT8nSkGvDeSrXls6bgOuU3UJBlvS-5gc';
@@ -117,18 +127,22 @@ async function handleAdminCatalog(req, res) {
     return;
   }
 
-  const merged = await supaServiceAll(
-    'supplier_catalog_merged?select=sku,size,name,retail_price,qty,brand,gender,category_1,category_2,category_3,supplier',
-  );
-
-  const catalogRows = merged.map((r) => [
-    r.sku, r.size, r.name, r.retail_price, r.qty, r.brand, r.gender,
-    r.category_1, r.category_2, r.category_3, r.supplier,
-  ]);
+  // Статичний файл, закомічений у git — щогодини перезаписує
+  // local_sync_catalog.py на ПК власника (Windows Планувальник завдань,
+  // без Claude), з ПОВНОГО каталогу всіх 6 постачальників. Формат
+  // {cols, rows} уже точно такий, який чекає admin.html — просто віддаємо
+  // його як є, без переформатування.
+  let raw;
+  try {
+    raw = fs.readFileSync(path.join(__dirname, '_data', 'excel-catalog.json'), 'utf8');
+  } catch (err) {
+    res.status(500).json({ error: 'catalog_file_missing', message: String((err && err.message) || err) });
+    return;
+  }
 
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'private, no-store');
-  res.status(200).json({ cols: COLS, rows: catalogRows });
+  res.status(200).send(raw);
 }
 
 module.exports = async (req, res) => {
