@@ -40,6 +40,9 @@
     "api/cron-sync-ttn.js": {
       "maxDuration": 60
     },
+    "api/catalog.js": {
+      "maxDuration": 60
+    },
     "api/product.js": {
       "includeFiles": "product-page.html"
     },
