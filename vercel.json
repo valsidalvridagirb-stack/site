@@ -37,9 +37,6 @@
     "api/scan-dimensions.js": {
       "maxDuration": 60
     },
-    "api/scan-external-dimensions.js": {
-      "maxDuration": 60
-    },
     "api/cron-sync-ttn.js": {
       "maxDuration": 60
     },
