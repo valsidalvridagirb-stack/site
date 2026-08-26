@@ -210,9 +210,9 @@
     <div class="card">
       <h3>Інструменти</h3>
       <div class="actions-row">
-        <button class="btn" id="bulkWatermarkBtn">Накласти водяний знак на всі опубліковані фото</button>
+        <button class="btn" id="bulkWatermarkBtn" disabled title="Вимкнено за запитом Влада 2026-08-26 — водяний знак більше не накладається">Накласти водяний знак на всі опубліковані фото (вимкнено)</button>
       </div>
-      <div class="desc-hint">Одноразова дія: перевіряє фото усіх товарів, що зараз показуються на сайті (не чіпає осиротілі файли у сховищі від старих перезаливок), пропускає ті, що вже з водяним знаком (за списком у базі), і накладає знак на решту. Можна безпечно натиснути кілька разів — вже оброблені фото не будуть оброблені повторно.</div>
+      <div class="desc-hint">Функція вимкнена 2026-08-26 — сайт більше не накладає водяний знак NEXXTLEVEL.STORE на фото товарів (ні при публікації нових, ні цією кнопкою).</div>
       <div class="progress" id="wmProgressWrap" style="display:none;"><i id="wmProgressBar"></i></div>
       <div class="status-line" id="wmStatusLine"></div>
     </div>
@@ -1246,7 +1246,9 @@ async function publish() {
         finalUrls.push(item.url);
         continue;
       }
-      const file = await drawWatermark(item.file);
+      // Водяний знак вимкнено за запитом Влада 2026-08-26 — фото
+      // завантажуються як є, без накладання NEXXTLEVEL.STORE.
+      const file = item.file;
       const path = `${currentArticul}/${crypto.randomUUID()}.${extOf(file.name)}`;
       const { error: upErr } = await supabaseClient.storage.from(BUCKET).upload(path, file, { upsert: false });
       if (upErr) throw new Error('Не вдалось завантажити ' + file.name + ': ' + upErr.message);
