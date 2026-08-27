@@ -269,15 +269,8 @@
 
     <div class="card" id="customSizeChartCard" style="display:none;">
       <h3>Власні заміри</h3>
-      <div id="customSizeChartColumns"></div>
-      <button type="button" class="btn btn-secondary" id="customSizeChartAddColBtn">+ Додати колонку</button>
-      <div id="customSizeChartRows" style="margin-top:16px;"></div>
-      <button type="button" class="btn btn-secondary" id="customSizeChartAddRowBtn">+ Додати рядок (розмір)</button>
-      <div style="margin-top:16px;">
-        <label class="name-input-label" for="customSizeChartNote">Примітка (необов'язково)</label>
-        <textarea class="desc-textarea" id="customSizeChartNote" placeholder="напр. Заміри в сантиметрах, устілка"></textarea>
-      </div>
-      <div class="desc-hint">Якщо тут вказано хоча б один рядок з назвою колонки і розміром — на сторінці товару кнопка «Розмірна сітка» відкриватиме саме ці власні заміри замість загальної сітки бренду. Порожні колонки/рядки ігноруються.</div>
+      <textarea class="desc-textarea" id="customSizeChartInput" placeholder="Впишіть заміри як завгодно, напр.:&#10;42 — довжина стопи 27 см&#10;43 — довжина стопи 28 см"></textarea>
+      <div class="desc-hint">Якщо тут щось вписано — на сторінці товару кнопка «Розмірна сітка» покаже саме цей текст замість загальної сітки бренду. Порожнє поле — сітка показується як звичайно.</div>
     </div>
 
     <div class="card" id="manualSizesCard" style="display:none;">
@@ -776,126 +769,19 @@ let manualMode = false;
 // (без прив'язки до жодного матчу з прайсу постачальника).
 let manualSizeRows = [];
 
-// Власні заміри для поточного артикулу (замінюють загальну розмірну сітку
-// бренду на сторінці товару, якщо задані) — [''] колонок + [{size, values[]}]
-// рядків, зберігаються в products.custom_size_chart як JSON.
-let customSizeChartColumns = [''];
-let customSizeChartRows = [{ size: '', values: [''] }];
-
-function renderCustomSizeChartColumns() {
-  const wrap = document.getElementById('customSizeChartColumns');
-  wrap.innerHTML = '<label class="name-input-label">Колонки таблиці замірів (напр. «Довжина стопи, см»)</label>';
-  customSizeChartColumns.forEach((col, i) => {
-    const line = document.createElement('div');
-    line.className = 'manual-size-row';
-    line.innerHTML = `
-      <input type="text" class="manual-size-input" placeholder="напр. Довжина стопи, см" style="flex:1;">
-      <button type="button" class="pill-x" title="Видалити колонку">×</button>`;
-    const inp = line.querySelector('input');
-    inp.value = col ?? '';
-    inp.addEventListener('input', () => { customSizeChartColumns[i] = inp.value; });
-    line.querySelector('.pill-x').addEventListener('click', () => {
-      customSizeChartColumns.splice(i, 1);
-      customSizeChartRows.forEach(r => r.values.splice(i, 1));
-      if (!customSizeChartColumns.length) { customSizeChartColumns = ['']; customSizeChartRows.forEach(r => r.values = ['']); }
-      renderCustomSizeChart();
-    });
-    wrap.appendChild(line);
-  });
-}
-
-function renderCustomSizeChartRows() {
-  const wrap = document.getElementById('customSizeChartRows');
-  wrap.innerHTML = '<label class="name-input-label">Рядки (розмір + значення по кожній колонці)</label>';
-  customSizeChartRows.forEach((row, i) => {
-    const line = document.createElement('div');
-    line.className = 'manual-size-row';
-    let html = `<input type="text" class="manual-size-input" placeholder="Розмір, напр. 42" style="max-width:110px;">`;
-    customSizeChartColumns.forEach(() => { html += `<input type="text" class="manual-size-input" placeholder="Значення">`; });
-    html += `<button type="button" class="pill-x" title="Видалити рядок">×</button>`;
-    line.innerHTML = html;
-    const inputs = [...line.querySelectorAll('input')];
-    const sizeInp = inputs[0];
-    sizeInp.value = row.size ?? '';
-    sizeInp.addEventListener('input', () => { customSizeChartRows[i].size = sizeInp.value; });
-    for (let c = 0; c < customSizeChartColumns.length; c++) {
-      const valInp = inputs[c + 1];
-      valInp.value = row.values[c] ?? '';
-      valInp.addEventListener('input', () => { customSizeChartRows[i].values[c] = valInp.value; });
-    }
-    line.querySelector('.pill-x').addEventListener('click', () => {
-      customSizeChartRows.splice(i, 1);
-      if (!customSizeChartRows.length) customSizeChartRows.push({ size: '', values: customSizeChartColumns.map(() => '') });
-      renderCustomSizeChartRows();
-    });
-    wrap.appendChild(line);
-  });
-}
-
-function renderCustomSizeChart() {
-  renderCustomSizeChartColumns();
-  renderCustomSizeChartRows();
-}
-
-document.getElementById('customSizeChartAddColBtn').addEventListener('click', () => {
-  customSizeChartColumns.push('');
-  customSizeChartRows.forEach(r => r.values.push(''));
-  renderCustomSizeChart();
-});
-document.getElementById('customSizeChartAddRowBtn').addEventListener('click', () => {
-  customSizeChartRows.push({ size: '', values: customSizeChartColumns.map(() => '') });
-  renderCustomSizeChartRows();
-});
-
-// Завантажує власні заміри з JSON, що лежить у products.custom_size_chart
-// (або скидає форму до порожньої, якщо товар їх ще не має) — викликається
-// і в ручному режимі, і в звичайному завантаженні товару.
+// Власні заміри для поточного артикулу — простий вільний текст, який
+// замінює загальну розмірну сітку бренду на сторінці товару, якщо заданий.
+// Завантажує значення з products.custom_size_chart у текстове поле
+// (або очищує його, якщо в товару замірів ще нема).
 function loadCustomSizeChart(raw) {
-  customSizeChartColumns = [];
-  customSizeChartRows = [];
-  document.getElementById('customSizeChartNote').value = '';
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw);
-      customSizeChartColumns = Array.isArray(parsed.columns) ? parsed.columns.slice() : [];
-      const rowsObj = parsed.rows && typeof parsed.rows === 'object' ? parsed.rows : {};
-      customSizeChartRows = Object.entries(rowsObj).map(([size, values]) => ({
-        size,
-        values: customSizeChartColumns.map((_, i) => (Array.isArray(values) ? (values[i] ?? '') : ''))
-      }));
-      document.getElementById('customSizeChartNote').value = parsed.note || '';
-    } catch (e) {
-      console.error('Не вдалось розпарсити custom_size_chart:', e);
-    }
-  }
-  if (!customSizeChartColumns.length) customSizeChartColumns = [''];
-  if (!customSizeChartRows.length) customSizeChartRows = [{ size: '', values: customSizeChartColumns.map(() => '') }];
-  renderCustomSizeChart();
+  document.getElementById('customSizeChartInput').value = raw || '';
 }
 
-// Збирає введені власні заміри у JSON для збереження в products.custom_size_chart
-// (null, якщо форма порожня) — порожні колонки й порожні рядки ігноруються.
+// Повертає введений текст замірів для збереження в products.custom_size_chart
+// (null, якщо поле порожнє).
 function buildCustomSizeChartJSON() {
-  const colIndices = [];
-  const columns = [];
-  customSizeChartColumns.forEach((c, i) => {
-    const name = String(c || '').trim();
-    if (name) { columns.push(name); colIndices.push(i); }
-  });
-  if (!columns.length) return null;
-  const rows = {};
-  customSizeChartRows.forEach(r => {
-    const size = String(r.size || '').trim();
-    if (!size) return;
-    const values = colIndices.map(i => String(r.values[i] || '').trim());
-    if (values.every(v => !v)) return;
-    rows[size] = values;
-  });
-  if (!Object.keys(rows).length) return null;
-  const note = document.getElementById('customSizeChartNote').value.trim();
-  const result = { columns, rows };
-  if (note) result.note = note;
-  return JSON.stringify(result);
+  const text = document.getElementById('customSizeChartInput').value.trim();
+  return text || null;
 }
 
 document.getElementById('artSearchBtn').addEventListener('click', doSearch);

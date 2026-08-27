@@ -1125,29 +1125,13 @@ function sizeSortKey(sz) {
 const SIZE_CHART_GENDER_LABEL = { men: 'Чоловіча', women: 'Жіноча', teen: 'Підліткова', unisex: 'Унісекс' };
 const SIZE_CHART_GENDER_LINK = { men: 'male', women: 'female', teen: 'teen', unisex: 'unisex' };
 
-// Власні заміри, введені вручну в адмінці для цього артикулу
-// (products.custom_size_chart, JSON: {columns:[...], rows:{size:[...]}, note}) —
-// мають пріоритет над загальною сіткою бренду/статі нижче, коли задані.
+// Власні заміри, введені вручну в адмінці для цього артикулу (вільний текст
+// у products.custom_size_chart) — мають пріоритет над загальною сіткою
+// бренду/статі нижче, коли задані.
 function buildCustomSizeChartData(product) {
-  const raw = product.custom_size_chart;
-  if (!raw) return null;
-  let parsed;
-  try { parsed = JSON.parse(raw); } catch (e) { return null; }
-  const columns = Array.isArray(parsed.columns) ? parsed.columns.filter(c => String(c || '').trim()) : [];
-  const rowsObj = parsed.rows && typeof parsed.rows === 'object' ? parsed.rows : {};
-  const sizes = Object.keys(rowsObj).sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
-  if (!columns.length || !sizes.length) return null;
-  const rows = sizes.map(size => [size, ...columns.map((_, i) => String((rowsObj[size] || [])[i] ?? ''))]);
-  return {
-    kind: 'clothes',
-    title: 'Заміри товару',
-    note: parsed.note || '',
-    columns: ['Розмір', ...columns],
-    rows,
-    howto: null,
-    howtoTitle: null,
-    deepLink: null
-  };
+  const text = String(product.custom_size_chart || '').trim();
+  if (!text) return null;
+  return { kind: 'custom-text', title: 'Заміри товару', text };
 }
 
 function buildSizeChartData(product) {
@@ -1273,6 +1257,14 @@ function switchSizeModalTab(idx) {
 function renderSizeModalBody() {
   const d = currentSizeChartData;
   if (!d) return;
+
+  if (d.kind === 'custom-text') {
+    document.getElementById('sizeModalBody').innerHTML = `
+      <h2>${d.title}</h2>
+      <p class="chart-note" style="white-space:pre-wrap;">${escapeHtml(d.text)}</p>
+    `;
+    return;
+  }
 
   if (d.kind === 'shoes-both') {
     const active = d.tabs[currentSizeChartTabIdx] || d.tabs[0];
