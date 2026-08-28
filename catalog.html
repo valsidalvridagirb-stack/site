@@ -697,7 +697,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
-                  <a href="catalog.html?cat=Чоловіче&amp;type=Куртки">Куртки</a>
+                  <a href="catalog.html?cat=Чоловіче&amp;type=Куртки, пуховики">Куртки, пуховики</a>
                   <a href="catalog.html?cat=Чоловіче&amp;type=Вітровки, жилетки">Вітровки, жилетки</a>
                   <a href="catalog.html?cat=Чоловіче&amp;type=Парки">Парки</a>
                   <a href="catalog.html?cat=Чоловіче&amp;type=Пальто, плащі, тренчі">Пальто, плащі, тренчі</a>
@@ -755,7 +755,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
-                  <a href="catalog.html?cat=Жіноче&amp;type=Куртки">Куртки</a>
+                  <a href="catalog.html?cat=Жіноче&amp;type=Куртки, пуховики">Куртки, пуховики</a>
                   <a href="catalog.html?cat=Жіноче&amp;type=Вітровки, жилетки">Вітровки, жилетки</a>
                   <a href="catalog.html?cat=Жіноче&amp;type=Парки">Парки</a>
                   <a href="catalog.html?cat=Жіноче&amp;type=Пальто, плащі, тренчі">Пальто, плащі, тренчі</a>
@@ -1072,7 +1072,7 @@ let activeFilters = {
 // цьому списку, самі стануть пунктом фільтра, без правок коду.
 const PRODUCT_TYPE_ORDER = [
   'Кросівки', 'Капці', 'Сандалі', 'Черевики',
-  'Куртки', 'Вітровки, жилетки', 'Парки', 'Пальто, плащі, тренчі',
+  'Куртки, пуховики', 'Вітровки, жилетки', 'Парки', 'Пальто, плащі, тренчі',
   'Zip-Худі', 'Худі', 'Світшоти', 'Кофти',
   'Футболки',
   'Спортивні штани', 'Джинси', 'Брюки, класичні',
@@ -1095,7 +1095,7 @@ const PRODUCT_TYPE_ORDER_LOOKUP = new Map(PRODUCT_TYPE_ORDER.map(t => [t.toLower
 // для них сайдбар лишається незвуженим, як і раніше.
 const TYPE_FAMILIES = [
   ['Кросівки', 'Капці', 'Сандалі', 'Черевики', 'Шиповки'], // Взуття
-  ['Куртки', 'Вітровки, жилетки', 'Парки', 'Пальто, плащі, тренчі'], // Верхній одяг
+  ['Куртки, пуховики', 'Вітровки, жилетки', 'Парки', 'Пальто, плащі, тренчі'], // Верхній одяг
   ['Zip-Худі', 'Худі', 'Світшоти', 'Кофти'], // Кофти
   ['Спортивні штани', 'Джинси', 'Брюки, класичні'], // Штани
 ];
@@ -1120,8 +1120,8 @@ const CATEGORY_2_MAP = {
   'шльопанці та сандалі': 'Капці', // стара об'єднана категорія — лишаємо для сумісності зі старими даними
   'черевики': 'Черевики',
   'черевики та чоботи': 'Черевики', // стара назва категорії — лишаємо для сумісності зі старими даними
-  'куртки та вітровки': 'Куртки',
-  'куртка': 'Куртки',
+  'куртки та вітровки': 'Куртки, пуховики',
+  'куртка': 'Куртки, пуховики',
   'пальто': 'Пальто, плащі, тренчі',
   'плащ': 'Пальто, плащі, тренчі',
   'тренч': 'Пальто, плащі, тренчі',
@@ -1195,7 +1195,7 @@ function detectProductType(p) {
   if (/парк|parka/.test(name)) return 'Парки';
   if (/пальто|плащ|тренч|trench|overcoat|raincoat/.test(name)) return 'Пальто, плащі, тренчі';
   if (/вітр[іо]вк|жилет|windbreaker|vest|gilet/.test(name)) return 'Вітровки, жилетки';
-  if (/куртк|пуховик|jacket|coat/.test(name)) return 'Куртки';
+  if (/куртк|пуховик|jacket|coat/.test(name)) return 'Куртки, пуховики';
   if (/футболк|сорочк|блуз|лонгслів|майк|t-?shirt|polo|blouse/.test(name)) return 'Футболки';
   // Кофти розбиті на Zip-Худі/Худі/Світшоти — специфічні варіанти
   // перевіряємо ПЕРШИМИ (той самий принцип, що й з Парки/Вітровки вище):
