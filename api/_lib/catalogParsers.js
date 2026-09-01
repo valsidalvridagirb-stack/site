@@ -179,7 +179,7 @@ function parseUltrasportXml(xmlText) {
   return rows;
 }
 
-// ─── tcross — public YML feed (https://tcross1.pp.ua/feed.xml) ─────
+// ─── tcross — public YML feed (https://tcross1.pp.ua.s52.hhos.net/feed.xml) ─────
 // Combines tcross_feed_sync.py's category-chain resolution with
 // update.py's parse_tcross() column mapping, reading the feed directly
 // instead of round-tripping through an .xlsx file.
