@@ -88,7 +88,7 @@ const CRON_ACTIONS = {
   }),
   tcross: makeCatalogCronHandler({
     supplier: 'tcross',
-    url: 'https://tcross1.pp.ua/feed.xml',
+    url: 'https://tcross1.pp.ua.s52.hhos.net/feed.xml',
     parse: parseTcrossXml,
     minExpectedRows: 200,
   }),
