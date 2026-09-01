@@ -163,13 +163,14 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
     <div class="brand-tabs" id="brandTabs">
       <button class="brand-btn active" data-brand="nike">Nike</button>
       <button class="brand-btn" data-brand="jordan">Jordan</button>
+      <button class="brand-btn" data-brand="adidas">Adidas</button>
       <button class="brand-btn" data-brand="puma">Puma</button>
       <button class="brand-btn" data-brand="nb">New Balance</button>
-      <button class="brand-btn" data-brand="adidas">Adidas</button>
-      <button class="brand-btn" data-brand="saucony">Saucony</button>
-      <button class="brand-btn" data-brand="karrimor">Karrimor</button>
+      <button class="brand-btn" data-brand="reebok">Reebok</button>
       <button class="brand-btn" data-brand="ua">Under Armour</button>
+      <button class="brand-btn" data-brand="saucony">Saucony</button>
       <button class="brand-btn" data-brand="converse">Converse</button>
+      <button class="brand-btn" data-brand="karrimor">Karrimor</button>
     </div>
 
     <div id="brand-nike">
@@ -219,6 +220,34 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
         <p class="chart-note">Jordan належить Nike Inc. і офіційно використовує ідентичну сітку розмірів. EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
         <div class="table-scroll">
           <table class="size-table" id="jordanWomenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="brand-adidas" style="display:none;">
+      <div class="chart-section">
+        <h2>Adidas — чоловіче взуття</h2>
+        <p class="chart-note">EU — офіційний розмір Adidas (бренд сам позначає проміжні розміри дробом — 2/3 або 1/3, це не наближення, а власна сітка виробника). US — чоловіча сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="adidasMenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Adidas — жіноче взуття</h2>
+        <p class="chart-note">EU — офіційний розмір Adidas (проміжні розміри — дробом, 2/3 або 1/3). US — жіноча сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="adidasWomenTable">
             <thead>
               <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
             </thead>
@@ -336,12 +365,12 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
       </div>
     </div>
 
-    <div id="brand-adidas" style="display:none;">
+    <div id="brand-reebok" style="display:none;">
       <div class="chart-section">
-        <h2>Adidas — чоловіче взуття</h2>
-        <p class="chart-note">EU — офіційний розмір Adidas (бренд сам позначає проміжні розміри дробом — 2/3 або 1/3, це не наближення, а власна сітка виробника). US — чоловіча сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
+        <h2>Reebok — чоловіче взуття</h2>
+        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах (офіційний reebok.com публікує лише US-розміри та довжину стопи в дюймах, без EU/UK/CM — ці значення звірені за незалежними джерелами).</p>
         <div class="table-scroll">
-          <table class="size-table" id="adidasMenTable">
+          <table class="size-table" id="reebokMenTable">
             <thead>
               <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
             </thead>
@@ -351,79 +380,10 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
       </div>
 
       <div class="chart-section">
-        <h2>Adidas — жіноче взуття</h2>
-        <p class="chart-note">EU — офіційний розмір Adidas (проміжні розміри — дробом, 2/3 або 1/3). US — жіноча сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах.</p>
+        <h2>Reebok — жіноче взуття</h2>
+        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка. CM — довжина устілки в сантиметрах (офіційний reebok.com публікує лише US-розміри та довжину стопи в дюймах, без EU/UK/CM — ці значення звірені за незалежними джерелами).</p>
         <div class="table-scroll">
-          <table class="size-table" id="adidasWomenTable">
-            <thead>
-              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="brand-saucony" style="display:none;">
-      <div class="chart-section">
-        <h2>Saucony — чоловіче взуття</h2>
-        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. CM — довжина стопи в сантиметрах.</p>
-        <div class="table-scroll">
-          <table class="size-table" id="sauconyMenTable">
-            <thead>
-              <tr><th>EU</th><th>US</th><th>CM</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="chart-section">
-        <h2>Saucony — жіноче взуття</h2>
-        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. CM — довжина стопи в сантиметрах.</p>
-        <div class="table-scroll">
-          <table class="size-table" id="sauconyWomenTable">
-            <thead>
-              <tr><th>EU</th><th>US</th><th>CM</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="brand-karrimor" style="display:none;">
-      <div class="chart-section">
-        <h2>Karrimor — чоловіче взуття</h2>
-        <p class="chart-note">Сітка з таблиці на коробці товару. EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. UK — британська сітка (Karrimor — британський бренд). CM — довжина стопи в сантиметрах.</p>
-        <div class="table-scroll">
-          <table class="size-table" id="karrimorMenTable">
-            <thead>
-              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="chart-section">
-        <h2>Karrimor — жіноче взуття</h2>
-        <p class="chart-note">Сітка з таблиці на коробці товару. EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка (Karrimor — британський бренд). CM — довжина стопи в сантиметрах.</p>
-        <div class="table-scroll">
-          <table class="size-table" id="karrimorWomenTable">
-            <thead>
-              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="chart-section">
-        <h2>Karrimor — унісекс взуття</h2>
-        <p class="chart-note">Окрема унісекс-сітка з таблиці на коробці товару (не збігається один-в-один з чоловічою чи жіночою для того самого EU). EU — розмір, вказаний на сайті та на етикетці взуття. US — унісекс розмірна сітка США. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
-        <div class="table-scroll">
-          <table class="size-table" id="karrimorUnisexTable">
+          <table class="size-table" id="reebokWomenTable">
             <thead>
               <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
             </thead>
@@ -487,6 +447,34 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
       </div>
     </div>
 
+    <div id="brand-saucony" style="display:none;">
+      <div class="chart-section">
+        <h2>Saucony — чоловіче взуття</h2>
+        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="sauconyMenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Saucony — жіноче взуття</h2>
+        <p class="chart-note">EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="sauconyWomenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <div id="brand-converse" style="display:none;">
       <div class="chart-section">
         <h2>Converse — чоловіче взуття</h2>
@@ -514,6 +502,48 @@ html[data-theme="dark"] header.site{background:rgba(18,18,18,.95);}.theme-toggle
         </div>
       </div>
     </div>
+
+    <div id="brand-karrimor" style="display:none;">
+      <div class="chart-section">
+        <h2>Karrimor — чоловіче взуття</h2>
+        <p class="chart-note">Сітка з таблиці на коробці товару. EU — розмір, вказаний на сайті та на етикетці взуття. US — чоловіча розмірна сітка США. UK — британська сітка (Karrimor — британський бренд). CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="karrimorMenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Karrimor — жіноче взуття</h2>
+        <p class="chart-note">Сітка з таблиці на коробці товару. EU — розмір, вказаний на сайті та на етикетці взуття. US — жіноча розмірна сітка США. UK — британська сітка (Karrimor — британський бренд). CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="karrimorWomenTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>Karrimor — унісекс взуття</h2>
+        <p class="chart-note">Окрема унісекс-сітка з таблиці на коробці товару (не збігається один-в-один з чоловічою чи жіночою для того самого EU). EU — розмір, вказаний на сайті та на етикетці взуття. US — унісекс розмірна сітка США. UK — британська сітка. CM — довжина стопи в сантиметрах.</p>
+        <div class="table-scroll">
+          <table class="size-table" id="karrimorUnisexTable">
+            <thead>
+              <tr><th>EU</th><th>US</th><th>UK</th><th>CM</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
 
     <div class="howto">
       <h3>Як виміряти розмір ноги</h3>
@@ -661,6 +691,8 @@ fillTable('nbUnisexTable', NB_UNISEX);
 fillTable('nbTeenTable', NB_TEEN);
 fillTable('adidasMenTable', ADIDAS_MEN);
 fillTable('adidasWomenTable', ADIDAS_WOMEN);
+fillTable('reebokMenTable', REEBOK_MEN);
+fillTable('reebokWomenTable', REEBOK_WOMEN);
 fillTable('karrimorMenTable', KARRIMOR_MEN);
 fillTable('karrimorWomenTable', KARRIMOR_WOMEN);
 fillTable('karrimorUnisexTable', KARRIMOR_UNISEX);
@@ -713,7 +745,7 @@ function setupGenderTabs(containerEl) {
   containerEl.insertBefore(row, sections[0]);
   sections.forEach((s, j) => { s.style.display = (j === 0) ? '' : 'none'; });
 }
-['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony', 'karrimor', 'ua', 'converse'].forEach(id => setupGenderTabs(document.getElementById('brand-' + id)));
+['nike', 'jordan', 'adidas', 'puma', 'nb', 'reebok', 'ua', 'saucony', 'converse', 'karrimor'].forEach(id => setupGenderTabs(document.getElementById('brand-' + id)));
 setupGenderTabs(document.getElementById('tab-clothes'));
 
 // ---------- перемикання вкладок (Взуття / Одяг) ----------
@@ -730,7 +762,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ---------- перемикання бренду (в межах вкладки "Взуття") ----------
-const BRAND_IDS = ['nike', 'jordan', 'puma', 'nb', 'adidas', 'saucony', 'karrimor', 'ua', 'converse'];
+const BRAND_IDS = ['nike', 'jordan', 'adidas', 'puma', 'nb', 'reebok', 'ua', 'saucony', 'converse', 'karrimor'];
 function selectBrand(brandId) {
   const btn = document.querySelector(`.brand-btn[data-brand="${brandId}"]`);
   if (!btn) return;
