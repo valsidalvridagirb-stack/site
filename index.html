@@ -961,7 +961,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
             </button>
             <div class="nav-subgroup-body">
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Верхній одяг
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Верхній одяг">Верхній одяг
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -972,7 +972,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                 </div>
               </div>
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Кофти
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Кофти">Кофти
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -982,7 +982,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                 </div>
               </div>
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Штани
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Штани">Штани
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -1019,7 +1019,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
             </button>
             <div class="nav-subgroup-body">
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Верхній одяг
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Верхній одяг">Верхній одяг
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -1030,7 +1030,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                 </div>
               </div>
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Кофти
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Кофти">Кофти
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -1040,7 +1040,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                 </div>
               </div>
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Штани
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Штани">Штани
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -1091,12 +1091,14 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
           e.preventDefault();
           e.stopPropagation();
           const group = btn.dataset.catalogGroup;
-          // Натискання на назву групи відкриває весь її каталог; стрілка
+          const typeFamily = btn.dataset.catalogFamily;
+          // Натискання на назву відкриває всю групу товарів; стрілка
           // лишається для розгортання вкладених підкатегорій.
-          if (group && !e.target.closest('.chevron')) {
+          if ((group || typeFamily) && !e.target.closest('.chevron')) {
             const categoryLink = btn.closest('.nav-item')?.querySelector(':scope > .nav-toggle');
             const targetUrl = new URL(categoryLink?.href || 'catalog.html', window.location.href);
-            targetUrl.searchParams.set('group', group);
+            if (group) targetUrl.searchParams.set('group', group);
+            if (typeFamily) targetUrl.searchParams.set('typeFamily', typeFamily);
             window.location.href = `${targetUrl.pathname}${targetUrl.search}`;
             return;
           }
