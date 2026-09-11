@@ -490,6 +490,19 @@ html[data-theme="dark"] .nav-dropdown{background:rgba(24,24,24,.92);border-color
   }
 /* Захист фото: базовий бар'єр проти простого перетягування/збереження
    зображень товарів (повністю заблокувати збереження неможливо). */
+/* На телефоні логотип і розділи каталогу вирівняні відносно центру екрана,
+   а пошук та іконки залишаються зручним окремим рядком. */
+@media (max-width:768px){
+  header.site .header-row{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;justify-content:initial;
+    row-gap:20px;column-gap:16px;padding:20px 16px 16px;
+  }
+  header.site .logo{grid-column:1/-1;justify-self:center;}
+  header.site nav.main-nav{grid-column:1/-1;width:100%;justify-content:center;gap:clamp(18px,7vw,36px);}
+  header.site .site-search{grid-column:1;min-width:0;width:100%;max-width:none;}
+  header.site .header-icons{grid-column:2;}
+}
 img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 </style>
 <script src="assets/theme.js" defer></script>
