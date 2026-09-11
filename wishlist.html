@@ -508,7 +508,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
         <div class="nav-dropdown">
           <a href="catalog.html?cat=Чоловіче">Всі товари</a>
           <div class="nav-subgroup">
-            <button type="button" class="nav-subgroup-toggle">Взуття
+            <button type="button" class="nav-subgroup-toggle" data-catalog-group="Взуття">Взуття
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-subgroup-body">
@@ -520,7 +520,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
             </div>
           </div>
           <div class="nav-subgroup">
-            <button type="button" class="nav-subgroup-toggle">Одяг
+            <button type="button" class="nav-subgroup-toggle" data-catalog-group="Одяг">Одяг
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-subgroup-body">
@@ -567,7 +567,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
         <div class="nav-dropdown">
           <a href="catalog.html?cat=Жіноче">Всі товари</a>
           <div class="nav-subgroup">
-            <button type="button" class="nav-subgroup-toggle">Взуття
+            <button type="button" class="nav-subgroup-toggle" data-catalog-group="Взуття">Взуття
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-subgroup-body">
@@ -578,7 +578,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
             </div>
           </div>
           <div class="nav-subgroup">
-            <button type="button" class="nav-subgroup-toggle">Одяг
+            <button type="button" class="nav-subgroup-toggle" data-catalog-group="Одяг">Одяг
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-subgroup-body">
@@ -654,6 +654,16 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
         btn.addEventListener('click', e => {
           e.preventDefault();
           e.stopPropagation();
+          const group = btn.dataset.catalogGroup;
+          // Натискання на назву групи відкриває весь її каталог; стрілка
+          // лишається для розгортання вкладених підкатегорій.
+          if (group && !e.target.closest('.chevron')) {
+            const categoryLink = btn.closest('.nav-item')?.querySelector(':scope > .nav-toggle');
+            const targetUrl = new URL(categoryLink?.href || 'catalog.html', window.location.href);
+            targetUrl.searchParams.set('group', group);
+            window.location.href = `${targetUrl.pathname}${targetUrl.search}`;
+            return;
+          }
           btn.closest('.nav-subgroup').classList.toggle('open');
         });
       });
