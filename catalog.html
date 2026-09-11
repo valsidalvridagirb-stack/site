@@ -1504,20 +1504,7 @@ function populateFilterOptions() {
     typeOptions.appendChild(label);
   });
 
-  const brandOptions = document.getElementById('brandOptions');
-  brandOptions.innerHTML = '';
-  Array.from(brandSet).sort().forEach(brand => {
-    const label = document.createElement('label');
-    label.className = 'filter-row';
-    label.innerHTML = `<input type="checkbox" value="${brand}"> <span>${brand}</span>`;
-    label.querySelector('input').addEventListener('change', e => {
-      if (e.target.checked) activeFilters.brands.add(brand);
-      else activeFilters.brands.delete(brand);
-      label.classList.toggle('checked', e.target.checked);
-      applyFiltersAndRender(true);
-    });
-    brandOptions.appendChild(label);
-  });
+  renderBrandOptions();
 
   const sizeOptions = document.getElementById('sizeOptions');
   sizeOptions.innerHTML = '';
@@ -1535,6 +1522,42 @@ function populateFilterOptions() {
   });
 }
 
+function renderBrandOptions() {
+  // Бренди залежать від інших уже вибраних параметрів, але не від самого
+  // фільтра бренду. Тож після вибору «Капці» тут лишаться лише марки капців,
+  // які є в актуально завантаженому асортименті.
+  const availableBrands = new Set();
+  allProducts.forEach(p => {
+    if (groupParam && !String(p.category_1 || '').toLowerCase().includes(groupParam.toLowerCase())) return;
+    if (activeFilters.types.size > 0 && !p.__types.some(t => activeFilters.types.has(t))) return;
+    if (activeFilters.sizes.size > 0 && !(p.sizes || []).some(s => activeFilters.sizes.has(s))) return;
+    const price = Number(p.price) || 0;
+    if (activeFilters.priceMin !== null && price < activeFilters.priceMin) return;
+    if (activeFilters.priceMax !== null && price > activeFilters.priceMax) return;
+    if (p.brand) availableBrands.add(p.brand);
+  });
+
+  // Если после смены категории у выбранного бренда больше нет товаров,
+  // снимаем этот фильтр, чтобы не оставить пользователя с пустым каталогом.
+  activeFilters.brands.forEach(brand => {
+    if (!availableBrands.has(brand)) activeFilters.brands.delete(brand);
+  });
+
+  const brandOptions = document.getElementById('brandOptions');
+  brandOptions.innerHTML = '';
+  Array.from(availableBrands).sort().forEach(brand => {
+    const label = document.createElement('label');
+    const isChecked = activeFilters.brands.has(brand);
+    label.className = 'filter-row' + (isChecked ? ' checked' : '');
+    label.innerHTML = `<input type="checkbox" value="${brand}" ${isChecked ? 'checked' : ''}> <span>${brand}</span>`;
+    label.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) activeFilters.brands.add(brand);
+      else activeFilters.brands.delete(brand);
+      applyFiltersAndRender(true);
+    });
+    brandOptions.appendChild(label);
+  });
+}
 function updateFilterCountPill() {
   const total = activeFilters.types.size + activeFilters.brands.size + activeFilters.sizes.size
     + (activeFilters.priceMin !== null ? 1 : 0) + (activeFilters.priceMax !== null ? 1 : 0);
@@ -1548,6 +1571,7 @@ function updateFilterCountPill() {
 }
 
 function applyFiltersAndRender(resetPage) {
+  renderBrandOptions();
   updateFilterCountPill();
 
   filteredProducts = allProducts.filter(p => {
