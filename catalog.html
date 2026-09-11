@@ -706,7 +706,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
             </button>
             <div class="nav-subgroup-body">
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Верхній одяг
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Верхній одяг">Верхній одяг
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -717,7 +717,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                 </div>
               </div>
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Кофти
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Кофти">Кофти
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -727,7 +727,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                 </div>
               </div>
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Штани
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Штани">Штани
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -764,7 +764,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
             </button>
             <div class="nav-subgroup-body">
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Верхній одяг
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Верхній одяг">Верхній одяг
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -775,7 +775,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                 </div>
               </div>
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Кофти
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Кофти">Кофти
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -785,7 +785,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
                 </div>
               </div>
               <div class="nav-subgroup">
-                <button type="button" class="nav-subgroup-toggle">Штани
+                <button type="button" class="nav-subgroup-toggle" data-catalog-family="Штани">Штани
                   <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="nav-subgroup-body">
@@ -842,12 +842,14 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
           e.preventDefault();
           e.stopPropagation();
           const group = btn.dataset.catalogGroup;
-          // Натискання на назву групи відкриває весь її каталог; стрілка
+          const typeFamily = btn.dataset.catalogFamily;
+          // Натискання на назву відкриває всю групу товарів; стрілка
           // лишається для розгортання вкладених підкатегорій.
-          if (group && !e.target.closest('.chevron')) {
+          if ((group || typeFamily) && !e.target.closest('.chevron')) {
             const categoryLink = btn.closest('.nav-item')?.querySelector(':scope > .nav-toggle');
             const targetUrl = new URL(categoryLink?.href || 'catalog.html', window.location.href);
-            targetUrl.searchParams.set('group', group);
+            if (group) targetUrl.searchParams.set('group', group);
+            if (typeFamily) targetUrl.searchParams.set('typeFamily', typeFamily);
             window.location.href = `${targetUrl.pathname}${targetUrl.search}`;
             return;
           }
@@ -1140,6 +1142,12 @@ const TYPE_FAMILIES = [
 function getTypeFamily(type) {
   return TYPE_FAMILIES.find(group => group.includes(type)) || null;
 }
+// Назви вкладених груп у меню → усі типи товарів усередині них.
+const MENU_TYPE_FAMILIES = {
+  'Верхній одяг': TYPE_FAMILIES[1],
+  'Кофти': TYPE_FAMILIES[2],
+  'Штани': TYPE_FAMILIES[3],
+};
 // Точний збіг усієї "Категорія 2" від постачальника (або обраної в адмінці
 // вручну категорії) → тип товару для вкладок каталогу. Винесено на рівень
 // модуля (а не всередину detectProductType), щоб цю саму мапу можна було
@@ -1322,6 +1330,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const categoryParam = urlParams.get('cat');
 const typeParam = urlParams.get('type');
 const groupParam = urlParams.get('group');
+const typeFamilyParam = urlParams.get('typeFamily');
 const searchParam = urlParams.get('search') || '';
 // Пошук тепер живий (шукає одразу під час набору тексту, без Enter) — тому,
 // на відміну від інших параметрів вище, значення пошуку більше не
@@ -1337,10 +1346,12 @@ let liveSearchTerm = searchParam;
 // тим самим списком, а не окрема сторінка, і дублювання таких варіантів
 // в індексі Google лише шкодить.
 (function updateCatalogSeoTags() {
-  const label = groupParam || typeParam || categoryParam;
+  const sectionLabel = typeFamilyParam || groupParam || typeParam;
+  const label = categoryParam && sectionLabel ? `${categoryParam} — ${sectionLabel}` : (sectionLabel || categoryParam);
   const canonicalParams = new URLSearchParams();
   if (categoryParam) canonicalParams.set('cat', categoryParam);
   if (typeParam) canonicalParams.set('type', typeParam);
+  if (typeFamilyParam) canonicalParams.set('typeFamily', typeFamilyParam);
   const qs = canonicalParams.toString();
   const canonicalUrl = 'https://nexxtlevel.store/catalog' + (qs ? '?' + qs : '');
 
@@ -1363,10 +1374,11 @@ let liveSearchTerm = searchParam;
 // які реально є серед завантажених товарів, у populateFilterOptions()
 // нижче (щоб не рахувати як "активний фільтр" тип, якого серед
 // результатів ще немає — наприклад, одяг, поки його не опубліковано).
-const pendingTypePreselect = new Set(typeParam ? [typeParam] : preselectTypesFromCat(categoryParam));
+const selectedTypeFamily = typeFamilyParam ? MENU_TYPE_FAMILIES[typeFamilyParam] : null;
+const pendingTypePreselect = new Set(selectedTypeFamily || (typeParam ? [typeParam] : preselectTypesFromCat(categoryParam)));
 
 if (categoryParam) {
-  document.getElementById('pageTitle').textContent = groupParam ? `${categoryParam} — ${groupParam}` : (typeParam ? `${categoryParam} — ${typeParam}` : categoryParam);
+  document.getElementById('pageTitle').textContent = typeFamilyParam ? `${categoryParam} — ${typeFamilyParam}` : (groupParam ? `${categoryParam} — ${groupParam}` : (typeParam ? `${categoryParam} — ${typeParam}` : categoryParam));
 } else if (typeParam) {
   document.getElementById('pageTitle').textContent = typeParam;
 } else if (searchParam) {
@@ -1473,7 +1485,7 @@ function populateFilterOptions() {
   loadedTypeSet = typeSet;
 
   if (pendingTypePreselect.size > 0) {
-    if (typeParam) {
+    if (typeParam && !typeFamilyParam) {
       // Точний тип із нового пункту меню (Взуття/Одяг) — застосовуємо
       // суворо: якщо серед завантажених товарів такого типу ще немає
       // (наприклад, одяг поки не опубліковано в каталозі), чесно показуємо
@@ -1491,7 +1503,7 @@ function populateFilterOptions() {
   // весь асортимент статі (взуття впереміш з одягом). Самостійні типи поза
   // групами (Футболки, Шорти, Спортивні костюми тощо) і візити без ?type=
   // (наприклад "Всі товари") лишаються незвуженими, як і раніше.
-  const typeFamily = typeParam ? getTypeFamily(typeParam) : null;
+  const typeFamily = selectedTypeFamily || (typeParam ? getTypeFamily(typeParam) : null);
   const visibleTypes = typeFamily ? Array.from(typeSet).filter(t => typeFamily.includes(t)) : Array.from(typeSet);
 
   const typeOptions = document.getElementById('typeOptions');
@@ -1833,12 +1845,13 @@ function runLiveSearch(term) {
   const params = new URLSearchParams();
   if (categoryParam) params.set('cat', categoryParam);
   if (groupParam) params.set('group', groupParam);
+  if (typeFamilyParam) params.set('typeFamily', typeFamilyParam);
   if (term) params.set('search', term);
   const qs = params.toString();
   history.replaceState(null, '', qs ? `catalog.html?${qs}` : 'catalog.html');
 
   if (categoryParam) {
-    document.getElementById('pageTitle').textContent = groupParam ? `${categoryParam} — ${groupParam}` : (typeParam ? `${categoryParam} — ${typeParam}` : categoryParam);
+    document.getElementById('pageTitle').textContent = typeFamilyParam ? `${categoryParam} — ${typeFamilyParam}` : (groupParam ? `${categoryParam} — ${groupParam}` : (typeParam ? `${categoryParam} — ${typeParam}` : categoryParam));
   } else if (typeParam) {
     document.getElementById('pageTitle').textContent = typeParam;
   } else {
