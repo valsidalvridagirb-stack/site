@@ -663,10 +663,15 @@ footer.site-footer {
     gap: 15px;
     text-align: center;
   }
-  .product-layout {
-    grid-template-columns: 1fr;
+  /* Квадратні фото мають окреме desktop-правило з :has(...), яке за
+     специфічністю сильніше за звичайний .product-layout. На телефоні
+     примусово повертаємо одну колонку, щоб опис не їхав праворуч за екран. */
+  .product-layout,
+  .product-layout:has(.main-image-wrap.is-square) {
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
   }
+  .product-page { margin: 24px auto; padding: 0 16px; }
   .gallery-container {
     flex-direction: column-reverse;
   }
