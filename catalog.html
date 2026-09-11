@@ -1028,8 +1028,23 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const ITEMS_PER_PAGE = 20;
-let currentPage = 1;
+// Номер сторінки є частиною стану каталогу: якщо покупець відкрив товар,
+// кнопка «Назад» має повернути його на ту саму сторінку списку, а не на першу.
+const initialCatalogPage = Math.max(1, parseInt(new URLSearchParams(window.location.search).get('page'), 10) || 1);
+let currentPage = initialCatalogPage;
 let wishlist = new Set(JSON.parse(localStorage.getItem('wishlist') || '[]'));
+
+const catalogReturnStorageKey = `catalog-return-position:${window.location.pathname}${window.location.search}`;
+let pendingCatalogScrollRestore = null;
+try {
+  const savedPosition = sessionStorage.getItem(catalogReturnStorageKey);
+  if (savedPosition !== null) {
+    pendingCatalogScrollRestore = Math.max(0, Number(savedPosition) || 0);
+    sessionStorage.removeItem(catalogReturnStorageKey);
+  }
+} catch (_) {
+  // Заблоковане сховище не повинно заважати роботі каталогу.
+}
 
 let allProducts = [];
 let filteredProducts = [];
@@ -1550,14 +1565,31 @@ function applyFiltersAndRender(resetPage) {
     filteredProducts.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
   }
 
-  if (resetPage) currentPage = 1;
+  if (resetPage) {
+    currentPage = 1;
+    updateCatalogPageInUrl(currentPage);
+  }
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
   if (currentPage > totalPages) currentPage = totalPages;
 
   renderPage(currentPage);
 }
 
-function renderPage(page) {
+function updateCatalogPageInUrl(page) {
+  const params = new URLSearchParams(window.location.search);
+  if (page > 1) params.set('page', page);
+  else params.delete('page');
+  const qs = params.toString();
+  history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
+}
+
+function goToPage(page) {
+  currentPage = page;
+  updateCatalogPageInUrl(page);
+  renderPage(page, true);
+}
+
+function renderPage(page, scrollToTop = false) {
   currentPage = page;
   const grid = document.getElementById('productGrid');
   const countEl = document.getElementById('resultsCount');
@@ -1591,6 +1623,16 @@ function renderPage(page) {
     const card = document.createElement('a');
     card.href = `product?articul=${encodeURIComponent(p.articul || '')}`;
     card.className = 'product-card';
+    card.addEventListener('click', event => {
+      // Кнопки «обране» та швидкого перегляду не відкривають картку,
+      // тож позицію каталогу для них не зберігаємо.
+      if (event.target.closest('button')) return;
+      try {
+        sessionStorage.setItem(catalogReturnStorageKey, String(window.scrollY));
+      } catch (_) {
+        // Повернення все одно збереже сторінку через параметр page в URL.
+      }
+    });
     card.innerHTML = `
       <div class="product-media">
         <button class="wish-btn ${isWished ? 'active' : ''}" data-id="${p.articul}" aria-label="До обраного">
@@ -1611,7 +1653,13 @@ function renderPage(page) {
   });
 
   renderPagination(filteredProducts.length, page);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (pendingCatalogScrollRestore !== null) {
+    const savedY = pendingCatalogScrollRestore;
+    pendingCatalogScrollRestore = null;
+    requestAnimationFrame(() => window.scrollTo({ top: savedY, behavior: 'auto' }));
+  } else if (scrollToTop) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 function renderPagination(totalItems, page) {
@@ -1623,17 +1671,17 @@ function renderPagination(totalItems, page) {
     return;
   }
 
-  let html = `<button class="page-btn" ${page === 1 ? 'disabled' : ''} onclick="renderPage(${page - 1})">← Назад</button>`;
+  let html = `<button class="page-btn" ${page === 1 ? 'disabled' : ''} onclick="goToPage(${page - 1})">← Назад</button>`;
 
   for (let i = 1; i <= totalPages; i++) {
     if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
-      html += `<button class="page-btn ${i === page ? 'active' : ''}" onclick="renderPage(${i})">${i}</button>`;
+      html += `<button class="page-btn ${i === page ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
     } else if (i === page - 2 || i === page + 2) {
       html += `<span style="color:var(--mute)">...</span>`;
     }
   }
 
-  html += `<button class="page-btn" ${page === totalPages ? 'disabled' : ''} onclick="renderPage(${page + 1})">Вперед →</button>`;
+  html += `<button class="page-btn" ${page === totalPages ? 'disabled' : ''} onclick="goToPage(${page + 1})">Вперед →</button>`;
 
   paginationEl.innerHTML = html;
 }
@@ -1662,7 +1710,7 @@ async function loadCatalog() {
 
   allProducts = data || [];
   populateFilterOptions();
-  applyFiltersAndRender(true);
+  applyFiltersAndRender(false);
 }
 
 // ===== Акордеон фільтрів (розгортання/згортання секцій) =====
