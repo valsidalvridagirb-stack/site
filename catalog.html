@@ -676,7 +676,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
         <div class="nav-dropdown">
           <a href="catalog.html?cat=Чоловіче">Всі товари</a>
           <div class="nav-subgroup">
-            <button type="button" class="nav-subgroup-toggle">Взуття
+            <button type="button" class="nav-subgroup-toggle" data-catalog-group="Взуття">Взуття
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-subgroup-body">
@@ -688,7 +688,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
             </div>
           </div>
           <div class="nav-subgroup">
-            <button type="button" class="nav-subgroup-toggle">Одяг
+            <button type="button" class="nav-subgroup-toggle" data-catalog-group="Одяг">Одяг
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-subgroup-body">
@@ -735,7 +735,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
         <div class="nav-dropdown">
           <a href="catalog.html?cat=Жіноче">Всі товари</a>
           <div class="nav-subgroup">
-            <button type="button" class="nav-subgroup-toggle">Взуття
+            <button type="button" class="nav-subgroup-toggle" data-catalog-group="Взуття">Взуття
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-subgroup-body">
@@ -746,7 +746,7 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
             </div>
           </div>
           <div class="nav-subgroup">
-            <button type="button" class="nav-subgroup-toggle">Одяг
+            <button type="button" class="nav-subgroup-toggle" data-catalog-group="Одяг">Одяг
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-subgroup-body">
@@ -828,6 +828,16 @@ img { -webkit-user-drag: none; user-drag: none; -webkit-touch-callout: none; use
         btn.addEventListener('click', e => {
           e.preventDefault();
           e.stopPropagation();
+          const group = btn.dataset.catalogGroup;
+          // Натискання на назву групи відкриває весь її каталог; стрілка
+          // лишається для розгортання вкладених підкатегорій.
+          if (group && !e.target.closest('.chevron')) {
+            const categoryLink = btn.closest('.nav-item')?.querySelector(':scope > .nav-toggle');
+            const targetUrl = new URL(categoryLink?.href || 'catalog.html', window.location.href);
+            targetUrl.searchParams.set('group', group);
+            window.location.href = `${targetUrl.pathname}${targetUrl.search}`;
+            return;
+          }
           btn.closest('.nav-subgroup').classList.toggle('open');
         });
       });
@@ -1298,6 +1308,7 @@ function preselectTypesFromCat(cat) {
 const urlParams = new URLSearchParams(window.location.search);
 const categoryParam = urlParams.get('cat');
 const typeParam = urlParams.get('type');
+const groupParam = urlParams.get('group');
 const searchParam = urlParams.get('search') || '';
 // Пошук тепер живий (шукає одразу під час набору тексту, без Enter) — тому,
 // на відміну від інших параметрів вище, значення пошуку більше не
@@ -1313,7 +1324,7 @@ let liveSearchTerm = searchParam;
 // тим самим списком, а не окрема сторінка, і дублювання таких варіантів
 // в індексі Google лише шкодить.
 (function updateCatalogSeoTags() {
-  const label = typeParam || categoryParam;
+  const label = groupParam || typeParam || categoryParam;
   const canonicalParams = new URLSearchParams();
   if (categoryParam) canonicalParams.set('cat', categoryParam);
   if (typeParam) canonicalParams.set('type', typeParam);
@@ -1342,7 +1353,7 @@ let liveSearchTerm = searchParam;
 const pendingTypePreselect = new Set(typeParam ? [typeParam] : preselectTypesFromCat(categoryParam));
 
 if (categoryParam) {
-  document.getElementById('pageTitle').textContent = typeParam ? `${categoryParam} — ${typeParam}` : categoryParam;
+  document.getElementById('pageTitle').textContent = groupParam ? `${categoryParam} — ${groupParam}` : (typeParam ? `${categoryParam} — ${typeParam}` : categoryParam);
 } else if (typeParam) {
   document.getElementById('pageTitle').textContent = typeParam;
 } else if (searchParam) {
@@ -1540,6 +1551,7 @@ function applyFiltersAndRender(resetPage) {
   updateFilterCountPill();
 
   filteredProducts = allProducts.filter(p => {
+    if (groupParam && !String(p.category_1 || '').toLowerCase().includes(groupParam.toLowerCase())) return false;
     if (activeFilters.types.size > 0 && !p.__types.some(t => activeFilters.types.has(t))) return false;
     if (activeFilters.brands.size > 0 && !activeFilters.brands.has(p.brand)) return false;
     if (activeFilters.sizes.size > 0) {
@@ -1783,12 +1795,13 @@ function runLiveSearch(term) {
   // моделі впереміш.
   const params = new URLSearchParams();
   if (categoryParam) params.set('cat', categoryParam);
+  if (groupParam) params.set('group', groupParam);
   if (term) params.set('search', term);
   const qs = params.toString();
   history.replaceState(null, '', qs ? `catalog.html?${qs}` : 'catalog.html');
 
   if (categoryParam) {
-    document.getElementById('pageTitle').textContent = typeParam ? `${categoryParam} — ${typeParam}` : categoryParam;
+    document.getElementById('pageTitle').textContent = groupParam ? `${categoryParam} — ${groupParam}` : (typeParam ? `${categoryParam} — ${typeParam}` : categoryParam);
   } else if (typeParam) {
     document.getElementById('pageTitle').textContent = typeParam;
   } else {
