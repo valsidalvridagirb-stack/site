@@ -151,11 +151,41 @@ ${descriptionXml}<param name="Розмір">${escXml(size)}</param>
 ${genderParam}</offer>`;
 }
 
+// Google Merchant receives this live variant through /feed.xml?google=1.
+// The weights include ordinary packing and are calculated again every time the
+// catalogue is requested, so future products do not need manual work.
+const GOOGLE_SHIPPING_WEIGHTS = {
+  'Кросівки': '1.2 kg', 'Черевики': '1.6 kg', 'Капці': '0.6 kg', 'Сандалі': '0.7 kg', 'Шиповки': '1.1 kg',
+  'Куртки та вітровки': '1.5 kg', 'Кофти та худі': '0.8 kg', 'Штани та лосини': '0.7 kg',
+  'Футболки та майки': '0.4 kg', 'Шорти': '0.4 kg', 'Спортивні костюми': '1.2 kg', 'Тренч': '1.4 kg',
+  'Шкарпетки': '0.2 kg', 'Кепки та шапки': '0.4 kg', 'Рюкзаки': '0.9 kg', 'Спортивні сумки': '0.9 kg',
+  'Жіночі сумки': '0.8 kg', 'Сумки на пояс, плече': '0.5 kg', 'Месенджери': '0.6 kg', 'Ремені': '0.3 kg', 'Рукавички': '0.3 kg'
+};
+function googleShippingWeight(row) {
+  const category = LEGACY_CATEGORY_ALIASES[row.category_2] || row.category_2;
+  return GOOGLE_SHIPPING_WEIGHTS[category] || (row.category_1 === 'Взуття' ? '1.0 kg' : '0.7 kg');
+}
+function buildGoogleItemXml(row) {
+  const articul = String(row.articul || '').trim();
+  const picture = String(row.photos || '').split(/[;,]/).map(cleanImageUrl).find(Boolean) || '';
+  const title = String(row.name || '').replace(/\s+/g, ' ').trim();
+  const description = String(row.description || title).replace(/\s+/g, ' ').trim();
+  return `<item>\n<g:id>${escXml(articul)}</g:id>\n<g:title>${escXml(title)}</g:title>\n<g:description>${escXml(description)}</g:description>\n<g:link>${escXml(`${SITE_URL}/product?articul=${encodeURIComponent(articul)}`)}</g:link>\n${picture ? `<g:image_link>${escXml(picture)}</g:image_link>\n` : ''}<g:availability>in_stock</g:availability>\n<g:price>${Number(row.price || 0).toFixed(2)} UAH</g:price>\n<g:condition>new</g:condition>\n${row.brand ? `<g:brand>${escXml(row.brand)}</g:brand>\n` : ''}<g:shipping_weight>${googleShippingWeight(row)}</g:shipping_weight>\n</item>`;
+}
 module.exports = async (req, res) => {
   try {
     const rows = await fetchAllProducts();
     const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
 
+    if (String((req.query && req.query.google) || '') === '1') {
+      const productsByArticul = new Map();
+      rows.forEach(row => { if (row.articul && !productsByArticul.has(String(row.articul).trim())) productsByArticul.set(String(row.articul).trim(), row); });
+      const googleItems = Array.from(productsByArticul.values()).map(buildGoogleItemXml).join('\n');
+      res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=1800, stale-while-revalidate=3600');
+      res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?>\n<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0"><channel>\n<title>NEXXTLEVEL STORE</title><link>${SITE_URL}</link><description>Каталог товарів</description>\n${googleItems}\n</channel></rss>`);
+      return;
+    }
     const offersXml = rows.map(buildOfferXml).join('\n');
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
